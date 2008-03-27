@@ -1,0 +1,5 @@
+{
+    "appStages": ["lsst.dps.IOStage.InputStage", "lsst.detection.pipeline.DetectionStage", "lsst.dps.IOStage.OutputStage"],
+    "eventTopics": ["None", "None", "None"],
+    "stagePolicies": ["policy/input_policy.paf", "policy/DetectionStagePolicy.paf", "policy/output_policy.paf"]
+}

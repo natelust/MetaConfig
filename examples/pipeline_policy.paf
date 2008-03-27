@@ -1,0 +1,11 @@
+#<?cfg paf policy ?>
+appStages:       lsst.dps.IOStage.InputStage
+appStages:       lsst.detection.pipeline.DetectionStage
+appStages:       lsst.dps.IOStage.OutputStage
+
+eventTopics:     None None None
+
+stagePolicies:   @EventTranmitter_policy.paf
+stagePolicies:   @DetectionStagePolicy.paf
+stagePolicies:   @output_policy.paf
+
