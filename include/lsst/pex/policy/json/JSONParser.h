@@ -6,24 +6,24 @@
  * 
  */
 
-#ifndef LSST_MWI_POLICY_JSON_JSONPARSER_H
-#define LSST_MWI_POLICY_JSON_JSONPARSER_H
+#ifndef LSST_PEX_POLICY_JSON_JSONPARSER_H
+#define LSST_PEX_POLICY_JSON_JSONPARSER_H
 
 #include <sstream>
 #include <map>
 
-#include "lsst/mwi/policy/PolicyParser.h"
-#include "lsst/mwi/policy/Policy.h"
-#include "lsst/mwi/policy/parserexceptions.h"
+#include "lsst/pex/policy/PolicyParser.h"
+#include "lsst/pex/policy/Policy.h"
+#include "lsst/pex/policy/parserexceptions.h"
 #include <jaula/jaula_parse.h>
 #include <boost/regex.hpp>
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 namespace json {
 
-using namespace lsst::mwi::policy;
+using namespace lsst::pex::policy;
 using namespace std;
 using boost::regex;
 
@@ -182,5 +182,5 @@ private:
     // the Policy object is a member of the parent class
 };
 
-}}}}   // end lsst::mwi::policy::json
-#endif // LSST_MWI_POLICY_JSON_JSONPARSER_H
+}}}}   // end lsst::pex::policy::json
+#endif // LSST_PEX_POLICY_JSON_JSONPARSER_H

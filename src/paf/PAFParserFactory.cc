@@ -1,17 +1,17 @@
 /**
  * @class PAFParserFactory
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @author Ray Plante
  * 
  */
 
-#include "lsst/mwi/policy/paf/PAFParserFactory.h"
-#include "lsst/mwi/policy/paf/PAFParser.h"
+#include "lsst/pex/policy/paf/PAFParserFactory.h"
+#include "lsst/pex/policy/paf/PAFParser.h"
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 namespace paf {
 
@@ -57,4 +57,4 @@ bool PAFParserFactory::recognize(const string& leaders) const {
 
 
 
-}}}}   // end lsst::mwi::policy::paf
+}}}}   // end lsst::pex::policy::paf

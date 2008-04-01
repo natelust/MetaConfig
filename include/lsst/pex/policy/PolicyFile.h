@@ -2,7 +2,7 @@
 /**
  * @class PolicyFile
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @brief a representation of a file containing Policy parameter data
  * 
@@ -10,19 +10,19 @@
  * 
  */
 
-#ifndef LSST_MWI_POLICY_FILE_H
-#define LSST_MWI_POLICY_FILE_H
+#ifndef LSST_PEX_POLICY_FILE_H
+#define LSST_PEX_POLICY_FILE_H
 
 #include <boost/shared_ptr.hpp>
 #include <boost/regex.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 
-#include "lsst/mwi/policy/PolicySource.h"
-#include "lsst/mwi/policy/SupportedFormats.h"
+#include "lsst/pex/policy/PolicySource.h"
+#include "lsst/pex/policy/SupportedFormats.h"
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
 using namespace std;
@@ -133,8 +133,8 @@ private:
 };
 
 
-}}}  // end namespace lsst::mwi::policy
+}}}  // end namespace lsst::pex::policy
 
-#endif // LSST_MWI_POLICY_FILE_H
+#endif // LSST_PEX_POLICY_FILE_H
 
 

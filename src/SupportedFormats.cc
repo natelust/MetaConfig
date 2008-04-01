@@ -1,28 +1,28 @@
 /**
  * @class PolicyParserFactory
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @author Ray Plante
  * 
  */
 
-#include "lsst/mwi/policy/SupportedFormats.h"
-#include "lsst/mwi/policy/json/JSONParserFactory.h"
-#include "lsst/mwi/policy/paf/PAFParserFactory.h"
+#include "lsst/pex/policy/SupportedFormats.h"
+#include "lsst/pex/policy/json/JSONParserFactory.h"
+#include "lsst/pex/policy/paf/PAFParserFactory.h"
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
-using lsst::mwi::policy::json::JSONParserFactory;
-using lsst::mwi::policy::paf::PAFParserFactory;
+using lsst::pex::policy::json::JSONParserFactory;
+using lsst::pex::policy::paf::PAFParserFactory;
 
 /*
-#include "lsst/mwi/utils/Trace.h"
+#include "lsst/pex/utils/Trace.h"
 #define EXEC_TRACE  20
 static void execTrace( string s, int level = EXEC_TRACE ){
-    lsst::mwi::utils::Trace( "mwi.policy.PolicyParserFactory", level, s );
+    lsst::pex::utils::Trace( "pex.policy.PolicyParserFactory", level, s );
 }
 */
 
@@ -73,7 +73,7 @@ PolicyParserFactory::Ptr SupportedFormats::getFactory(const string& name) const
                                           : PolicyParserFactory::Ptr());
 }
 
-}}}  // end namespace lsst::mwi::policy
+}}}  // end namespace lsst::pex::policy
 
 
 

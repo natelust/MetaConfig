@@ -2,7 +2,7 @@
 /**
  * @class PolicyParserFactory
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @brief a factory class for creating PolicyParsers for specific formats
  * 
@@ -10,25 +10,25 @@
  * 
  */
 
-#ifndef LSST_MWI_POLICY_PARSERFACTORY_H
-#define LSST_MWI_POLICY_PARSERFACTORY_H
+#ifndef LSST_PEX_POLICY_PARSERFACTORY_H
+#define LSST_PEX_POLICY_PARSERFACTORY_H
 
 #include <string>
 
-#include "lsst/mwi/data/Citizen.h"
-#include "lsst/mwi/policy/Policy.h"
+#include "lsst/daf/base/Citizen.h"
+#include "lsst/pex/policy/Policy.h"
 
 #include <boost/shared_ptr.hpp>
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
 // forward declaration
 class PolicyParser;
 
 using namespace std;
-using lsst::mwi::data::Citizen;
+using lsst::daf::base::Citizen;
 
 // class PolicyParserFactory : public Citizen {  // causing deletion problems
 
@@ -88,8 +88,8 @@ public:
     static const string UNRECOGNIZED;
 };
 
-}}}  // end namespace lsst::mwi::policy
+}}}  // end namespace lsst::pex::policy
 
-#endif // LSST_MWI_POLICY_PARSERFACTORY_H
+#endif // LSST_PEX_POLICY_PARSERFACTORY_H
 
 

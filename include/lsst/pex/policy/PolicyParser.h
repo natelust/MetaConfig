@@ -2,7 +2,7 @@
 /**
  * @class PolicyParser
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @brief a class that can parse serialized Policy data from a stream.
  * 
@@ -10,15 +10,15 @@
  * 
  */
 
-#ifndef LSST_MWI_POLICY_PARSER_H
-#define LSST_MWI_POLICY_PARSER_H
+#ifndef LSST_PEX_POLICY_PARSER_H
+#define LSST_PEX_POLICY_PARSER_H
 
-#include "lsst/mwi/data/Citizen.h"
-#include "lsst/mwi/policy/Policy.h"
-#include "lsst/mwi/policy/PolicyParserFactory.h"
+#include "lsst/daf/base/Citizen.h"
+#include "lsst/pex/policy/Policy.h"
+#include "lsst/pex/policy/PolicyParserFactory.h"
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
 using namespace std;
@@ -83,6 +83,6 @@ protected:
     bool _strict;
 };
 
-}}}  // end namespace lsst::mwi::policy
+}}}  // end namespace lsst::pex::policy
 
-#endif // LSST_MWI_POLICY_PARSER_H
+#endif // LSST_PEX_POLICY_PARSER_H

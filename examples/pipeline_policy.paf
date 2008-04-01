@@ -1,7 +1,7 @@
 #<?cfg paf policy ?>
-appStages:       lsst.dps.IOStage.InputStage
+appStages:       lsst.pcons.dps.IOStage.InputStage
 appStages:       lsst.detection.pipeline.DetectionStage
-appStages:       lsst.dps.IOStage.OutputStage
+appStages:       lsst.pcons.dps.IOStage.OutputStage
 
 eventTopics:     None None None
 

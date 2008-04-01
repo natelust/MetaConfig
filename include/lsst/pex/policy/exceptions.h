@@ -1,6 +1,6 @@
 // -*- lsst-c++ -*-
 /*
- * @ingroup mwi
+ * @ingroup pex
  *
  * @brief exceptions characterizing errors in the use of Policies
  * 
@@ -8,13 +8,13 @@
  * 
  */
 
-#ifndef LSST_MWI_POLICY_EXCEPTIONS_H
-#define LSST_MWI_POLICY_EXCEPTIONS_H
+#ifndef LSST_PEX_POLICY_EXCEPTIONS_H
+#define LSST_PEX_POLICY_EXCEPTIONS_H
 
 #include <stdexcept>
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
 using namespace std;
@@ -56,7 +56,7 @@ public:
     IOError(const string& msg) : runtime_error(msg) { }
 };
 
-}}}  // end namespace lsst::mwi::policy
+}}}  // end namespace lsst::pex::policy
 
 
-#endif // LSST_MWI_POLICY_EXCEPTIONS_H
+#endif // LSST_PEX_POLICY_EXCEPTIONS_H

@@ -1,41 +1,41 @@
 // -*- lsst-c++ -*-
 %define logging_DOCSTRING
 "
-Access to the policy classes from the mwi library
+Access to the policy classes from the pex module
 "
 %enddef
 
 %feature("autodoc", "1");
-%module(package="lsst.mwi", docstring=logging_DOCSTRING) policy
+%module(package="lsst.pex", docstring=logging_DOCSTRING) policy
 
 %{
-#include "lsst/mwi/policy/Policy.h"
-#include "lsst/mwi/policy/PolicyFile.h"
-#include "lsst/mwi/utils/Trace.h"
-#include "lsst/mwi/policy/exceptions.h"
+#include "lsst/pex/policy/Policy.h"
+#include "lsst/pex/policy/PolicyFile.h"
+#include "lsst/pex/policy/exceptions.h"
+#include <sstream>
 %}
 
 %inline %{
-namespace lsst { namespace mwi { namespace data { } } }
-namespace lsst { namespace mwi { namespace policy { } } }
-namespace lsst { namespace mwi { namespace utils { } } }
+namespace lsst { namespace daf { namespace base { } } }
+namespace lsst { namespace pex { namespace policy { } } }
+namespace lsst { namespace utils { } }
 namespace boost { namespace filesystem { } }
 
 using namespace lsst;
-using namespace lsst::mwi::data;
-using namespace lsst::mwi::policy;
-using namespace lsst::mwi::utils;
+using namespace lsst::daf::base;
+using namespace lsst::pex::policy;
+using namespace lsst::utils;
 %}
 
 %init %{
 %}
 %pythoncode %{
-import lsst.mwi.utils
-import lsst.mwi.data
+import lsst.utils
 %}
 
-%include "p_lsstSwig.i"
-%import  "data.i"
+#define NO_SWIG_LSST_EXCEPTIONS
+%include "lsst/p_lsstSwig.i"
+# %import  "lsst/daf/base/DataProperty.i"
 
 %typemap(out) std::vector<double,std::allocator<double > >& {
 
@@ -77,7 +77,7 @@ import lsst.mwi.data
     }
 }
 
-%typemap(out) std::vector<boost::shared_ptr<lsst::mwi::policy::Policy > >& {
+%typemap(out) std::vector<boost::shared_ptr<lsst::pex::policy::Policy > >& {
 
     int len = (*$1).size();  // swig presents $1 as a pointer
     $result = PyList_New(len);
@@ -85,17 +85,17 @@ import lsst.mwi.data
     PyObject *pol;
     for (i = 0; i < len; i++) {
         pol = SWIG_NewPointerObj(SWIG_as_voidptr((*$1)[i].get()),
-                                 SWIGTYPE_p_lsst__mwi__policy__Policy,
+                                 SWIGTYPE_p_lsst__pex__policy__Policy,
                                  0 );
         PyList_SetItem($result,i, pol);
     }
 }
 
-%typemap(out) boost::shared_ptr<lsst::mwi::policy::Policy >& {
+%typemap(out) boost::shared_ptr<lsst::pex::policy::Policy >& {
 
     // unwrap the shared pointer
     $result = SWIG_NewPointerObj(SWIG_as_voidptr((*$1).get()),
-                                 SWIGTYPE_p_lsst__mwi__policy__Policy,
+                                 SWIGTYPE_p_lsst__pex__policy__Policy,
                                  0 );
 }
 
@@ -114,7 +114,7 @@ import lsst.mwi.data
 }
 
 %include "exception.i"
-%include "lsst/mwi/policy/exceptions.h"
+%include "lsst/pex/policy/exceptions.h"
 
 %exception {
     try {
@@ -135,15 +135,15 @@ import lsst.mwi.data
     }
 }
         
-%include "lsst/mwi/data/Citizen.h"
+%include "lsst/daf/base/Citizen.h"
 
-%newobject lsst::mwi::policy::Policy::createPolicy;
+%newobject lsst::pex::policy::Policy::createPolicy;
 
-%include "lsst/mwi/policy/Policy.h"
-%include "lsst/mwi/policy/PolicySource.h"
-%include "lsst/mwi/policy/PolicyFile.h"
+%include "lsst/pex/policy/Policy.h"
+%include "lsst/pex/policy/PolicySource.h"
+%include "lsst/pex/policy/PolicyFile.h"
 
-%extend lsst::mwi::policy::Policy {
+%extend lsst::pex::policy::Policy {
     string toString() {
        ostringstream msg;
        self->print(msg);
@@ -151,7 +151,7 @@ import lsst.mwi.data
     }
 }
 
-%template(PolicySharedPtr) boost::shared_ptr<lsst::mwi::policy::Policy>;
+%template(PolicySharedPtr) boost::shared_ptr<lsst::pex::policy::Policy>;
 %template(NameList) std::list<std::string >;
 
 %pythoncode %{

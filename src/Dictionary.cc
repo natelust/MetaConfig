@@ -1,9 +1,9 @@
 /*
  * Dictionary
  */
-#include "lsst/mwi/policy/Dictionary.h"
-#include "lsst/mwi/policy/PolicyFile.h"
-// #include "lsst/mwi/utils/Trace.h"
+#include "lsst/pex/policy/Dictionary.h"
+#include "lsst/pex/policy/PolicyFile.h"
+// #include "lsst/pex/utils/Trace.h"
 
 #include <stdexcept>
 #include <memory>
@@ -17,12 +17,12 @@ using namespace std;
 /*
 #define EXEC_TRACE  20
 static void execTrace( string s, int level = EXEC_TRACE ){
-    lsst::mwi::utils::Trace( "mwi.policy.Dictionary", level, s );
+    lsst::pex::utils::Trace( "pex.policy.Dictionary", level, s );
 }
 */
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
 using boost::regex;
@@ -746,5 +746,5 @@ void Dictionary::validate(const Policy& pol, ValidationError *errs) const {
 
 
 } // namespace policy
-} // namespace mwi
+} // namespace pex
 } // namespace lsst

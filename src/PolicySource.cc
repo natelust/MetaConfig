@@ -1,20 +1,20 @@
 /**
  * @class PolicySource
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @author Ray Plante
  * 
  */
 
-#include "lsst/mwi/policy/PolicySource.h"
+#include "lsst/pex/policy/PolicySource.h"
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
 PolicySource::~PolicySource() { }
 
 SupportedFormats::Ptr PolicySource::defaultFormats(new SupportedFormats());
 
-}}}   // end lsst::mwi::policy
+}}}   // end lsst::pex::policy

@@ -8,26 +8,28 @@
  * 
  */
 
-#ifndef LSST_MWI_POLICY_POLICY_H
-#define LSST_MWI_POLICY_POLICY_H
+#ifndef LSST_PEX_POLICY_POLICY_H
+#define LSST_PEX_POLICY_POLICY_H
 
 #include <string>
 #include <vector>
 #include <list>
 #include <map>
 
-#include "lsst/mwi/data/Citizen.h"
-#include "lsst/mwi/policy/exceptions.h"
+#include "lsst/daf/base/Citizen.h"
+#include "lsst/pex/policy/exceptions.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 
+/*
 #define FIX_ANY_POINTER_RTTI
+*/
 #ifdef FIX_ANY_POINTER_RTTI
-#include "lsst/mwi/policy/any.h"
-#define ANYTYPE lsst::mwi::policy::anyfix::any
-#define ANYCAST lsst::mwi::policy::anyfix::any_cast
-#define BADANYCAST lsst::mwi::policy::anyfix::bad_any_cast
+#include "lsst/pex/policy/any.h"
+#define ANYTYPE lsst::pex::policy::anyfix::any
+#define ANYCAST lsst::pex::policy::anyfix::any_cast
+#define BADANYCAST lsst::pex::policy::anyfix::bad_any_cast
 #else
 #include <boost/any.hpp>
 #define ANYTYPE boost::any
@@ -36,7 +38,7 @@
 #endif
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
 // forward declaration
@@ -50,7 +52,7 @@ using boost::shared_ptr;
 #ifndef FIX_ANY_POINTER_RTTI
 using boost::bad_any_cast;
 #endif
-using lsst::mwi::data::Citizen;
+using lsst::daf::base::Citizen;
 
 /**
  * @brief  a container for holding hierarchical configuration data in memory.
@@ -963,6 +965,6 @@ inline Policy* Policy::createPolicy(const string& input,
     return _createPolicy(input, true, repository, validate);
 }
 
-}}}  // end namespace lsst::mwi::policy
+}}}  // end namespace lsst::pex::policy
 
-#endif // LSST_MWI_POLICY_POLICY_H
+#endif // LSST_PEX_POLICY_POLICY_H

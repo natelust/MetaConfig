@@ -1,17 +1,17 @@
 /**
  * @class JSONParserFactory
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @author Ray Plante
  * 
  */
 
-#include "lsst/mwi/policy/json/JSONParserFactory.h"
-#include "lsst/mwi/policy/json/JSONParser.h"
+#include "lsst/pex/policy/json/JSONParserFactory.h"
+#include "lsst/pex/policy/json/JSONParser.h"
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 namespace json {
 
@@ -54,4 +54,4 @@ bool JSONParserFactory::recognize(const string& leaders) const {
             regex_search(leaders, LEADER_PATTERN));
 }
 
-}}}}   // end lsst::mwi::policy::json
+}}}}   // end lsst::pex::policy::json

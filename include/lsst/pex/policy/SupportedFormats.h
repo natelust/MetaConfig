@@ -8,23 +8,23 @@
  * 
  */
 
-#ifndef LSST_MWI_POLICY_SUPPORTEDFORMATS_H
-#define LSST_MWI_POLICY_SUPPORTEDFORMATS_H
+#ifndef LSST_PEX_POLICY_SUPPORTEDFORMATS_H
+#define LSST_PEX_POLICY_SUPPORTEDFORMATS_H
 
 #include <map>
 
-#include "lsst/mwi/policy/PolicyParserFactory.h"
+#include "lsst/pex/policy/PolicyParserFactory.h"
 
 #include <boost/shared_ptr.hpp>
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
 using namespace std;
 
-using lsst::mwi::policy::Policy;
-using lsst::mwi::policy::PolicyParserFactory;
+using lsst::pex::policy::Policy;
+using lsst::pex::policy::PolicyParserFactory;
 
 // class SupportedFormats : public Citizen { // causes problems in construction
 
@@ -83,8 +83,8 @@ private:
     Lookup _formats;
 };
 
-}}}  // end namespace lsst::mwi::policy
+}}}  // end namespace lsst::pex::policy
 
-#endif // LSST_MWI_POLICY_SUPPORTEDFORMATS_H
+#endif // LSST_PEX_POLICY_SUPPORTEDFORMATS_H
 
 

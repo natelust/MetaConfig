@@ -1,27 +1,27 @@
 /**
  * @class PolicyParser
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @author Ray Plante
  * 
  */
 
-#include "lsst/mwi/policy/PolicyParser.h"
+#include "lsst/pex/policy/PolicyParser.h"
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
 /*
-#include "lsst/mwi/utils/Trace.h"
+#include "lsst/pex/utils/Trace.h"
 #define EXEC_TRACE  20
 static void execTrace( string s, int level = EXEC_TRACE ){
-    lsst::mwi::utils::Trace( "mwi.policy.PolicyParser", level, s );
+    lsst::pex::utils::Trace( "pex.policy.PolicyParser", level, s );
 }
 */
 
 PolicyParser::~PolicyParser() { }
 
-}}}  // end namespace lsst::mwi::policy
+}}}  // end namespace lsst::pex::policy
 

@@ -2,7 +2,7 @@
 /**
  * @class PolicySource
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @brief a representation of a src of serialized Policy parameter data
  * 
@@ -10,23 +10,23 @@
  * 
  */
 
-#ifndef LSST_MWI_POLICY_SOURCE_H
-#define LSST_MWI_POLICY_SOURCE_H
+#ifndef LSST_PEX_POLICY_SOURCE_H
+#define LSST_PEX_POLICY_SOURCE_H
 
-#include "lsst/mwi/data/Citizen.h"
-#include "lsst/mwi/policy/Policy.h"
-#include "lsst/mwi/policy/PolicyParserFactory.h"
-#include "lsst/mwi/policy/SupportedFormats.h"
+#include "lsst/daf/base/Citizen.h"
+#include "lsst/pex/policy/Policy.h"
+#include "lsst/pex/policy/PolicyParserFactory.h"
+#include "lsst/pex/policy/SupportedFormats.h"
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
 using namespace std;
 
-using lsst::mwi::data::Citizen;
-using lsst::mwi::policy::Policy;
-using lsst::mwi::policy::PolicyParserFactory;
+using lsst::daf::base::Citizen;
+using lsst::pex::policy::Policy;
+using lsst::pex::policy::PolicyParserFactory;
 
 /**
  * @brief an abstract class representing a source of serialized Policy 
@@ -128,8 +128,8 @@ protected:
 };
 
 
-}}}  // end namespace lsst::mwi::policy
+}}}  // end namespace lsst::pex::policy
 
-#endif // LSST_MWI_POLICY_SOURCE_H
+#endif // LSST_PEX_POLICY_SOURCE_H
 
 

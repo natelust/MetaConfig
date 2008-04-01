@@ -1,7 +1,7 @@
 /**
  * @class PolicyFile
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @author Ray Plante
  * 
@@ -11,22 +11,22 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/filesystem/convenience.hpp>
 
-#include "lsst/mwi/policy/PolicyFile.h"
-#include "lsst/mwi/policy/PolicyParser.h"
-#include "lsst/mwi/policy/exceptions.h"
-#include "lsst/mwi/policy/parserexceptions.h"
-#include "lsst/mwi/policy/json/JSONParserFactory.h"
-#include "lsst/mwi/policy/paf/PAFParserFactory.h"
+#include "lsst/pex/policy/PolicyFile.h"
+#include "lsst/pex/policy/PolicyParser.h"
+#include "lsst/pex/policy/exceptions.h"
+#include "lsst/pex/policy/parserexceptions.h"
+#include "lsst/pex/policy/json/JSONParserFactory.h"
+#include "lsst/pex/policy/paf/PAFParserFactory.h"
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
 using boost::regex_match;
 using boost::regex_search;
 using boost::scoped_ptr;
-using lsst::mwi::policy::paf::PAFParserFactory;
-using lsst::mwi::policy::json::JSONParserFactory;
+using lsst::pex::policy::paf::PAFParserFactory;
+using lsst::pex::policy::json::JSONParserFactory;
 
 const string PolicyFile::EXT_PAF(".paf");
 const string PolicyFile::EXT_JSON(".json");
@@ -157,4 +157,4 @@ void PolicyFile::load(Policy& policy) {
     fs.close();
 }
 
-}}}   // end lsst::mwi::policy
+}}}   // end lsst::pex::policy

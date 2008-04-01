@@ -1,26 +1,26 @@
 /**
  * @class JSONParser
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @author Ray Plante
  * 
  */
 
-#include "lsst/mwi/policy/json/JSONParser.h"
-#include "lsst/mwi/policy/PolicyFile.h"
+#include "lsst/pex/policy/json/JSONParser.h"
+#include "lsst/pex/policy/PolicyFile.h"
 #include <stdexcept>
 
 /*
-#include "lsst/mwi/utils/Trace.h"
+#include "lsst/pex/utils/Trace.h"
 #define EXEC_TRACE  20
 static void execTrace( string s, int level = EXEC_TRACE ){
-    lsst::mwi::utils::Trace( "mwi.policy.json.JSONParser", level, s );
+    lsst::pex::utils::Trace( "pex.policy.json.JSONParser", level, s );
 }
 */
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 namespace json {
 
@@ -488,4 +488,4 @@ string JSONParser::badArray(const string& tokenData) {
 
 
 
-}}}}   // end lsst::mwi::policy::json
+}}}}   // end lsst::pex::policy::json

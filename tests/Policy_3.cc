@@ -9,15 +9,15 @@
 #include <string>
 #include <stdexcept>
 #include <list>
-#include "lsst/mwi/policy/paf/PAFParser.h"
-#include "lsst/mwi/policy/Policy.h"
-#include "lsst/mwi/policy/PolicyFile.h"
+#include "lsst/pex/policy/paf/PAFParser.h"
+#include "lsst/pex/policy/Policy.h"
+#include "lsst/pex/policy/PolicyFile.h"
 
 using namespace std;
-using lsst::mwi::policy::Policy;
-using lsst::mwi::policy::PolicyFile;
-using lsst::mwi::policy::TypeError;
-using lsst::mwi::policy::NameNotFound;
+using lsst::pex::policy::Policy;
+using lsst::pex::policy::PolicyFile;
+using lsst::pex::policy::TypeError;
+using lsst::pex::policy::NameNotFound;
 
 #define Assert(b, m) tattle(b, m, __LINE__)
 
@@ -33,9 +33,9 @@ int main(int argc, char** argv) {
 
     Policy p;
     string files[] = { 
-        string("examples/policies/EventTranmitter_policy.json"),
-        string("examples/policies/EventTranmitter_policy.paf"),
-        string("examples/policies/pipeline_policy.paf") 
+        string("examples/EventTranmitter_policy.json"),
+        string("examples/EventTranmitter_policy.paf"),
+        string("examples/pipeline_policy.paf") 
     };
     int nfiles = 3;
 
@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
              << files[i] << endl;
 
         Policy p(pfile);
-        p.loadPolicyFiles("examples/policies");
+        p.loadPolicyFiles("examples");
         cout << p << endl;
     }
 

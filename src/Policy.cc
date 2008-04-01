@@ -1,12 +1,14 @@
 /**
  * \file Policy.cc
  */
-#include "lsst/mwi/policy/Policy.h"
-#include "lsst/mwi/policy/PolicyFile.h"
-#include "lsst/mwi/policy/PolicySource.h"
-#include "lsst/mwi/policy/Dictionary.h"
-#include "lsst/mwi/policy/parserexceptions.h"
-#include "lsst/mwi/utils/Trace.h"
+#include "lsst/pex/policy/Policy.h"
+#include "lsst/pex/policy/PolicyFile.h"
+#include "lsst/pex/policy/PolicySource.h"
+#include "lsst/pex/policy/Dictionary.h"
+#include "lsst/pex/policy/parserexceptions.h"
+/*
+#include "lsst/pex/logging/Trace.h"
+*/
 
 #include <boost/filesystem/path.hpp>
 
@@ -20,12 +22,12 @@ namespace fs = boost::filesystem;
 /*
 #define EXEC_TRACE  20
 static void execTrace( string s, int level = EXEC_TRACE ){
-    lsst::mwi::utils::Trace( "mwi.policy.Policy", level, s );
+    lsst::pex::utils::Trace( "pex.policy.Policy", level, s );
 }
 */
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
 const char * const Policy::typeName[] = {
@@ -618,5 +620,5 @@ string Policy::toString() const {
 
 
 } // namespace policy
-} // namespace mwi
+} // namespace pex
 } // namespace lsst

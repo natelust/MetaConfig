@@ -7,14 +7,14 @@
 #include <sstream>
 #include <string>
 #include <stdexcept>
-#include "lsst/mwi/policy/Policy.h"
-#include "lsst/mwi/policy/PolicyFile.h"
+#include "lsst/pex/policy/Policy.h"
+#include "lsst/pex/policy/PolicyFile.h"
 
 using namespace std;
-using lsst::mwi::policy::Policy;
-using lsst::mwi::policy::PolicyFile;
-using lsst::mwi::policy::TypeError;
-using lsst::mwi::policy::NameNotFound;
+using lsst::pex::policy::Policy;
+using lsst::pex::policy::PolicyFile;
+using lsst::pex::policy::TypeError;
+using lsst::pex::policy::NameNotFound;
 
 #define Assert(b, m) tattle(b, m, __LINE__)
 

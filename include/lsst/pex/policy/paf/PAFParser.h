@@ -2,33 +2,33 @@
 /**
  * @class Lexer
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @brief an object for tokenizing a Policy file in PAF format.
  * 
  * @author Ray Plante
  * 
  */
-#ifndef LSST_MWI_POLICY_PAF_TOKENIZER_H
-#define LSST_MWI_POLICY_PAF_TOKENIZER_H
+#ifndef LSST_PEX_POLICY_PAF_TOKENIZER_H
+#define LSST_PEX_POLICY_PAF_TOKENIZER_H
 
 #include <iostream>
 
-#include "lsst/mwi/data/Citizen.h"
-#include "lsst/mwi/policy/PolicyParser.h"
-#include "lsst/mwi/policy/Policy.h"
+#include "lsst/daf/base/Citizen.h"
+#include "lsst/pex/policy/PolicyParser.h"
+#include "lsst/pex/policy/Policy.h"
 
 #include <boost/regex.hpp>
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 namespace paf {
 
 using namespace std;
-using lsst::mwi::data::Citizen;
-using lsst::mwi::policy::Policy;
-using lsst::mwi::policy::PolicyParser;
+using lsst::daf::base::Citizen;
+using lsst::pex::policy::Policy;
+using lsst::pex::policy::PolicyParser;
 using boost::regex;
 using boost::match_results;
 using boost::regex_search;
@@ -106,5 +106,5 @@ private:
 };
 
 
-}}}}   // end lsst::mwi::policy::paf
-#endif // LSST_MWI_POLICY_PAF_PAFPARSER_H
+}}}}   // end lsst::pex::policy::paf
+#endif // LSST_PEX_POLICY_PAF_PAFPARSER_H

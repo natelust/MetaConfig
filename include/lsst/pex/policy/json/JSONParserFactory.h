@@ -2,20 +2,20 @@
 /**
  * @class JSONParserFactory
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @author Ray Plante
  * 
  */
 
-#ifndef LSST_MWI_POLICY_JSON_JSONPARSERFACTORY_H
-#define LSST_MWI_POLICY_JSON_JSONPARSERFACTORY_H
+#ifndef LSST_PEX_POLICY_JSON_JSONPARSERFACTORY_H
+#define LSST_PEX_POLICY_JSON_JSONPARSERFACTORY_H
 
-#include "lsst/mwi/policy/PolicyParserFactory.h"
+#include "lsst/pex/policy/PolicyParserFactory.h"
 #include <boost/regex.hpp>
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
 // forward declaraction
@@ -23,7 +23,7 @@ class PolicyParser;
 
 namespace json {
 
-using namespace lsst::mwi::policy;
+using namespace lsst::pex::policy;
 using namespace std;
 using boost::regex;
 
@@ -88,8 +88,8 @@ private:
     regex contentid;
 };
 
-}}}}   // end lsst::mwi::policy::json
+}}}}   // end lsst::pex::policy::json
 
-#endif // LSST_MWI_POLICY_JSON_JSONPARSERFACTORY_H
+#endif // LSST_PEX_POLICY_JSON_JSONPARSERFACTORY_H
 
 

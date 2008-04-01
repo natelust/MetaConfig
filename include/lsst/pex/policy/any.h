@@ -29,7 +29,7 @@ extern "C" {
 }
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 namespace anyfix {
 

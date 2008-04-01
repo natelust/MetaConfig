@@ -2,7 +2,7 @@
 /**
  * @class Dictionary
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @brief an object for holding configuration data
  * 
@@ -10,15 +10,15 @@
  * 
  */
 
-#ifndef LSST_MWI_POLICY_DICTIONARY_H
-#define LSST_MWI_POLICY_DICTIONARY_H
+#ifndef LSST_PEX_POLICY_DICTIONARY_H
+#define LSST_PEX_POLICY_DICTIONARY_H
 
-#include "lsst/mwi/policy/Policy.h"
+#include "lsst/pex/policy/Policy.h"
 #include <boost/regex.hpp>
 #include <stdexcept>
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 
 /**
@@ -594,6 +594,6 @@ protected:
 
 };
 
-}}}  // end namespace lsst::mwi::policy
+}}}  // end namespace lsst::pex::policy
 
-#endif // LSST_MWI_POLICY_POLICY_H
+#endif // LSST_PEX_POLICY_POLICY_H

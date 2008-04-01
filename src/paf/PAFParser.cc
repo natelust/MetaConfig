@@ -1,27 +1,27 @@
 /**
  * @class JSONParser
  * 
- * @ingroup mwi
+ * @ingroup pex
  *
  * @author Ray Plante
  * 
  */
 
-#include "lsst/mwi/policy/paf/PAFParser.h"
-#include "lsst/mwi/policy/PolicyFile.h"
-#include "lsst/mwi/policy/parserexceptions.h"
+#include "lsst/pex/policy/paf/PAFParser.h"
+#include "lsst/pex/policy/PolicyFile.h"
+#include "lsst/pex/policy/parserexceptions.h"
 #include <stdexcept>
 
 /*
-#include "lsst/mwi/utils/Trace.h"
+#include "lsst/pex/utils/Trace.h"
 #define EXEC_TRACE  20
 static void execTrace( string s, int level = EXEC_TRACE ){
-    lsst::mwi::utils::Trace( "mwi.policy.json.PAFParser", level, s );
+    lsst::pex::utils::Trace( "pex.policy.json.PAFParser", level, s );
 }
 */
 
 namespace lsst {
-namespace mwi {
+namespace pex {
 namespace policy {
 namespace paf {
 
@@ -378,4 +378,4 @@ int PAFParser::_addValue(const string& propname, string& value,
 
 
 
-}}}}   // end lsst::mwi::policy::paf
+}}}}   // end lsst::pex::policy::paf
