@@ -24,4 +24,4 @@ tests = lsst.tests.Control(env, ignoreList=['exceptionTests.py'], verbose=True)
 tests.run("Policy_*.cc")
 
 for target in tests.run("*.py"):
-    env.Depends(target, "../python/lsst/pex/_policy%s" % env['LDMODULESUFFIX'])
+    env.Depends(target, "../python/lsst/pex/policy/_policyLib%s" % env['LDMODULESUFFIX'])

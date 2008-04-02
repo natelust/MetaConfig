@@ -1,6 +1,0 @@
-# -*- python -*-
-Import("env")
-
-env.CheckSwig("python", ilang="c++", includedProducts="utils")
-env.LoadableModuleIncomplete("_policy", Split("policy.i"), LIBS=env.libs["boost"] + ["utils", "daf_base", "pex_policy", "jaula"])
-

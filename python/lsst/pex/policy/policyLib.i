@@ -6,7 +6,7 @@ Access to the policy classes from the pex module
 %enddef
 
 %feature("autodoc", "1");
-%module(package="lsst.pex", docstring=logging_DOCSTRING) policy
+%module(package="lsst.pex.policy", docstring=logging_DOCSTRING) policyLib
 
 %{
 #include "lsst/pex/policy/Policy.h"
@@ -33,7 +33,6 @@ using namespace lsst::utils;
 import lsst.utils
 %}
 
-#define NO_SWIG_LSST_EXCEPTIONS
 %include "lsst/p_lsstSwig.i"
 # %import  "lsst/daf/base/DataProperty.i"
 

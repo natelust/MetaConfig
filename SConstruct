@@ -13,7 +13,8 @@ env = scons.makeEnv("pex_policy",
                      ["python", "Python.h"],
                      ["jaula", "jaula/jaula_parse.h", "jaula:C++"],
                      ["utils", "lsst/utils/Utils.h", "utils:C++"],
-                     ["daf_base", "lsst/daf/base/Citizen.h", "daf_base:C++"]
+                     ["daf_base", "lsst/daf/base/Citizen.h", "daf_base:C++"],
+                     ["pex_exceptions", "lsst/pex/exceptions/Exception.h", "pex_exceptions:C++"]
                     ])
 
 #
@@ -28,7 +29,7 @@ if not re.search(r"LSST_HAVE_TR1", str(env['CCFLAGS'])):
 #
 # Build/install things
 #
-for d in Split("lib tests python/lsst/pex doc"):
+for d in Split("lib tests python/lsst/pex/policy doc"):
     SConscript(os.path.join(d, "SConscript"))
 
 env['IgnoreFiles'] = r"(~$|\.pyc$|^\.svn$|\.o$)"

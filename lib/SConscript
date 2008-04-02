@@ -15,5 +15,5 @@ env.SharedLibrary('pex_policy', map(lambda str: "../src/" + str,
                              "paf/PAFParser.cc",
                              "paf/PAFParserFactory.cc"
                             ]),
-                  LIBS=env.getlibs("boost jaula"))
+                  LIBS=env.getlibs("boost daf_base jaula"))
 
