@@ -33,11 +33,10 @@ int main(int argc, char** argv) {
 
     Policy p;
     string files[] = { 
-        string("examples/EventTranmitter_policy.json"),
         string("examples/EventTranmitter_policy.paf"),
         string("examples/pipeline_policy.paf") 
     };
-    int nfiles = 3;
+    int nfiles = 2;
 
     if (argc > 1) {
         files[0] = argv[1];
