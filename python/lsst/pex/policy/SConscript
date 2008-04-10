@@ -2,5 +2,4 @@
 Import("env")
 
 env.CheckSwig("python", ilang="c++", includedProducts="utils")
-env.LoadableModuleIncomplete("_policyLib", Split("policyLib.i"), LIBS=env.libs["boost"] + ["utils", "daf_base", "pex_exceptions", "pex_policy", "jaula"])
-
+env.LoadableModuleIncomplete("_policyLib", Split("policyLib.i"), LIBS=env.libs["pex_policy"])
