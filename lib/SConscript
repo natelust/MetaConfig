@@ -10,8 +10,6 @@ env.SharedLibrary('pex_policy', map(lambda str: "../src/" + str,
                              "PolicyParserFactory.cc",
                              "SupportedFormats.cc",
                              "Dictionary.cc",
-                             "json/JSONParser.cc",
-                             "json/JSONParserFactory.cc",
                              "paf/PAFParser.cc",
                              "paf/PAFParserFactory.cc"
                             ]),

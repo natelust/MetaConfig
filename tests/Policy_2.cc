@@ -8,14 +8,12 @@
 #include <string>
 #include <stdexcept>
 #include <list>
-#include "lsst/pex/policy/json/JSONParser.h"
 #include "lsst/pex/policy/paf/PAFParser.h"
 #include "lsst/pex/policy/Policy.h"
 
 using namespace std;
 using lsst::pex::policy::Policy;
 using lsst::pex::policy::paf::PAFParser;
-using lsst::pex::policy::json::JSONParser;
 using lsst::pex::policy::TypeError;
 using lsst::pex::policy::NameNotFound;
 
@@ -49,30 +47,6 @@ int main(int argc, char** argv) {
            dataerror+"transmitter.serializationFormat");
     Assert(p2.getBool("standalone"), dataerror+"standalone");
     Assert(p2.getDouble("threshold") == 4.5, dataerror+"threshold");
-
-/*
-    Policy p1;
-    JSONParser jp(p1);
-    cout << "the JSON parser will" << ((jp.isStrict()) ? " " : " not ")
-         << "be strict.\n"         << endl;
-
-    is.open("examples/EventTranmitter_policy.json");
-
-    jp.parse(is);
-    is.close();
-
-    cout << "Contents of JSON file:" << endl;
-    cout << p1 << endl;
-
-    Assert(p1.getString("receiver.logVerbosity") == "debug", 
-           dataerror+"receiver.logVerbosity");
-    Assert(p1.getString("transmitter.logVerbosity") == "debug", 
-           dataerror+"transmitter.logVerbosity");
-    Assert(p1.getString("transmitter.serializationFormat") == "deluxe", 
-           dataerror+"transmitter.serializationFormat");
-    Assert(p1.getBool("standalone"), dataerror+"standalone");
-    Assert(p1.getDouble("threshold") == 4.5, dataerror+"threshold");
-*/
 
 //     list<string> names;
 //     p.paramNames(names);

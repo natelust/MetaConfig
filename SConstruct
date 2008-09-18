@@ -11,12 +11,11 @@ env = scons.makeEnv("pex_policy",
                      ["boost", "boost/regex.hpp", "boost_regex:C++"],
                      ["boost", "boost/serialization/serialization.hpp", "boost_serialization:C++"],
                      ["python", "Python.h"],
-                     ["jaula", "jaula/jaula_parse.h", "jaula:C++"],
                      ["utils", "lsst/utils/Utils.h", "utils:C++"],
                      ["daf_base", "lsst/daf/base/Citizen.h", "daf_base:C++"],
                      ["pex_exceptions", "lsst/pex/exceptions/Exception.h", "pex_exceptions:C++"]
                     ])
-env.libs["pex_policy"] += env.getlibs("boost utils daf_base jaula pex_exceptions");
+env.libs["pex_policy"] += env.getlibs("boost utils daf_base pex_exceptions");
 #
 # Is C++'s TR1 available?  If not, use e.g. #include "lsst/devenv/tr1/foo.h"
 #

@@ -108,7 +108,6 @@ public:
     virtual void load(Policy& policy);
 
     static const string EXT_PAF;   //! the PAF file extension, ".paf"
-    static const string EXT_JSON;  //! the JSON file extension, ".json"
     static const string EXT_XML;   //! the XML file extension,  ".xml"
 
     static const regex SPACE_RE;   //! reg-exp for an empty line

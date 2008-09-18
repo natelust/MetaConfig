@@ -34,7 +34,6 @@ int main(int argc, char** argv) {
 
     string files[] = { 
         string("examples/EventTranmitter_dict.paf"),
-        string("examples/EventTranmitter_dict.json") 
     };
     int nfiles = 1;
 

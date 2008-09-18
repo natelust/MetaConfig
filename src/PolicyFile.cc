@@ -15,7 +15,6 @@
 #include "lsst/pex/policy/PolicyParser.h"
 #include "lsst/pex/policy/exceptions.h"
 #include "lsst/pex/policy/parserexceptions.h"
-#include "lsst/pex/policy/json/JSONParserFactory.h"
 #include "lsst/pex/policy/paf/PAFParserFactory.h"
 
 namespace lsst {
@@ -26,10 +25,8 @@ using boost::regex_match;
 using boost::regex_search;
 using boost::scoped_ptr;
 using lsst::pex::policy::paf::PAFParserFactory;
-using lsst::pex::policy::json::JSONParserFactory;
 
 const string PolicyFile::EXT_PAF(".paf");
-const string PolicyFile::EXT_JSON(".json");
 const string PolicyFile::EXT_XML(".xml");
 
 const regex PolicyFile::SPACE_RE("^\\s*$");
@@ -86,10 +83,6 @@ const string& PolicyFile::getFormatName() {
         if (ext == EXT_PAF) {
             if (_formats->supports(PAFParserFactory::FORMAT_NAME)) 
                 return cacheName(PAFParserFactory::FORMAT_NAME);
-        }
-        else if (ext == EXT_JSON) {
-            if (_formats->supports(JSONParserFactory::FORMAT_NAME)) 
-                return cacheName(JSONParserFactory::FORMAT_NAME);
         }
         else if (ext == EXT_XML) {
             return cacheName("XML");

@@ -65,9 +65,6 @@ public:
 //         /**  XML format  */
 //         XML,
 
-//         /**  JSON format */
-//         JSON,
-
 //         /**  Policy authoring format (PAF)  */
 //         PAF,
 

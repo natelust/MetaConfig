@@ -8,14 +8,12 @@
  */
 
 #include "lsst/pex/policy/SupportedFormats.h"
-#include "lsst/pex/policy/json/JSONParserFactory.h"
 #include "lsst/pex/policy/paf/PAFParserFactory.h"
 
 namespace lsst {
 namespace pex {
 namespace policy {
 
-using lsst::pex::policy::json::JSONParserFactory;
 using lsst::pex::policy::paf::PAFParserFactory;
 
 /*
@@ -28,7 +26,6 @@ static void execTrace( string s, int level = EXEC_TRACE ){
 
 void SupportedFormats::initDefaultFormats(SupportedFormats& sf) { 
     sf.registerFormat(PolicyParserFactory::Ptr(new PAFParserFactory()));
-    sf.registerFormat(PolicyParserFactory::Ptr(new JSONParserFactory()));
 }
 
 /**
