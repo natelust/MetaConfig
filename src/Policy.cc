@@ -128,7 +128,7 @@ Policy* Policy::_createPolicy(const string& input, bool doIncludes,
     fs::path repos = repository;
     if (repos.empty()) {
         fs::path filepath(input);
-        if (filepath.has_branch_path()) repos = filepath.branch_path();
+        if (filepath.has_parent_path()) repos = filepath.parent_path();
     }
     PolicyFile file(input);
     return _createPolicy(file, doIncludes, repos, validate);
