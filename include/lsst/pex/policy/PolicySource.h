@@ -25,8 +25,6 @@ namespace policy {
 using namespace std;
 
 using lsst::daf::base::Citizen;
-using lsst::pex::policy::Policy;
-using lsst::pex::policy::PolicyParserFactory;
 
 /**
  * @brief an abstract class representing a source of serialized Policy 

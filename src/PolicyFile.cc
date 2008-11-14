@@ -21,6 +21,7 @@ namespace lsst {
 namespace pex {
 namespace policy {
 
+using boost::regex;
 using boost::regex_match;
 using boost::regex_search;
 using boost::scoped_ptr;

@@ -49,9 +49,6 @@ class Dictionary;
 using namespace std;
 namespace fs = boost::filesystem;
 using boost::shared_ptr;
-#ifndef FIX_ANY_POINTER_RTTI
-using boost::bad_any_cast;
-#endif
 using lsst::daf::base::Citizen;
 
 /**

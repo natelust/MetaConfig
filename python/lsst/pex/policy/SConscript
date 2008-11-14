@@ -1,5 +1,5 @@
 # -*- python -*-
 Import("env")
 
-env.CheckSwig("python", ilang="c++", includedProducts="utils")
+env.CheckSwig("python", ilang="c++", includedProducts="utils daf_base")
 env.LoadableModuleIncomplete("_policyLib", Split("policyLib.i"), LIBS=env.libs["pex_policy"])

@@ -27,7 +27,6 @@ namespace policy {
 
 using namespace std;
 namespace fs = boost::filesystem;
-using boost::regex;
 
 /**
  * @brief a representation of a file containing Policy parameter data.  When
@@ -110,13 +109,13 @@ public:
     static const string EXT_PAF;   //! the PAF file extension, ".paf"
     static const string EXT_XML;   //! the XML file extension,  ".xml"
 
-    static const regex SPACE_RE;   //! reg-exp for an empty line
-    static const regex COMMENT;    //! reg-exp for the start of a comment
+    static const boost::regex SPACE_RE;   //! reg-exp for an empty line
+    static const boost::regex COMMENT;    //! reg-exp for the start of a comment
 
     /** 
      * reg-exp for a Policy content identifier, "<?cfg [format] [content] ?>"
      */
-    static const regex CONTENTID;  
+    static const boost::regex CONTENTID;  
 
 private:
     const string& cacheName(const string& name) {

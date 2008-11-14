@@ -2,7 +2,7 @@ import pdb                          # we may want to say pdb.set_trace()
 import unittest
 
 import lsst.utils.tests as tests
-from lsst.pex.policy import Policy, PolicyPtr, PolicySharedPtr
+from lsst.pex.policy import Policy
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -77,20 +77,16 @@ class PolicyTestCase(unittest.TestCase):
         p = None
 #        self.assertEquals(mwid.Citizen_census(0), n, "Policy apparently leaked")
 
-    def testNullPolicyPtr(self):
-        p = PolicyPtr()
+    def testEmptyPolicy(self):
+        p = Policy()
 
-    def testPolicySharedPtrConversion(self):
+    def testPolicyCopy(self):
         p = Policy.createPolicy("examples/EventTranmitter_policy.paf")
-        pp = PolicySharedPtr(p)
+        pp = Policy(p, True)
         self.assertEquals(p.get("transmitter.serializationFormat"), "deluxe")
         self.assertEquals(pp.getString("transmitter.serializationFormat"), "deluxe")
         p = None
         self.assertEquals(pp.getString("transmitter.serializationFormat"), "deluxe")
-
-    def testPolicyPtr(self):
-        p = PolicyPtr("examples/EventTranmitter_policy.paf")
-        self.assertEquals(p.getString("transmitter.serializationFormat"), "deluxe")
 
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

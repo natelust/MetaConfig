@@ -62,7 +62,7 @@ public:
 
     /**
      * parse the data found on the given stream
-     * @param strm    the stream to read PAF-encoded data from
+     * @param is      the stream to read PAF-encoded data from
      * @returns int   the number of parameters values loaded.  This does not
      *                   include sub-Policy objects.  
      */

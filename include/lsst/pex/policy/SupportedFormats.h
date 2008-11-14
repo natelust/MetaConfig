@@ -23,9 +23,6 @@ namespace policy {
 
 using namespace std;
 
-using lsst::pex::policy::Policy;
-using lsst::pex::policy::PolicyParserFactory;
-
 // class SupportedFormats : public Citizen { // causes problems in construction
 
 /**
