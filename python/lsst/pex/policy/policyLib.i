@@ -75,7 +75,7 @@ namespace boost { namespace filesystem { } }
             new boost::shared_ptr<lsst::pex::policy::Policy>((*$1)[i]);
         PyObject * obj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
             SWIGTYPE_p_boost__shared_ptrT_lsst__pex__policy__Policy_t,
-            SWIG_POINTER_NEW | SWIG_POINTER_OWN);
+            SWIG_POINTER_OWN);
         PyList_SetItem($result, i, obj);
     }
 }
@@ -88,7 +88,7 @@ namespace boost { namespace filesystem { } }
             new boost::shared_ptr<lsst::pex::policy::PolicyFile>((*$1)[i]);
         PyObject * obj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
             SWIGTYPE_p_boost__shared_ptrT_lsst__pex__policy__PolicyFile_t,
-            SWIG_POINTER_NEW | SWIG_POINTER_OWN);
+            SWIG_POINTER_OWN);
         PyList_SetItem($result, i, obj);
     }
 }
