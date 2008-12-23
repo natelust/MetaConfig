@@ -9,20 +9,13 @@
 
 #include "lsst/pex/policy/SupportedFormats.h"
 #include "lsst/pex/policy/paf/PAFParserFactory.h"
+#include "lsst/pex/exceptions.h"
 
 namespace lsst {
 namespace pex {
 namespace policy {
 
 using lsst::pex::policy::paf::PAFParserFactory;
-
-/*
-#include "lsst/pex/utils/Trace.h"
-#define EXEC_TRACE  20
-static void execTrace( string s, int level = EXEC_TRACE ){
-    lsst::pex::utils::Trace( "pex.policy.PolicyParserFactory", level, s );
-}
-*/
 
 void SupportedFormats::initDefaultFormats(SupportedFormats& sf) { 
     sf.registerFormat(PolicyParserFactory::Ptr(new PAFParserFactory()));
@@ -34,8 +27,9 @@ void SupportedFormats::initDefaultFormats(SupportedFormats& sf) {
 void SupportedFormats::registerFormat(const PolicyParserFactory::Ptr& factory) 
 {
     if (factory.get() == 0) 
-        throw runtime_error(string("attempt to register null ") + 
-                            "PolicyParserFactory pointer");
+        throw LSST_EXCEPT(pexExcept::RuntimeErrorException, 
+                          std::string("attempt to register null ") + 
+                                               "PolicyParserFactory pointer");
 
     _formats[factory->getFormatName()] = factory;
 }

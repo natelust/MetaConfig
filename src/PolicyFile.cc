@@ -27,6 +27,8 @@ using boost::regex_search;
 using boost::scoped_ptr;
 using lsst::pex::policy::paf::PAFParserFactory;
 
+namespace pexExcept = lsst::pex::exceptions;
+
 const string PolicyFile::EXT_PAF(".paf");
 const string PolicyFile::EXT_XML(".xml");
 
@@ -94,8 +96,7 @@ const string& PolicyFile::getFormatName() {
     if (fs::exists(_file)) {
         ifstream is(_file.string().c_str());
         if (is.fail()) 
-            throw IOError("failure opening Policy file: " + 
-                          fs::complete(_file).string());
+            throw LSST_EXCEPT(pexExcept::IoErrorException, "failure opening Policy file: " + fs::complete(_file).string());
 
         // skip over comments
         string line;
@@ -106,8 +107,7 @@ const string& PolicyFile::getFormatName() {
         { }
             
         if (is.fail()) 
-            throw IOError("failure reading Policy file: " + 
-                          fs::complete(_file).string());
+            throw LSST_EXCEPT(pexExcept::IoErrorException, "failure reading Policy file: " + fs::complete(_file).string());
         if (is.eof() && 
             (regex_match(line, SPACE_RE) || 
              (regex_search(line, COMMENT) && !regex_search(line, COMMENT))))
@@ -135,7 +135,7 @@ void PolicyFile::load(Policy& policy) {
     if (! pfactory.get()) {
         const string& fmtname = getFormatName();
         if (fmtname.empty()) 
-            throw ParserError("Unknown Policy format: " + _file.string());
+            throw LSST_EXCEPT(ParserError, "Unknown Policy format: " + _file.string());
 
         pfactory = _formats->getFactory(fmtname);
     }
@@ -144,8 +144,7 @@ void PolicyFile::load(Policy& policy) {
 
     ifstream fs(_file.string().c_str());
     if (fs.fail()) 
-        throw IOError("failure opening Policy file: " + 
-                      fs::complete(_file).string());
+        throw LSST_EXCEPT(pexExcept::IoErrorException, "failure opening Policy file: " + fs::complete(_file).string());
 
     parser->parse(fs);
     fs.close();

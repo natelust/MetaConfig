@@ -1,5 +1,6 @@
 setupRequired(boost >= 1.36.0)
 setupRequired(pex_exceptions)
+setupRequired(daf_base)
 
 envAppend(LD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
 envAppend(DYLD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)

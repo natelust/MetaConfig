@@ -29,11 +29,12 @@ namespace boost { namespace filesystem { } }
 
 // For now, pex_policy does not use the standard LSST exception classes,
 // so disable the associated SWIG exception handling machinery
-#define NO_SWIG_LSST_EXCEPTIONS
+// #define NO_SWIG_LSST_EXCEPTIONS
 
 %include "lsst/p_lsstSwig.i"
 
 %import "lsst/daf/base/baseLib.i"
+%import "lsst/pex/exceptions/exceptionsLib.i"    // for Exceptions
 
 %typemap(out) std::vector<double,std::allocator<double > >& {
     int len = (*$1).size();
@@ -104,25 +105,6 @@ namespace boost { namespace filesystem { } }
     int i = 0;
     for (sp = (*$1).begin(); sp != (*$1).end(); sp++, i++) {
         PyList_SetItem($result,i,PyString_FromString(sp->c_str()));
-    }
-}
-
-%exception {
-    try {
-        $action;
-    } catch (lsst::pex::policy::NameNotFound &e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-    } catch (lsst::pex::policy::TypeError &e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-    } catch (lsst::pex::policy::BadNameError &e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-    } catch (lsst::pex::policy::IOError &e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-    } catch (std::exception &e) {
-        SWIG_exception(SWIG_RuntimeError, 
-            std::string(e.what()).append(" (").append(typeid(e).name()).append(")").c_str());
-    } catch (...) {
-       SWIG_exception(SWIG_RuntimeError, "unknown error while handling policy");
     }
 }
 

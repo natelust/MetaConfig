@@ -18,13 +18,7 @@
 
 using namespace std;
 namespace fs = boost::filesystem;
-
-/*
-#define EXEC_TRACE  20
-static void execTrace( string s, int level = EXEC_TRACE ){
-    lsst::pex::utils::Trace( "pex.policy.Policy", level, s );
-}
-*/
+namespace pexExcept = lsst::pex::exceptions;
 
 namespace lsst {
 namespace pex {
@@ -40,19 +34,19 @@ const char * const Policy::typeName[] = {
     "PolicyFile"
 };
 
-/**
+/*
  * Create an empty policy
  */
 Policy::Policy() : Citizen(typeid(this)), _data() { }
 
-/**
+/*
  * Create policy
  */
 Policy::Policy(PolicyFile& file) : Citizen(typeid(this)), _data() { 
     file.load(*this);
 }
 
-/**
+/*
  * Create a Policy from a named file
  */
 Policy::Policy(const string& filePath) : Citizen(typeid(this)), _data() {
@@ -60,7 +54,7 @@ Policy::Policy(const string& filePath) : Citizen(typeid(this)), _data() {
     file.load(*this);
 }
 
-/**
+/*
  * Create a default Policy from a Dictionary.  
  *
  * Note:  validation is not implemented yet.
@@ -83,7 +77,7 @@ Policy::Policy(bool validate, const Dictionary& dict)
     }
 }
 
-/**
+/*
  * copy a Policy.  Sub-policy objects will be shared.  
  */
 Policy::Policy(const Policy& pol, bool deep) 
@@ -134,12 +128,12 @@ Policy* Policy::_createPolicy(const string& input, bool doIncludes,
     return _createPolicy(file, doIncludes, repos, validate);
 }
 
-/**
+/*
  * Create an empty policy
  */
 Policy::~Policy() { }
 
-/**
+/*
  * load the names of parameters into a given list.  \c names() returns
  * all names, \c paramNames() only returns the names that resolve to
  * non-Policy type parameters, and \c policyNames() only returns the 
@@ -193,7 +187,7 @@ int Policy::_names(const string& prepend, list<string>& names,
 }
 
 
-/**
+/*
  * return the Policy object that holds the property given 
  * by relname, a hierarchical name.  
  * @param mode        the search behavior mode.  If set to STRICT, an 
@@ -231,7 +225,7 @@ Policy& Policy::_getPolicyFor(Mode mode, string& relname,
 
     if (dot == 0 || dot >= relname.size()-1)
         // name begins or ends with a dot--not nice
-        throw BadNameError(relname);
+        throw LSST_EXCEPT(BadNameError, relname);
 
     dot = relname.find('.');
     string head = (dot == string::npos) ? relname : relname.substr(0,dot);
@@ -250,7 +244,7 @@ Policy& Policy::_getPolicyFor(Mode mode, string& relname,
             return child.back()->_getPolicyFor(mode, relname,parentname);
         }
         catch (BADANYCAST&) {
-            throw new TypeError(parentname, typeName[POLICY]);
+            throw LSST_EXCEPT(TypeError, parentname, typeName[POLICY]);
         }
     }
     else if (mode == ENSURE) {
@@ -271,7 +265,7 @@ Policy& Policy::_getPolicyFor(Mode mode, string& relname,
         }
         catch (BADANYCAST& e) {
             // shouldn't happen!
-            throw logic_error("Policy: unexpected type held by any");
+            throw LSST_EXCEPT(pexExcept::LogicErrorException, "Policy: unexpected type held by any");
         }
     }
     else if (mode == STRICT) {
@@ -279,14 +273,14 @@ Policy& Policy::_getPolicyFor(Mode mode, string& relname,
         if (parentname.size() > 0) parentname.append(1, '.');
         parentname.append(head);
 
-        throw NameNotFound(parentname);
+        throw LSST_EXCEPT(NameNotFound, parentname);
     }
 
     // can't/shouldn't recurse further, so stop here.
     return *this;
 }
 
-/**
+/*
  * return the value associated with a given name.  
  * @exception NameNotFound  if no value is associated with the given name.
  */
@@ -299,12 +293,12 @@ ANYTYPE& Policy::_getValue(const string& name) {
     if (childptr == parent._data.end()) {
         if (policyname.size() > 0) policyname.append(1,'.');
         policyname.append(fullname);
-        throw NameNotFound(policyname);
+        throw LSST_EXCEPT(NameNotFound, policyname);
     }
     return childptr->second;
 }
 
-/**
+/*
  * return the number of values currently associated with a given name.  Zero
  * is returned if the value has not been set.  
  */
@@ -337,7 +331,7 @@ size_t Policy::valueCount(const string& name) const {
             out = p->size();
         }
         else {
-            throw logic_error("Policy: unexpected type held by any");
+            throw LSST_EXCEPT(pexExcept::LogicErrorException, "Policy: unexpected type held by any");
         }
     }
     catch (NameNotFound&) { }
@@ -345,7 +339,7 @@ size_t Policy::valueCount(const string& name) const {
     return out;
 }
 
-/**
+/*
  * return the type information for the underlying type associated with
  * a given name
  */
@@ -380,11 +374,11 @@ const std::type_info& Policy::getTypeInfo(const string& name) const {
         return typeid(*(f->back()));
     }
     else {
-        throw logic_error("Policy: unexpected type held by any");
+        throw LSST_EXCEPT(pexExcept::LogicErrorException, "Policy: unexpected type held by any");
     }
 }
 
-/**
+/*
  * return the type information for the underlying type associated with
  * a given name.  
  */
@@ -419,14 +413,14 @@ Policy::ValueType Policy::getValueType(const string& name) const {
             return FILE;
         }
         else {
-            throw logic_error("Policy: unexpected type held by any");
+            throw LSST_EXCEPT(pexExcept::LogicErrorException, "Policy: unexpected type held by any");
         }
     } catch (NameNotFound&) {
         return UNDEF;
     }
 }
 
-/**
+/*
  * recursively replace all PolicyFile values with the contents of the 
  * files they refer to.  The type of a parameter containing a PolicyFile
  * will consequently change to a Policy upon successful completion.  If
@@ -474,7 +468,7 @@ void Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
             try {
                 pf.load(*policy);
             }
-            catch (IOError& e) {
+            catch (pexExcept::IoErrorException& e) {
                 if (strict) {
                     // TODO: use LSST exceptions
                     throw e;
@@ -516,7 +510,7 @@ void Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
 }
 
 
-/**
+/*
  * return a string representation of the value given by a name.  The
  * string "<null>" is printed if the name does not exist.
  */
@@ -581,7 +575,7 @@ string Policy::str(const string& name, const string& indent) const {
             }
         }
         else {
-            throw logic_error("Policy: unexpected type held by any");
+            throw LSST_EXCEPT(pexExcept::LogicErrorException, "Policy: unexpected type held by any");
         }
     }
     catch (NameNotFound&) {
@@ -592,7 +586,7 @@ string Policy::str(const string& name, const string& indent) const {
     return out.str();
 }
 
-/**
+/*
  * print the contents of this policy to an output stream
  */
 void Policy::print(ostream& out, const string& label, 
@@ -607,7 +601,7 @@ void Policy::print(ostream& out, const string& label,
     }
 }
 
-/**
+/*
  * convert the entire contents of this policy to a string.  This 
  * is mainly intended for debugging purposes.  
  */

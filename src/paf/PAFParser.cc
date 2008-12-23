@@ -12,14 +12,6 @@
 #include "lsst/pex/policy/parserexceptions.h"
 #include <stdexcept>
 
-/*
-#include "lsst/pex/utils/Trace.h"
-#define EXEC_TRACE  20
-static void execTrace( string s, int level = EXEC_TRACE ){
-    lsst::pex::utils::Trace( "pex.policy.json.PAFParser", level, s );
-}
-*/
-
 namespace lsst {
 namespace pex {
 namespace policy {
@@ -105,7 +97,7 @@ int PAFParser::_parseIntoPolicy(istream& is, Policy& policy) {
             _depth--;
             if (_depth < 0) {
                 string msg = "extra '}' character encountered.";
-                if (_strict) throw FormatSyntaxError(msg, _lineno);
+                if (_strict) throw LSST_EXCEPT(FormatSyntaxError, msg, _lineno);
                 // log message
             }
 
@@ -119,7 +111,7 @@ int PAFParser::_parseIntoPolicy(istream& is, Policy& policy) {
                 string msg = "Not a legal names designation: ";
                 msg.append(name);
                 if (_strict) 
-                    throw FormatSyntaxError(msg, _lineno);
+                    throw LSST_EXCEPT(FormatSyntaxError, msg, _lineno);
                 // log warning
                 continue;
             }
@@ -128,7 +120,7 @@ int PAFParser::_parseIntoPolicy(istream& is, Policy& policy) {
             count += _addValue(name, value, policy, is);
         }
     }
-    if (! is.eof() && is.fail()) throw ParserError("read error", _lineno);
+    if (! is.eof() && is.fail()) throw LSST_EXCEPT(ParserError, "read error", _lineno);
 
     return count;
 }
@@ -169,7 +161,7 @@ int PAFParser::_addValue(const string& propname, string& value,
             if (unparsed && (*unparsed)) {
                 msg = "value contains unparsable non-numeric data: ";
                 msg.append(element);
-                if (_strict) throw FormatSyntaxError(msg, _lineno);
+                if (_strict) throw LSST_EXCEPT(FormatSyntaxError, msg, _lineno);
                 break;
             }
 
@@ -192,7 +184,7 @@ int PAFParser::_addValue(const string& propname, string& value,
         if (value.size() > 0) {
             msg = "Expecting double value, found: ";
             msg.append(value);
-            if (_strict) throw FormatSyntaxError(msg, _lineno);
+            if (_strict) throw LSST_EXCEPT(FormatSyntaxError, msg, _lineno);
             // log message
         }
     }
@@ -206,7 +198,7 @@ int PAFParser::_addValue(const string& propname, string& value,
             if (unparsed && (*unparsed)) {
                 msg = "value contains unparsable non-integer data: ";
                 msg.append(element);
-                if (_strict) throw FormatSyntaxError(msg, _lineno);
+                if (_strict) throw LSST_EXCEPT(FormatSyntaxError, msg, _lineno);
                 continue;
             }
 
@@ -215,7 +207,7 @@ int PAFParser::_addValue(const string& propname, string& value,
                 // longs are unsupported
                 msg = "unsupported long integer value found: ";
                 msg.append(value);
-                if (_strict) throw UnsupportedSyntax(msg, _lineno);
+                if (_strict) throw LSST_EXCEPT(UnsupportedSyntax, msg, _lineno);
                 // log a message
             }
 
@@ -239,7 +231,7 @@ int PAFParser::_addValue(const string& propname, string& value,
         if (value.size() > 0) {
             msg = "Expecting integer value, found: ";
             msg.append(value);
-            if (_strict) throw FormatSyntaxError(msg, _lineno);
+            if (_strict) throw LSST_EXCEPT(FormatSyntaxError, msg, _lineno);
             // log message
         }
     }
@@ -274,7 +266,7 @@ int PAFParser::_addValue(const string& propname, string& value,
             msg = "Expecting boolean value, found: ";
             msg.append(value);
             if (_strict) 
-                throw FormatSyntaxError(msg, _lineno);
+                throw LSST_EXCEPT(FormatSyntaxError, msg, _lineno);
             // log message
         }
     }
@@ -311,9 +303,9 @@ int PAFParser::_addValue(const string& propname, string& value,
                     }
                 }
                 if (is.fail()) 
-                    throw ParserError("read error", _lineno);
+                    throw LSST_EXCEPT(ParserError, "read error", _lineno);
                 if (is.eof()) {
-                    if (_strict) throw EOFError(_lineno);
+                    if (_strict) throw LSST_EXCEPT(EOFError, _lineno);
                     // log message
                 }
             }
@@ -334,9 +326,9 @@ int PAFParser::_addValue(const string& propname, string& value,
                     }
                 }
                 if (is.fail()) 
-                    throw ParserError("read error", _lineno);
+                    throw LSST_EXCEPT(ParserError, "read error", _lineno);
                 if (is.eof()) {
-                    if (_strict) throw EOFError(_lineno);
+                    if (_strict) throw LSST_EXCEPT(EOFError, _lineno);
                     // log message
                 }
             }

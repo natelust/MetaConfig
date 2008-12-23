@@ -3,6 +3,7 @@ import unittest
 
 import lsst.utils.tests as tests
 from lsst.pex.policy import Policy
+from lsst.pex.exceptions import LsstCppException
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -14,7 +15,7 @@ class PolicyTestCase(unittest.TestCase):
                          "empty valueCount test failed")
 
         self.assertEqual(p.getInt("foo", 5), 5, "providing default failed")
-        self.assertRaises(RuntimeError, p.getTypeInfo, "foo")
+        self.assertRaises(LsstCppException, p.getTypeInfo, "foo")
 
         p.set("doall", "true")
 
@@ -25,15 +26,15 @@ class PolicyTestCase(unittest.TestCase):
                          "empty valueCount test failed");
         self.failUnless(not p.isInt("foo"),
                         "non-empty non-existence type test failed");
-        self.assertRaises(RuntimeError, p.getTypeInfo, "foo")
+        self.assertRaises(LsstCppException, p.getTypeInfo, "foo")
 
         # existance tests
         self.assert_(p.exists("doall"), "non-empty existance test failed")
         self.assertEquals(p.valueCount("doall"), 1,
                           "single valueCount test failed");
 
-        self.assertRaises(RuntimeError, p.getInt, "doall")
-        self.assertRaises(RuntimeError, p.getDoubleArray, "doall")
+        self.assertRaises(LsstCppException, p.getInt, "doall")
+        self.assertRaises(LsstCppException, p.getDoubleArray, "doall")
 
         self.assertEquals(p.get("doall"), "true",
                           "top-level getString failed")

@@ -41,6 +41,8 @@ namespace lsst {
 namespace pex {
 namespace policy {
 
+namespace pexExcept = lsst::pex::exceptions;
+
 // forward declaration
 class PolicySource;
 class PolicyFile;
@@ -662,7 +664,7 @@ protected:
         try {
             return ANYCAST<vector<T>&>(_getValue(name));
         } catch (BADANYCAST&) {
-            throw TypeError(name, expectedType);
+            throw LSST_EXCEPT(TypeError, name, expectedType);
         } 
     }        
 
@@ -671,7 +673,7 @@ protected:
         try {
             return _getList<T>(name, expectedType).back();
         } catch (std::out_of_range&) {
-            throw logic_error("internal policy data not initialized");
+            throw LSST_EXCEPT(pexExcept::LogicErrorException, "internal policy data not initialized");
         }
     }
 
@@ -806,7 +808,7 @@ inline bool Policy::getBool(const string& name) const {
     try {
         return me->_getList<bool>(name, typeName[BOOL]).back();
     } catch (std::out_of_range&) {
-        throw logic_error("internal policy data not initialized");
+        throw LSST_EXCEPT(pexExcept::LogicErrorException, "internal policy data not initialized");
     }
 }
 
@@ -924,7 +926,7 @@ void Policy::_addValue(const string& name, const T& newval,
         }
         catch (BADANYCAST& e) {
             // shouldn't happen!
-            throw logic_error("Policy: unexpected type held by any");
+            throw LSST_EXCEPT(pexExcept::LogicErrorException, "Policy: unexpected type held by any");
         }
     }
     else {
@@ -933,7 +935,7 @@ void Policy::_addValue(const string& name, const T& newval,
             prop.push_back(newval);
         }
         catch (BADANYCAST&) {
-            throw TypeError(name, expectedType);
+            throw LSST_EXCEPT(TypeError, name, expectedType);
         }
     }
 }
