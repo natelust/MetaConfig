@@ -89,7 +89,7 @@ Policy::Policy(const Policy& pol, bool deep)
         PolicyPtrArray *p = 0;
         Ptr policyp;
         for(i = _data.begin(); i != _data.end(); ++i) {
-            if (p = ANYCAST<PolicyPtrArray>(&(i->second))) {
+            if ( (p = ANYCAST<PolicyPtrArray>(&(i->second))) ) {
                 PolicyPtrArray::iterator pi;
                 for(pi = p->begin(); pi != p->end(); ++pi) {
                     policyp = *pi;
@@ -315,19 +315,19 @@ size_t Policy::valueCount(const string& name) const {
         StringPtrArray *s;
         PolicyPtrArray *p;
     
-        if (b = ANYCAST<BoolArray>(&val)) {
+        if ( (b = ANYCAST<BoolArray>(&val)) ) {
             out = b->size();
         }
-        else if (i = ANYCAST<IntArray>(&val)) {
+        else if ( (i = ANYCAST<IntArray>(&val)) ) {
             out = i->size();
         }
-        else if (d = ANYCAST<DoubleArray>(&val)) {
+        else if ( (d = ANYCAST<DoubleArray>(&val)) ) {
             out = d->size();
         }
-        else if (s = ANYCAST<StringPtrArray>(&val)) {
+        else if ( (s = ANYCAST<StringPtrArray>(&val)) ) {
             out = s->size();
         }
-        else if (p = ANYCAST<PolicyPtrArray>(&val)) {
+        else if ( (p = ANYCAST<PolicyPtrArray>(&val)) ) {
             out = p->size();
         }
         else {
@@ -354,23 +354,23 @@ const std::type_info& Policy::getTypeInfo(const string& name) const {
     PolicyPtrArray *p;
     FilePtrArray *f;
     
-    if (b = ANYCAST<BoolArray>(&val)) {
+    if ( (b = ANYCAST<BoolArray>(&val)) ) {
         bool v = b->back();
         return typeid(v);
     }
-    else if (i = ANYCAST<IntArray>(&val)) {
+    else if ( (i = ANYCAST<IntArray>(&val) )) {
         return typeid(i->back());
     }
-    else if (d = ANYCAST<DoubleArray>(&val)) {
+    else if ( (d = ANYCAST<DoubleArray>(&val) )) {
         return typeid(d->back());
     }
-    else if (s = ANYCAST<StringPtrArray>(&val)) {
+    else if ( (s = ANYCAST<StringPtrArray>(&val) )) {
         return typeid(*(s->back()));
     }
-    else if (p = ANYCAST<PolicyPtrArray>(&val)) {
+    else if ( (p = ANYCAST<PolicyPtrArray>(&val) )) {
         return typeid(*(p->back()));
     }
-    else if (f = ANYCAST<FilePtrArray>(&val)) {
+    else if ( (f = ANYCAST<FilePtrArray>(&val)) ) {
         return typeid(*(f->back()));
     }
     else {
@@ -394,22 +394,22 @@ Policy::ValueType Policy::getValueType(const string& name) const {
         PolicyPtrArray *p;
         FilePtrArray *f;
     
-        if (b = ANYCAST<BoolArray>(&val)) {
+        if ( (b = ANYCAST<BoolArray>(&val)) ) {
             return BOOL;
         }
-        else if (i = ANYCAST<IntArray>(&val)) {
+        else if ( (i = ANYCAST<IntArray>(&val)) ) {
             return INT;
         }
-        else if (d = ANYCAST<DoubleArray>(&val)) {
+        else if ( (d = ANYCAST<DoubleArray>(&val)) ) {
             return DOUBLE;
         }
-        else if (s = ANYCAST<StringPtrArray>(&val)) {
+        else if ( (s = ANYCAST<StringPtrArray>(&val)) ) {
             return STRING;
         }
-        else if (p = ANYCAST<PolicyPtrArray>(&val)) {
+        else if ( (p = ANYCAST<PolicyPtrArray>(&val)) ) {
             return POLICY;
         }
-        else if (f = ANYCAST<FilePtrArray>(&val)) {
+        else if ( (f = ANYCAST<FilePtrArray>(&val)) ) {
             return FILE;
         }
         else {
@@ -528,35 +528,35 @@ string Policy::str(const string& name, const string& indent) const {
         PolicyPtrArray *p;
         FilePtrArray *f;
     
-        if (b = ANYCAST<BoolArray>(&val)) {
+        if ( (b = ANYCAST<BoolArray>(&val)) ) {
             BoolArray::iterator vi;
             for(vi=b->begin(); vi != b->end(); ++vi) {
                 out << *vi;
                 if (vi+1 != b->end()) out << ", ";
             }
         }
-        else if (i = ANYCAST<IntArray>(&val)) {
+        else if ( (i = ANYCAST<IntArray>(&val)) ) {
             IntArray::iterator vi;
             for(vi=i->begin(); vi != i->end(); ++vi) {
                 out << *vi;
                 if (vi+1 != i->end()) out << ", ";
             }
         }
-        else if (d = ANYCAST<DoubleArray>(&val)) {
+        else if ( (d = ANYCAST<DoubleArray>(&val)) ) {
             DoubleArray::iterator vi;
             for(vi=d->begin(); vi != d->end(); ++vi) {
                 out << *vi;
                 if (vi+1 != d->end()) out << ", ";
             }
         }
-        else if (s = ANYCAST<StringPtrArray>(&val)) {
+        else if ( (s = ANYCAST<StringPtrArray>(&val)) ) {
             StringPtrArray::iterator vi;
             for(vi= s->begin(); vi != s->end(); ++vi) {
                 out << '"' << **vi << '"';
                 if (vi+1 != s->end()) out << ", ";
             }
         }
-        else if (p = ANYCAST<PolicyPtrArray>(&val)) {
+        else if ( (p = ANYCAST<PolicyPtrArray>(&val)) ) {
             PolicyPtrArray::iterator vi;
             for(vi= p->begin(); vi != p->end(); ++vi) {
                 out << "{\n";
@@ -566,7 +566,7 @@ string Policy::str(const string& name, const string& indent) const {
                 out.flush();
             }
         }
-        else if (f = ANYCAST<FilePtrArray>(&val)) {
+        else if ( (f = ANYCAST<FilePtrArray>(&val)) ) {
             FilePtrArray::iterator vi;
             for(vi= f->begin(); vi != f->end(); ++vi) {
                 out << "FILE:" << (*vi)->getPath();

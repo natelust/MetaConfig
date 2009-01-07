@@ -1,5 +1,5 @@
 /**
- * @class JSONParser
+ * @class PAFParser
  * 
  * @ingroup pex
  *
@@ -37,7 +37,7 @@ const regex PAFParser::BARE_STRING_LINE("^\\s*(\\S(.*\\S)?)\\s*");
 const regex PAFParser::BARE_STRING("^\\s*([^#\\}\\s]([^#\\}]*[^#\\}\\s])?)\\s*[#}]?");
 const regex PAFParser::FILE_VALUE("^@");
 
-/**
+/*
  * create a parser to load a Policy
  */
 PAFParser::PAFParser(Policy& policy) 
@@ -47,12 +47,12 @@ PAFParser::PAFParser(Policy& policy, bool strict)
     : PolicyParser(policy, strict), _buffer(), _lineno(0), _depth(0)
 { }
 
-/**
+/*
  * delete this parser
  */
 PAFParser::~PAFParser() { } 
 
-/**
+/*
  * parse the data found on the given stream
  * @param strm    the stream to read PAF-encoded data from
  * @return int   the number of values primitive values parsed.

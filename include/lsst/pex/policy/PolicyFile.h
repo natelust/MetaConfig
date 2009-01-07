@@ -49,19 +49,33 @@ public:
      *                          boost::filesystem::path instance
      * @param fmts           a SupportedFormats object to use.  An instance 
      *                          encapsulates a configured set of known formats.
+     */
+    PolicyFile(const string& filepath, 
+               const SupportedFormats::Ptr& fmts = defaultFormats);
+    PolicyFile(const fs::path& filepath, 
+               const SupportedFormats::Ptr& fmts = defaultFormats);
+    //@}
+
+    //@{
+    /**
+     * create a Policy file that points a file with given path.  Typically,
+     * one need only provide a file path; this class will determine the 
+     * type automatically using the default set of supported formats.  If 
+     * you want to control what formats (and the particular parsers) to allow,
+     * you can provide your own SupportedFormats instance.  To force 
+     * interpretation as a particular format, you can a PolicyParserFactory 
+     * instance in lieu of a SupportedFormats.  
+     * @param filepath       the path to the file, either as a string or a
+     *                          boost::filesystem::path instance
      * @param parserFactory  a PolicyParserFactory implementation to be used
      *                          in parsing the file, assuming a particular 
      *                          format.
      */
+    PolicyFile(const string& filepath, 
+               const PolicyParserFactory::Ptr& parserFactory);
+    PolicyFile(const fs::path& filepath, 
+               const PolicyParserFactory::Ptr& parserFactory);
     PolicyFile(const SupportedFormats::Ptr& fmts = defaultFormats);
-    PolicyFile(const string& filepath, 
-               const SupportedFormats::Ptr& fmts = defaultFormats);
-    PolicyFile(const string& filepath, 
-               const PolicyParserFactory::Ptr& parserFactory);
-    PolicyFile(const fs::path& filepath, 
-               const SupportedFormats::Ptr& fmts = defaultFormats);
-    PolicyFile(const fs::path& filepath, 
-               const PolicyParserFactory::Ptr& parserFactory);
     //@}
 
 //     /**

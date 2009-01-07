@@ -63,7 +63,7 @@ public:
     /**
      * parse data from the input stream and load results into the attached 
      * Policy.  
-     * @param strm    the stream to read JSON-encoded data from
+     * @param is      the stream to read JSON-encoded data from
      * @returns int   the number of parameters values loaded.  This does not
      *                   include sub-Policy objects.  
      */

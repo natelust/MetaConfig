@@ -49,6 +49,12 @@ public:
      * create a new PolicyParser class and return a pointer to it.  The 
      * caller is responsible for destroying the pointer.
      * @param  policy   the Policy object that data should be loaded into.
+     * @param  strict   if true (default), make the returned PolicyParser 
+     *                    be strict in reporting errors in file 
+     *                    contents and syntax.  If false, errors will 
+     *                    be ignored if possible; often, such errors will 
+     *                    result in some data not getting loaded.  The 
+     *                    default (set by PolicyParser) is true.
      */
     virtual PolicyParser* createParser(Policy& policy, 
                                        bool strict=true) const;

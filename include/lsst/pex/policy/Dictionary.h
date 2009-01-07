@@ -318,7 +318,6 @@ public:
     }
     //@}
 
-    //@}
     /**
      * confirm that a Policy parameter conforms to this definition.  
      *   If a ValidationError instance is provided, any errors detected 
@@ -335,10 +334,22 @@ public:
      */
     void validate(const Policy& policy, const string& name, 
                   ValidationError *errs=0) const;
+
+    /**
+     * confirm that a Policy parameter conforms to this definition.  
+     *   If a ValidationError instance is provided, any errors detected 
+     *   and will be loaded into it.  If no ValidationError is provided,
+     *   then any errors detected will cause a ValidationError exception
+     *   to be thrown.  
+     * @param policy   the policy object to inspect
+     * @param errs     a pointer to a ValidationError instance to load errors 
+     *                  into. 
+     * @exception ValidationError   if errs is not provided and the value 
+     *                  does not conform.  
+     */
     void validate(Policy& policy, ValidationError *errs=0) const {
         validate(policy, _name, errs);
     }
-    //@}
 
     //@{
     /**
@@ -359,6 +370,8 @@ public:
      * @param curcount  the number of values assumed to already stored under
      *                     the given name.  If < 0, limit checking is not
      *                     done.  
+     * @param errs     a pointer to a ValidationError instance to load errors 
+     *                  into. 
      * @exception ValidationError   if the value does not conform.  The message
      *                 should explain why.
      */

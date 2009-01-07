@@ -38,7 +38,7 @@ const regex
           PolicyFile::CONTENTID("^\\s*#\\s*<\\?cfg\\s+\\w+(\\s+\\w+)*\\s*\\?>",
                                 regex::icase);
 
-/**
+/*
  * create a Policy file that points a file with given path.
  * @param filepath   the path to the file
  */
@@ -70,7 +70,7 @@ PolicyFile::PolicyFile(const fs::path& filepath,
     if (! _pfact.get()) _format = _pfact->getFormatName();
 }
 
-/**
+/*
  * return the name of the format that the data is stored in.  This may 
  * cause the first few records of the source to be read.
  * @exception IOError   if an error occurs while reading the first few
@@ -122,7 +122,7 @@ const string& PolicyFile::getFormatName() {
     return PolicyParserFactory::UNRECOGNIZED;
 }
 
-/**
+/*
  * load the data from this Policy source into a Policy object
  * @param policy    the policy object to load the data into
  * @exception ParserError  if an error occurs while parsing the data

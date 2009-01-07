@@ -51,8 +51,8 @@ public:
      *                   result in some data not getting loaded.  The 
      *                   default (set by PolicyParser) is true.
      */
-    PAFParser(Policy& policy);
     PAFParser(Policy& policy, bool strict);
+    PAFParser(Policy& policy);
     //@}
 
     /**
