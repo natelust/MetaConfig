@@ -571,6 +571,13 @@ public:
     }
 
     /**
+     * return the top-level parameter names defined in this Dictionary
+     */
+    int definedNames(list<string>& names, bool append=false) const {
+        return getDefinitions()->names(true); 
+    }
+
+    /**
      * return a definition for the named parameter
      * @param name    the hierarchical name for the parameter
      */
