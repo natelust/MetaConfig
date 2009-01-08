@@ -25,7 +25,6 @@ namespace lsst {
 namespace pex {
 namespace policy {
 
-using namespace std;
 namespace fs = boost::filesystem;
 
 /**
@@ -50,7 +49,7 @@ public:
      * @param fmts           a SupportedFormats object to use.  An instance 
      *                          encapsulates a configured set of known formats.
      */
-    PolicyFile(const string& filepath, 
+    PolicyFile(const std::string& filepath, 
                const SupportedFormats::Ptr& fmts = defaultFormats);
     PolicyFile(const fs::path& filepath, 
                const SupportedFormats::Ptr& fmts = defaultFormats);
@@ -71,7 +70,7 @@ public:
      *                          in parsing the file, assuming a particular 
      *                          format.
      */
-    PolicyFile(const string& filepath, 
+    PolicyFile(const std::string& filepath, 
                const PolicyParserFactory::Ptr& parserFactory);
     PolicyFile(const fs::path& filepath, 
                const PolicyParserFactory::Ptr& parserFactory);
@@ -93,7 +92,7 @@ public:
     /**
      * return the file path as a string
      */
-    const string getPath() const { return _file.string(); }
+    const std::string getPath() const { return _file.string(); }
 
     /**
      * return true if the file exists.  
@@ -109,7 +108,7 @@ public:
      * @exception IOError   if an error occurs while reading the first few
      *                      characters of the source stream.
      */
-    virtual const string& getFormatName() const;
+    virtual const std::string& getFormatName() const;
 
     /**
      * load the data from this Policy source into a Policy object
@@ -120,8 +119,8 @@ public:
      */
     virtual void load(Policy& policy) const;
 
-    static const string EXT_PAF;   //! the PAF file extension, ".paf"
-    static const string EXT_XML;   //! the XML file extension,  ".xml"
+    static const std::string EXT_PAF;   //! the PAF file extension, ".paf"
+    static const std::string EXT_XML;   //! the XML file extension,  ".xml"
 
     static const boost::regex SPACE_RE;   //! reg-exp for an empty line
     static const boost::regex COMMENT;    //! reg-exp for the start of a comment
@@ -132,13 +131,13 @@ public:
     static const boost::regex CONTENTID;  
 
 private:
-    const string& cacheName(const string& name) {
+    const std::string& cacheName(const std::string& name) {
         _format = name;
         return _format;
     }
 
     fs::path _file;
-    string _format;
+    std::string _format;
     PolicyParserFactory::Ptr _pfact;
 
     // inherits SupportedFormats _formats from PolicySource

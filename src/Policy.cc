@@ -347,6 +347,7 @@ void Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
     }
 
     // Now iterate again to recurse into sub-Policy values
+    // TODO: alter repos?; record name of source file? 
     policyNames(names, true);
     for(list<string>::iterator it=names.begin(); it != names.end(); it++) {
         PolicyPtrArray& policies = getPolicyArray(*it);
