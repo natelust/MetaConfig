@@ -93,12 +93,12 @@ public:
     /**
      * return the file path as a string
      */
-    const string getPath() { return _file.string(); }
+    const string getPath() const { return _file.string(); }
 
     /**
      * return true if the file exists.  
      */
-    bool exists() {  return fs::exists(_file);  }
+    bool exists() const {  return fs::exists(_file);  }
 
     /**
      * return the name of the format that the data is stored in.  This may 
@@ -109,7 +109,7 @@ public:
      * @exception IOError   if an error occurs while reading the first few
      *                      characters of the source stream.
      */
-    virtual const string& getFormatName();
+    virtual const string& getFormatName() const;
 
     /**
      * load the data from this Policy source into a Policy object
@@ -118,7 +118,7 @@ public:
      * @exception IOError   if an I/O error occurs while reading from the 
      *                       source stream.
      */
-    virtual void load(Policy& policy);
+    virtual void load(Policy& policy) const;
 
     static const string EXT_PAF;   //! the PAF file extension, ".paf"
     static const string EXT_XML;   //! the XML file extension,  ".xml"

@@ -19,10 +19,13 @@
 using namespace std;
 namespace fs = boost::filesystem;
 namespace pexExcept = lsst::pex::exceptions;
+namespace dafBase = lsst::daf::base;
 
 namespace lsst {
 namespace pex {
 namespace policy {
+
+using dafBase::PropertySet;
 
 const char * const Policy::typeName[] = {
     "undefined",
@@ -37,19 +40,23 @@ const char * const Policy::typeName[] = {
 /*
  * Create an empty policy
  */
-Policy::Policy() : Citizen(typeid(this)), _data() { }
+Policy::Policy() : Citizen(typeid(this)), _data(new PropertySet()) { }
 
 /*
  * Create policy
  */
-Policy::Policy(PolicyFile& file) : Citizen(typeid(this)), _data() { 
+Policy::Policy(const PolicyFile& file) 
+    : Citizen(typeid(this)), _data(new PropertySet()) 
+{ 
     file.load(*this);
 }
 
 /*
  * Create a Policy from a named file
  */
-Policy::Policy(const string& filePath) : Citizen(typeid(this)), _data() {
+Policy::Policy(const string& filePath) 
+    : Citizen(typeid(this)), _data(new PropertySet()) 
+{
     PolicyFile file(filePath);
     file.load(*this);
 }
@@ -65,7 +72,7 @@ Policy::Policy(const string& filePath) : Citizen(typeid(this)), _data() {
  * @param dict      the Dictionary file load defaults from
  */
 Policy::Policy(bool validate, const Dictionary& dict) 
-    : Citizen(typeid(this)), _data() 
+    : Citizen(typeid(this)), _data(new PropertySet()) 
 { 
     list<string> names;
     dict.definedNames(names);
@@ -78,26 +85,24 @@ Policy::Policy(bool validate, const Dictionary& dict)
 }
 
 /*
- * copy a Policy.  Sub-policy objects will be shared.  
+ * copy a Policy.  Sub-policy objects will not be shared.  
  */
-Policy::Policy(const Policy& pol, bool deep) 
-    : Citizen(typeid(this)), _data(pol._data) 
+Policy::Policy(const Policy& pol) 
+    : Citizen(typeid(this)), _data() 
 {
-    // copy Policy objects
-    if (deep) {
-        Lookup::iterator i;
-        PolicyPtrArray *p = 0;
-        Ptr policyp;
-        for(i = _data.begin(); i != _data.end(); ++i) {
-            if ( (p = ANYCAST<PolicyPtrArray>(&(i->second))) ) {
-                PolicyPtrArray::iterator pi;
-                for(pi = p->begin(); pi != p->end(); ++pi) {
-                    policyp = *pi;
-                    *pi = Ptr(new Policy(*policyp, true));
-                }
-            }
-        }
-    }
+    _data = pol.getPropertySetPtr()->deepCopy();
+}
+
+/*
+ * copy a Policy.  Sub-policy objects will be shared unless deep is true
+ */
+Policy::Policy(Policy& pol, bool deep) 
+    : Citizen(typeid(this)), _data() 
+{
+    if (deep)
+        _data = pol.getPropertySetPtr()->deepCopy();
+    else
+        _data = pol.getPropertySetPtr();
 }
 
 Policy* Policy::_createPolicy(PolicySource& source, bool doIncludes, 
@@ -134,10 +139,7 @@ Policy* Policy::_createPolicy(const string& input, bool doIncludes,
 Policy::~Policy() { }
 
 /*
- * load the names of parameters into a given list.  \c names() returns
- * all names, \c paramNames() only returns the names that resolve to
- * non-Policy type parameters, and \c policyNames() only returns the 
- * Policy names. 
+ * load the names of parameters into a given list.  
  * 
  * @param prepend       the names string to prepend to any names found.
  * @param names         the list object to be loaded
@@ -150,36 +152,37 @@ Policy::~Policy() { }
  *                         2=PolicyFiles, 4=parameters, 7=all).
  * @return int  the number of names added
  */
-int Policy::_names(const string& prepend, list<string>& names, 
+int Policy::_names(vector<string>& names, 
                    bool topLevelOnly, bool append, int want) const
 {
+    bool check = true;
+    std::vector<std::string> src;
+    if (want == 1) {
+        src = _data->propertySetNames(topLevelOnly);
+        have = 1;
+        check = false;
+    }
+    else if (want == 7) 
+        src = _data->names(topLevelOnly);
+    else 
+        src = _data->parameterNames(topLevelOnly);
+
     if (!append) names.erase(names.begin(), names.end());
 
-    string pre((prepend.size() > 0) ? prepend + string(".") : prepend);
-    int count = 0;
-
-    Policy *me = const_cast<Policy*>(this);
-
-    Lookup::iterator i;
+    StringArray::iterator i;
     int have;
-    PolicyPtrArray *p;
-    FilePtrArray *f;
-    for(i = me->_data.begin(); i != me->_data.end(); ++i) {
-        p = ANYCAST<PolicyPtrArray>(&(i->second));
-        if (p) {
-            have = 1;
-        }
-        else {
-            f = ANYCAST<FilePtrArray>(&(i->second));
-            have = (f) ? 2 : 4;
+    for(i = src.begin(); i != src.end(); ++i) {
+        if (check) {
+            if (isPolicy(*i)) 
+                have = 1;
+            else if (isFile(*i)) 
+                have = 2;
+            else 
+                have = 4;
         }
         if ((have&want) > 0) {
-            names.push_back(pre + i->first);
+            names.push_back(*i);
             count++;
-        }
-        if (! topLevelOnly && p) {
-            count += p->back()->_names(pre+i->first, names, topLevelOnly, 
-                                       true, want);
         }
     }
 
@@ -187,196 +190,27 @@ int Policy::_names(const string& prepend, list<string>& names,
 }
 
 
-/*
- * return the Policy object that holds the property given 
- * by relname, a hierarchical name.  
- * @param mode        the search behavior mode.  If set to STRICT, an 
- *                      NameNotFound is thrown if a Policy is not found for
- *                      the full name.  If set to ENSURE, any missing Policies
- *                      will be created.  If set to BEST and a Policy is not
- *                      found, the nearest ancestor will be returned.  
- * @param relname     (input/output) the hierarchical name of the 
- *                      property of interest relative to this Policy.  
- *                      Upon return, this parameter will be updated to the 
- *                      name of the property relative to the returned 
- *                      Policy object.
- * @param parentname  (input/output) the property name for this Policy.  
- *                      This is used if a TypeError is encountered to 
- *                      provide some context to the error message.  Upon 
- *                      return, this this parameter will be updated to 
- *                      the name of the returned Policy relative to the
- *                      original context.
- * @return Policy   the Policy object containing the property pointed to 
- *                    by relname, or if the requested Policy does not 
- *                    exist (and mode is BEST), the closest ancestor 
- *                    Policy.  
- * @exception TypeError if one of the intermediate property names does 
- *                      not resolve to a Policy object.
- * @exception BadNameError  if the given name is not legal.
- */
-Policy& Policy::_getPolicyFor(Mode mode, string& relname, 
-                              string& parentname) 
-{
-    // find the last dot; everything prior to it represents a Policy node
-    size_t dot = relname.rfind('.');
-    if (dot == string::npos) 
-        // not a hierarchical name; we're done
-        return *this;
-
-    if (dot == 0 || dot >= relname.size()-1)
-        // name begins or ends with a dot--not nice
-        throw LSST_EXCEPT(BadNameError, relname);
-
-    dot = relname.find('.');
-    string head = (dot == string::npos) ? relname : relname.substr(0,dot);
-
-    Lookup::iterator childptr = _data.find(head);
-    if (childptr != _data.end()) {
-        if (dot >= 0) relname.erase(0, dot+1);
-        if (parentname.size() > 0) parentname.append(1, '.');
-        parentname.append(head);
-
-        try {
-            PolicyPtrArray& child = 
-                ANYCAST<PolicyPtrArray&>(childptr->second);
-
-            // recurse: descend into child policy
-            return child.back()->_getPolicyFor(mode, relname,parentname);
-        }
-        catch (BADANYCAST&) {
-            throw LSST_EXCEPT(TypeError, parentname, typeName[POLICY]);
-        }
-    }
-    else if (mode == ENSURE) {
-        if (dot >= 0) relname.erase(0, dot+1);
-        if (parentname.size() > 0) parentname.append(1, '.');
-        parentname.append(head);
-
-        // create the child policy
-        _data[head] = PolicyPtrArray(1);
-
-        try {
-            PolicyPtrArray& child = 
-                ANYCAST<PolicyPtrArray&>(_data[head]);
-            child[0] = shared_ptr<Policy>(new Policy());
-
-            // recurse: create descendent policies
-            return child[0]->_getPolicyFor(mode, relname, parentname);
-        }
-        catch (BADANYCAST& e) {
-            // shouldn't happen!
-            throw LSST_EXCEPT(pexExcept::LogicErrorException, "Policy: unexpected type held by any");
-        }
-    }
-    else if (mode == STRICT) {
-        if (dot >= 0) relname.erase(0, dot+1);
-        if (parentname.size() > 0) parentname.append(1, '.');
-        parentname.append(head);
-
-        throw LSST_EXCEPT(NameNotFound, parentname);
-    }
-
-    // can't/shouldn't recurse further, so stop here.
-    return *this;
-}
-
-/*
- * return the value associated with a given name.  
- * @exception NameNotFound  if no value is associated with the given name.
- */
-ANYTYPE& Policy::_getValue(const string& name) {
-    string fullname = name;
-    string policyname;
-    Policy& parent = _getPolicyFor(STRICT, fullname, policyname);
-
-    Lookup::iterator childptr = parent._data.find(fullname);
-    if (childptr == parent._data.end()) {
-        if (policyname.size() > 0) policyname.append(1,'.');
-        policyname.append(fullname);
-        throw LSST_EXCEPT(NameNotFound, policyname);
-    }
-    return childptr->second;
-}
-
-/*
- * return the number of values currently associated with a given name.  Zero
- * is returned if the value has not been set.  
- */
-size_t Policy::valueCount(const string& name) const {
-    size_t out = 0;
-    Policy *me = const_cast<Policy*>(this);
-
+template <typename T>
+bool Policy::_getScalarValue(const string& name) const {
     try {
-        ANYTYPE& val = me->_getValue(name);
-
-        BoolArray *b;  
-        IntArray *i;  
-        DoubleArray *d;   
-        StringPtrArray *s;
-        PolicyPtrArray *p;
-    
-        if ( (b = ANYCAST<BoolArray>(&val)) ) {
-            out = b->size();
-        }
-        else if ( (i = ANYCAST<IntArray>(&val)) ) {
-            out = i->size();
-        }
-        else if ( (d = ANYCAST<DoubleArray>(&val)) ) {
-            out = d->size();
-        }
-        else if ( (s = ANYCAST<StringPtrArray>(&val)) ) {
-            out = s->size();
-        }
-        else if ( (p = ANYCAST<PolicyPtrArray>(&val)) ) {
-            out = p->size();
-        }
-        else {
-            throw LSST_EXCEPT(pexExcept::LogicErrorException, "Policy: unexpected type held by any");
-        }
-    }
-    catch (NameNotFound&) { }
-
-    return out;
-}
-
-/*
- * return the type information for the underlying type associated with
- * a given name
- */
-const std::type_info& Policy::getTypeInfo(const string& name) const {
-    Policy *me = const_cast<Policy*>(this);
-    ANYTYPE& val = me->_getValue(name);
-
-    BoolArray *b;  
-    IntArray *i;  
-    DoubleArray *d;   
-    StringPtrArray *s;
-    PolicyPtrArray *p;
-    FilePtrArray *f;
-    
-    if ( (b = ANYCAST<BoolArray>(&val)) ) {
-        bool v = b->back();
-        return typeid(v);
-    }
-    else if ( (i = ANYCAST<IntArray>(&val) )) {
-        return typeid(i->back());
-    }
-    else if ( (d = ANYCAST<DoubleArray>(&val) )) {
-        return typeid(d->back());
-    }
-    else if ( (s = ANYCAST<StringPtrArray>(&val) )) {
-        return typeid(*(s->back()));
-    }
-    else if ( (p = ANYCAST<PolicyPtrArray>(&val) )) {
-        return typeid(*(p->back()));
-    }
-    else if ( (f = ANYCAST<FilePtrArray>(&val)) ) {
-        return typeid(*(f->back()));
-    }
-    else {
-        throw LSST_EXCEPT(pexExcept::LogicErrorException, "Policy: unexpected type held by any");
+        return _data->get<T>(name);
+    } catch (pexExcept::NotFoundException&) {
+        throw LSST_EXCEPT(NameNotFound, name);
+    } catch (BADANYCAST&) {
+        throw LSST_EXCEPT(TypeError, name, string(getTypeName(name)));
     }
 }
+
+template <class T>
+std::vector<T> Policy::_getList(const string& name) {
+    try {
+        return _data->getArray<T>(name);
+    } catch (pexExcept::NotFoundException&) {
+        throw LSST_EXCEPT(NameNotFound, name);
+    } catch (BADANYCAST&) {
+        throw LSST_EXCEPT(TypeError, name, string(getTypeName(name)));
+    } 
+}        
 
 /*
  * return the type information for the underlying type associated with
@@ -384,41 +218,59 @@ const std::type_info& Policy::getTypeInfo(const string& name) const {
  */
 Policy::ValueType Policy::getValueType(const string& name) const {
     try {
-        Policy *me = const_cast<Policy*>(this);
-        ANYTYPE& val = me->_getValue(name);
-
-        BoolArray *b;  
-        IntArray *i;  
-        DoubleArray *d;   
-        StringPtrArray *s;
-        PolicyPtrArray *p;
-        FilePtrArray *f;
-    
-        if ( (b = ANYCAST<BoolArray>(&val)) ) {
+        std::type_info& tp = _data->typeOf(name);
+        if (tp == typeid(bool)) {
             return BOOL;
         }
-        else if ( (i = ANYCAST<IntArray>(&val)) ) {
+        else if(tp == typeid(int)) {
             return INT;
         }
-        else if ( (d = ANYCAST<DoubleArray>(&val)) ) {
+        else if (tp == typeid(double)) {
             return DOUBLE;
         }
-        else if ( (s = ANYCAST<StringPtrArray>(&val)) ) {
+        else if (tp == typeid(string)) {
             return STRING;
         }
-        else if ( (p = ANYCAST<PolicyPtrArray>(&val)) ) {
+        else if (tp == typeid(PropertySet::Ptr)) {
             return POLICY;
         }
-        else if ( (f = ANYCAST<FilePtrArray>(&val)) ) {
+        else if (tp == typeid(FilePtr)) {
             return FILE;
         }
         else {
-            throw LSST_EXCEPT(pexExcept::LogicErrorException, "Policy: unexpected type held by any");
+            throw LSST_EXCEPT(pexExcept::LogicErrorException, string("Policy: illegal type held by PropertySet: ") + tp.name());
         }
     } catch (NameNotFound&) {
         return UNDEF;
     }
 }
+
+Policy::ConstPolicyPtrArray Policy::getPolicyArray(const std::string& name) const {
+    ConstPolicyPtrArray out;
+    PolicyPtrArray src = getPolicyArray(name);
+    PolicyPtrArray::const_iterator i;
+    for(i=_data->begin(); i != _data->end(); ++i) 
+        out.push_back(*i);
+    return out;
+}
+
+Policy::ConstStringPtrArray Policy::getStringArray(const std::string& name) const {
+    ConstStringPtrArray out;
+    StringPtrArray src = getStringArray(name);
+    StringPtrArray::const_iterator i;
+    for(i=_data->begin(); i != _data->end(); ++i) 
+        out.push_back(*i);
+    return out;
+}
+
+Policy::StringArray getStrings(const std::string& name) const {
+    StringArray out;
+    StringPtrArray src = _data->getArray<StringPtr>(name);
+    for(StringArray::iterator i = src.begin(); i != src.end(); ++i) 
+        out.push_back(*(i->get()));
+    return out;
+}
+
 
 /*
  * recursively replace all PolicyFile values with the contents of the 
@@ -470,21 +322,19 @@ void Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
             }
             catch (pexExcept::IoErrorException& e) {
                 if (strict) {
-                    // TODO: use LSST exceptions
                     throw e;
                 }
                 // TODO: log a problem
             }
             catch (ParserError& e) {
                 if (strict) {
-                    // TODO: use LSST exceptions
                     throw e;
                 }
                 // TODO: log a problem
             }
             // everything else will get sent up the stack
 
-            pols.push_back(policy);
+            pols.push_back(policy->getPropertySetPtr());
         }
 
         if (pols.size() > 0) {   // shouldn't actually be zero
@@ -519,58 +369,57 @@ string Policy::str(const string& name, const string& indent) const {
     ostringstream out;
 
     try {
-        ANYTYPE& val = me->_getValue(name);
-
-        BoolArray *b;  
-        IntArray *i;  
-        DoubleArray *d;   
-        StringPtrArray *s;
-        PolicyPtrArray *p;
-        FilePtrArray *f;
-    
-        if ( (b = ANYCAST<BoolArray>(&val)) ) {
+        std::type_info& tp = _data->typeOf(name);
+        if (tp == typeid(bool)) {
+            BoolArray b = getBoolArray(name);
             BoolArray::iterator vi;
-            for(vi=b->begin(); vi != b->end(); ++vi) {
+            for(vi=b.begin(); vi != b.end(); ++vi) {
                 out << *vi;
-                if (vi+1 != b->end()) out << ", ";
+                if (vi+1 != b.end()) out << ", ";
             }
         }
-        else if ( (i = ANYCAST<IntArray>(&val)) ) {
+        else if (tp == typeid(int)) {
+            IntArray i = getIntArray(name);
             IntArray::iterator vi;
-            for(vi=i->begin(); vi != i->end(); ++vi) {
+            for(vi=i.begin(); vi != i.end(); ++vi) {
                 out << *vi;
-                if (vi+1 != i->end()) out << ", ";
+                if (vi+1 != i.end()) out << ", ";
             }
         }
-        else if ( (d = ANYCAST<DoubleArray>(&val)) ) {
+        else if (tp == typeid(double)) {
+            DoubleArray d = getDoubleArray(name);
             DoubleArray::iterator vi;
-            for(vi=d->begin(); vi != d->end(); ++vi) {
+            for(vi=d.begin(); vi != d.end(); ++vi) {
                 out << *vi;
-                if (vi+1 != d->end()) out << ", ";
+                if (vi+1 != d.end()) out << ", ";
             }
         }
-        else if ( (s = ANYCAST<StringPtrArray>(&val)) ) {
+        else if (tp == typeid(StringPtr)) {
+            StringPtrArray s = _data->getArray<StringPtr>(name);
             StringPtrArray::iterator vi;
-            for(vi= s->begin(); vi != s->end(); ++vi) {
+            for(vi= s.begin(); vi != s.end(); ++vi) {
                 out << '"' << **vi << '"';
-                if (vi+1 != s->end()) out << ", ";
+                if (vi+1 != s.end()) out << ", ";
             }
         }
-        else if ( (p = ANYCAST<PolicyPtrArray>(&val)) ) {
-            PolicyPtrArray::iterator vi;
-            for(vi= p->begin(); vi != p->end(); ++vi) {
+        else if (tp == typeid(PropertySet::Ptr)) {
+            vector<PropertySet::Ptr> p = 
+                _data->getArray<PropertySet::Ptr>(name);
+            vector<PropertySet::Ptr>::iterator vi;
+            for(vi= p.begin(); vi != p.end(); ++vi) {
                 out << "{\n";
-                (*vi)->print(out, "", indent+"  ");
+                Policy(*vi).print(out, "", indent+"  ");
                 out << indent << "}";
-                if (vi+1 != p->end()) out << ", ";
+                if (vi+1 != p.end()) out << ", ";
                 out.flush();
             }
         }
-        else if ( (f = ANYCAST<FilePtrArray>(&val)) ) {
+        else if (tp == typeid(FilePtr)) {
+            FilePtrArray f = _data->getArray<StringPtr>(name);
             FilePtrArray::iterator vi;
-            for(vi= f->begin(); vi != f->end(); ++vi) {
+            for(vi= f.begin(); vi != f.end(); ++vi) {
                 out << "FILE:" << (*vi)->getPath();
-                if (vi+1 != f->end()) out << ", ";
+                if (vi+1 != f.end()) out << ", ";
                 out.flush();
             }
         }
