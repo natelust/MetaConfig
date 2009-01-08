@@ -712,11 +712,9 @@ void Dictionary::validate(const Policy& pol, ValidationError *errs) const {
     ValidationError *use = &ve;
     if (errs != 0) use = errs;
 
-    list<string> params;
-    pol.names(params, true);
-
+    Policy::StringArray params = pol.names(true);
     try {
-        list<string>::iterator ni;
+        Policy::StringArray::iterator ni;
         for(ni = params.begin(); ni != params.end(); ++ni) {
             scoped_ptr<Definition> def(makeDef(*ni));
             def->validate(pol, *ni, use);
