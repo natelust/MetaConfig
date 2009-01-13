@@ -14,8 +14,8 @@ env = scons.makeEnv("pex_policy",
                      ["boost", "boost/serialization/serialization.hpp", "boost_serialization:C++"],
                      ["python", "Python.h"],
                      ["utils", "lsst/utils/Utils.h", "utils:C++"],
-                     ["daf_base", "lsst/daf/base/Citizen.h", "daf_base:C++"],
                      ["pex_exceptions", "lsst/pex/exceptions/Exception.h", "pex_exceptions:C++"]
+                     ["daf_base", "lsst/daf/base/Citizen.h", "daf_base:C++"],
                     ])
 env.libs["pex_policy"] += env.getlibs("boost utils daf_base pex_exceptions");
 #
