@@ -1,6 +1,6 @@
 setupRequired(boost >= 1.36.0)
-setupRequired(pex_exceptions >= svn6665)
-setupRequired(daf_base >= svn6738)
+setupRequired(pex_exceptions >= 3.2)
+setupRequired(daf_base >= 3.2)
 
 envAppend(LD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
 envAppend(DYLD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
