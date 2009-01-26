@@ -668,7 +668,7 @@ Dictionary::Dictionary(const char *filePath) : Policy(filePath) {
     if (!exists("definitions"))
         throw LSST_EXCEPT(pexExcept::RuntimeErrorException, string(filePath) + ": does not contain a dictionary");
 }
-Dictionary::Dictionary(PolicyFile filePath) : Policy(filePath) { 
+Dictionary::Dictionary(const PolicyFile& filePath) : Policy(filePath) { 
     if (!exists("definitions"))
         throw LSST_EXCEPT(pexExcept::RuntimeErrorException, filePath.getPath() + ": does not contain a dictionary");
 }

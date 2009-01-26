@@ -18,10 +18,14 @@
 #include <boost/regex.hpp>
 
 namespace pexExcept = lsst::pex::exceptions;
+namespace dafBase = lsst::daf::base;
 
 namespace lsst {
 namespace pex {
 namespace policy {
+
+class PolicySource;
+class PolicyFile;
 
 /**
  * @brief an exception for holding errors detected while validating a Policy.
@@ -92,7 +96,7 @@ public:
         UNKNOWN_ERROR = 128
     };
 
-    static const string& getErrorMessageFor(ErrorType err) {
+    static const std::string& getErrorMessageFor(ErrorType err) {
         if (_errmsgs.size() == 0) _loadMessages();
         MsgLookup::iterator it = _errmsgs.find(err);
         if (it != _errmsgs.end())
@@ -101,7 +105,7 @@ public:
             return EMPTY;
     }
 
-    static const string EMPTY;
+    static const std::string EMPTY;
 
     /**
      * create an empty ValidationError message
@@ -126,7 +130,7 @@ public:
      * load the names of the parameters that had problems into the given 
      * list
      */
-    void paramNames(list<string> names) const {
+    void paramNames(std::list<std::string> names) const {
         ParamLookup::const_iterator it;
         for(it = _errors.begin(); it != _errors.end(); it++)
             names.push_back(it->first);
@@ -135,7 +139,7 @@ public:
     /**
      * get the errors encountered for the given parameter name
      */
-    int getErrors(const string& name) const {
+    int getErrors(const std::string& name) const {
         ParamLookup::const_iterator it = _errors.find(name);
         if (it != _errors.end()) 
             return it->second;
@@ -146,7 +150,7 @@ public:
     /**
      * add an error code to this exception
      */
-    void addError(const string& name, ErrorType e) {
+    void addError(const std::string& name, ErrorType e) {
         _errors[name] |= e;
     }
 
@@ -163,8 +167,8 @@ public:
     }
 
 protected:
-    typedef map<int, string> MsgLookup;
-    typedef map<string, int> ParamLookup;
+    typedef std::map<int, std::string> MsgLookup;
+    typedef std::map<std::string, int> ParamLookup;
 
     static MsgLookup _errmsgs;
 
@@ -177,15 +181,15 @@ protected:
  * @brief a convenience convenience container for a single parameter 
  * definition from a dictionary.
  */
-class Definition : public Citizen {
+class Definition : public dafBase::Citizen {
 public:
 
     /**
      * create an empty definition
      * @param paramName   the name of the parameter being defined.
      */
-    Definition(const string& paramName = "")
-        : Citizen(typeid(*this)), _type(Policy::UNDEF), 
+    Definition(const std::string& paramName = "")
+        : dafBase::Citizen(typeid(*this)), _type(Policy::UNDEF), 
           _name(paramName), _policy()
     {
         _policy.reset(new Policy());
@@ -196,8 +200,8 @@ public:
      * @param paramName   the name of the parameter being defined.
      * @param defn        the policy containing the definition data
      */
-    Definition(const string& paramName, const Policy::Ptr& defn) 
-        : Citizen(typeid(*this)), _type(Policy::UNDEF), 
+    Definition(const std::string& paramName, const Policy::Ptr& defn) 
+        : dafBase::Citizen(typeid(*this)), _type(Policy::UNDEF), 
           _name(paramName), _policy(defn)
     { }
 
@@ -206,7 +210,7 @@ public:
      * @param defn        the policy containing the definition data
      */
     Definition(const Policy::Ptr& defn) 
-        : Citizen(typeid(*this)), _type(Policy::UNDEF), 
+        : dafBase::Citizen(typeid(*this)), _type(Policy::UNDEF), 
           _name(), _policy(defn)
     { }
 
@@ -214,7 +218,7 @@ public:
      * create a copy of a definition
      */
     Definition(const Definition& that) 
-        : Citizen(typeid(*this)), _type(Policy::UNDEF), 
+        : dafBase::Citizen(typeid(*this)), _type(Policy::UNDEF), 
           _name(that._name), _policy(that._policy)
     { }
 
@@ -242,13 +246,13 @@ public:
     /**
      * return the name of the parameter
      */
-    const string& getName() const { return _name; }
+    const std::string& getName() const { return _name; }
 
     /**
      * set the name of the parameter.  Note that this will not effect the 
      * name in Dictionary that this Definition came from.  
      */
-    void setName(const string& newname) { _name = newname; }
+    void setName(const std::string& newname) { _name = newname; }
 
     /**
      * return the definition data as a Policy pointer
@@ -274,14 +278,14 @@ public:
     /**
      * return the default value as a string
      */
-    string getDefault() const {
+    std::string getDefault() const {
         return _policy->str("default");
     }
 
     /**
      * return the semantic definition for the parameter
      */
-    const string& getDescription() const {
+    const std::string& getDescription() const {
         if (! _policy->isString("description")) 
             return ValidationError::EMPTY;
         return _policy->getString("description");
@@ -312,7 +316,7 @@ public:
      * @param withName  the name to look for the value under.  If not given
      *                    the name set in this definition will be used.
      */
-    void setDefaultIn(Policy& policy, const string& withName) const;
+    void setDefaultIn(Policy& policy, const std::string& withName) const;
     void setDefaultIn(Policy& policy) const {
         setDefaultIn(policy, _name);
     }
@@ -332,7 +336,7 @@ public:
      * @exception ValidationError   if errs is not provided and the value 
      *                  does not conform.  
      */
-    void validate(const Policy& policy, const string& name, 
+    void validate(const Policy& policy, const std::string& name, 
                   ValidationError *errs=0) const;
 
     /**
@@ -375,15 +379,15 @@ public:
      * @exception ValidationError   if the value does not conform.  The message
      *                 should explain why.
      */
-    void validate(const string& name, bool value, int curcount=-1, 
+    void validate(const std::string& name, bool value, int curcount=-1, 
                   ValidationError *errs=0) const;
-    void validate(const string& name, int value, int curcount=-1, 
+    void validate(const std::string& name, int value, int curcount=-1, 
                   ValidationError *errs=0) const;
-    void validate(const string& name, double value, int curcount=-1, 
+    void validate(const std::string& name, double value, int curcount=-1, 
                   ValidationError *errs=0) const;
-    void validate(const string& name, string value, int curcount=-1, 
+    void validate(const std::string& name, std::string value, int curcount=-1, 
                   ValidationError *errs=0) const;
-    void validate(const string& name, const Policy& value, int curcount=-1, 
+    void validate(const std::string& name, const Policy& value, int curcount=-1, 
                   ValidationError *errs=0) const;
     //@}
 
@@ -405,16 +409,16 @@ public:
      * @exception ValidationError   if the value does not conform.  The message
      *                 should explain why.
      */
-    void validate(const string& name, const Policy::BoolArray& value, 
+    void validate(const std::string& name, const Policy::BoolArray& value, 
                   ValidationError *errs=0) const;
-    void validate(const string& name, const Policy::IntArray& value, 
+    void validate(const std::string& name, const Policy::IntArray& value, 
                   ValidationError *errs=0) const;
-    void validate(const string& name, const Policy::DoubleArray& value, 
+    void validate(const std::string& name, const Policy::DoubleArray& value, 
                   ValidationError *errs=0) const;
-    void validate(const string& name, 
+    void validate(const std::string& name, 
                   const Policy::StringPtrArray& value, 
                   ValidationError *errs=0) const;
-    void validate(const string& name, 
+    void validate(const std::string& name, 
                   const Policy::PolicyPtrArray& value, 
                   ValidationError *errs=0) const;
     //@}
@@ -422,15 +426,15 @@ public:
 protected:
     Policy::ValueType _determineType() const;
 
-    static const string EMPTY;
+    static const std::string EMPTY;
 
 private:
     mutable Policy::ValueType _type;
-    string _name;
+    std::string _name;
     Policy::Ptr _policy;
 };
 
-inline ostream& operator<<(ostream& os, const Definition& d) {
+inline std::ostream& operator<<(std::ostream& os, const Definition& d) {
     d.getData()->print(os, d.getName());
     return os;
 }
@@ -547,14 +551,14 @@ public:
      * load a dictionary from a file
      */
     Dictionary(const char *filePath);
-    Dictionary(PolicyFile filePath);
+    Dictionary(const PolicyFile& filePath);
     //@}
 
     //@{
     /**
      * return the parameter name definitions as a Policy object
      */
-    const Policy::Ptr getDefinitions() const {
+    Policy::ConstPtr getDefinitions() const {
         return getPolicy("definitions");
     }
     Policy::Ptr getDefinitions() {
@@ -566,14 +570,14 @@ public:
      * load the top-level parameter names defined in this Dictionary into 
      * a given list.  
      */
-    int definedNames(list<string>& names, bool append=false) const {
+    int definedNames(std::list<std::string>& names, bool append=false) const {
         return getDefinitions()->names(names, true, append); 
     }
 
     /**
      * return the top-level parameter names defined in this Dictionary
      */
-    int definedNames(list<string>& names, bool append=false) const {
+    StringArray definedNames(bool append=false) const {
         return getDefinitions()->names(true); 
     }
 
@@ -581,7 +585,7 @@ public:
      * return a definition for the named parameter
      * @param name    the hierarchical name for the parameter
      */
-    Definition getDef(const string& name) {
+    Definition getDef(const std::string& name) {
         Definition *def = makeDef(name);
         Definition out(*def);
         delete def;
@@ -594,7 +598,7 @@ public:
      * getDef().
      * @param name    the hierarchical name for the parameter
      */
-    Definition* makeDef(const string& name) const;
+    Definition* makeDef(const std::string& name) const;
 
     /**
      * validate a Policy against this Dictionary.

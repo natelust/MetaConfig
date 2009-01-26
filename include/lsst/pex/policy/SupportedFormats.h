@@ -32,7 +32,7 @@ using namespace std;
 class SupportedFormats {
 public: 
 
-    typedef shared_ptr<SupportedFormats> Ptr;
+    typedef boost::shared_ptr<SupportedFormats> Ptr;
 
 //    SupportedFormats() : Citizen(typeid(this)), _formats() { }
 

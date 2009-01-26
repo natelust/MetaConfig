@@ -108,8 +108,12 @@ public:
      * @exception IOError   if an error occurs while reading the first few
      *                      characters of the source stream.
      */
-    virtual const std::string& getFormatName() const;
+    virtual const std::string& getFormatName();
+    const std::string& getFormatName() const {
+        return const_cast<PolicyFile*>(this)->getFormatName();
+    }
 
+    //@{
     /**
      * load the data from this Policy source into a Policy object
      * @param policy    the policy object to load the data into
@@ -117,7 +121,11 @@ public:
      * @exception IOError   if an I/O error occurs while reading from the 
      *                       source stream.
      */
-    virtual void load(Policy& policy) const;
+    virtual void load(Policy& policy);
+    void load(Policy& policy) const { 
+        const_cast<PolicyFile*>(this)->load(policy);
+    }
+    //@}
 
     static const std::string EXT_PAF;   //! the PAF file extension, ".paf"
     static const std::string EXT_XML;   //! the XML file extension,  ".xml"

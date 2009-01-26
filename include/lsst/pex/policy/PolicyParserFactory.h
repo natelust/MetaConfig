@@ -42,7 +42,7 @@ using lsst::daf::base::Citizen;
 class PolicyParserFactory {
 public: 
 
-    typedef shared_ptr<PolicyParserFactory> Ptr;
+    typedef boost::shared_ptr<PolicyParserFactory> Ptr;
 
     /**
      * create a factory

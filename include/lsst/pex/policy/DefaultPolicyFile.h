@@ -1,6 +1,6 @@
 // -*- lsst-c++ -*-
 /**
- * @class PolicyFile
+ * @class DefaultPolicyFile
  * 
  * @ingroup pex
  *
@@ -21,16 +21,24 @@ namespace policy {
 
 /**
  * @brief a representation of a default Policy file that is stored as a 
- * file in the installation directory of an LSST product.  An instance
- * is constructed from a package name and a relative file path.  To 
- * construct the true path to the file, the constructor looks for an 
- * environment variable of the form, PACKAGENAME_DIR (where PACKAGENAME 
- * is the given package name converted to all upper case) which names the 
- * directory where the product is installed.  The relative file path is 
- * location of the file within this directory.  
+ * file in the installation directory of an LSST product.  
+ *
+ * An instance is constructed from a product name, a relative path 
+ * to a subdirectory representing a policy repository within the installed 
+ * package, and a relative file path.  To construct the full path to the 
+ * file, the constructor looks for an environment variable of the form, 
+ * PRODUCTNAME_DIR (where PRODUCTNAME is the given package name converted 
+ * to all upper case) which names the directory where the product is 
+ * installed.  The full path, then, is the product installation directory
+ * concatonated with the repository directory, followed by the file path.
  *
  * The policy file can reference other files; these will be automatically 
- * opened and loaded when load() is called.  The paths stored in the ...
+ * opened and loaded when load() is called.  The paths stored in the policy 
+ * files must be relative to the repository subdirectory within the product
+ * installation directory.  
+ *
+ * This class is the recommended PolicySource type to return in the 
+ * PolicyConfigured interface's getDefaultPolicySource().  
  */
 class DefaultPolicyFile : public PolicyFile {
 public:

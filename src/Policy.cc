@@ -90,7 +90,7 @@ Policy::Policy(bool validate, const Dictionary& dict)
 Policy::Policy(const Policy& pol) 
     : Citizen(typeid(this)), _data() 
 {
-    _data = pol.getPropertySetPtr()->deepCopy();
+    _data = pol._data->deepCopy();
 }
 
 /*
@@ -100,9 +100,9 @@ Policy::Policy(Policy& pol, bool deep)
     : Citizen(typeid(this)), _data() 
 {
     if (deep)
-        _data = pol.getPropertySetPtr()->deepCopy();
+        _data = pol._data->deepCopy();
     else
-        _data = pol.getPropertySetPtr();
+        _data = pol._data;
 }
 
 Policy* Policy::_createPolicy(PolicySource& source, bool doIncludes, 
@@ -157,6 +157,7 @@ int Policy::_names(vector<string>& names,
 {
     bool check = true;
     std::vector<std::string> src;
+    int have = 0, count = 0;
     if (want == 1) {
         src = _data->propertySetNames(topLevelOnly);
         have = 1;
@@ -165,12 +166,62 @@ int Policy::_names(vector<string>& names,
     else if (want == 7) 
         src = _data->names(topLevelOnly);
     else 
-        src = _data->parameterNames(topLevelOnly);
+        src = _data->paramNames(topLevelOnly);
 
     if (!append) names.erase(names.begin(), names.end());
 
     StringArray::iterator i;
-    int have;
+    for(i = src.begin(); i != src.end(); ++i) {
+        if (check) {
+            if (isPolicy(*i)) 
+                have = 1;
+            else if (isFile(*i)) 
+                have = 2;
+            else 
+                have = 4;
+        }
+        if ((have&want) > 0) {
+            names.push_back(*i);
+            count++;
+        }
+    }
+
+    return count;
+}
+
+/*
+ * load the names of parameters into a given list.  
+ * 
+ * @param prepend       the names string to prepend to any names found.
+ * @param names         the list object to be loaded
+ * @param topLevelOnly  if true, only parameter names at the top of the 
+ *                         hierarchy will be returned; no hierarchical 
+ *                         names will be included.
+ * @param append        if false, the contents of the given list will 
+ *                         be erased before loading the names.  
+ * @param want          a bit field indicating which is desired (1=Policies,
+ *                         2=PolicyFiles, 4=parameters, 7=all).
+ * @return int  the number of names added
+ */
+int Policy::_names(list<string>& names, 
+                   bool topLevelOnly, bool append, int want) const
+{
+    bool check = true;
+    std::vector<std::string> src;
+    int have = 0, count = 0;
+    if (want == 1) {
+        src = _data->propertySetNames(topLevelOnly);
+        have = 1;
+        check = false;
+    }
+    else if (want == 7) 
+        src = _data->names(topLevelOnly);
+    else 
+        src = _data->paramNames(topLevelOnly);
+
+    if (!append) names.erase(names.begin(), names.end());
+
+    StringArray::iterator i;
     for(i = src.begin(); i != src.end(); ++i) {
         if (check) {
             if (isPolicy(*i)) 
@@ -191,24 +242,26 @@ int Policy::_names(vector<string>& names,
 
 
 template <typename T>
-bool Policy::_getScalarValue(const string& name) const {
+T Policy::_getScalarValue(const string& name, const char *expectedType) const {
     try {
         return _data->get<T>(name);
     } catch (pexExcept::NotFoundException&) {
         throw LSST_EXCEPT(NameNotFound, name);
     } catch (BADANYCAST&) {
-        throw LSST_EXCEPT(TypeError, name, string(getTypeName(name)));
+        throw LSST_EXCEPT(TypeError, name, string(expectedType));
     }
 }
 
 template <class T>
-std::vector<T> Policy::_getList(const string& name) {
+std::vector<T> Policy::_getList(const string& name, 
+                                const char *expectedType) const
+{
     try {
         return _data->getArray<T>(name);
     } catch (pexExcept::NotFoundException&) {
         throw LSST_EXCEPT(NameNotFound, name);
     } catch (BADANYCAST&) {
-        throw LSST_EXCEPT(TypeError, name, string(getTypeName(name)));
+        throw LSST_EXCEPT(TypeError, name, std::string(expectedType));
     } 
 }        
 
@@ -218,7 +271,7 @@ std::vector<T> Policy::_getList(const string& name) {
  */
 Policy::ValueType Policy::getValueType(const string& name) const {
     try {
-        std::type_info& tp = _data->typeOf(name);
+        const std::type_info& tp = _data->typeOf(name);
         if (tp == typeid(bool)) {
             return BOOL;
         }
@@ -247,26 +300,29 @@ Policy::ValueType Policy::getValueType(const string& name) const {
 
 Policy::ConstPolicyPtrArray Policy::getPolicyArray(const std::string& name) const {
     ConstPolicyPtrArray out;
-    PolicyPtrArray src = getPolicyArray(name);
+    Policy *me = const_cast<Policy*>(this);
+    PolicyPtrArray src = me->getPolicyArray(name);
     PolicyPtrArray::const_iterator i;
-    for(i=_data->begin(); i != _data->end(); ++i) 
+    for(i=src.begin(); i != src.end(); ++i) 
         out.push_back(*i);
     return out;
 }
 
 Policy::ConstStringPtrArray Policy::getStringArray(const std::string& name) const {
     ConstStringPtrArray out;
-    StringPtrArray src = getStringArray(name);
+    Policy *me = const_cast<Policy*>(this);
+    StringPtrArray src = me->getStringArray(name);
     StringPtrArray::const_iterator i;
-    for(i=_data->begin(); i != _data->end(); ++i) 
+    for(i=src.begin(); i != src.end(); ++i) 
         out.push_back(*i);
     return out;
 }
 
-Policy::StringArray getStrings(const std::string& name) const {
+const Policy::StringArray Policy::getStrings(const std::string& name) const {
     StringArray out;
-    StringPtrArray src = _data->getArray<StringPtr>(name);
-    for(StringArray::iterator i = src.begin(); i != src.end(); ++i) 
+    Policy *me = const_cast<Policy*>(this);
+    StringPtrArray src = me->getStringArray(name);
+    for(StringPtrArray::iterator i = src.begin(); i != src.end(); ++i) 
         out.push_back(*(i->get()));
     return out;
 }
@@ -334,7 +390,7 @@ void Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
             }
             // everything else will get sent up the stack
 
-            pols.push_back(policy->getPropertySetPtr());
+            pols.push_back(policy);
         }
 
         if (pols.size() > 0) {   // shouldn't actually be zero
@@ -350,7 +406,7 @@ void Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
     // TODO: alter repos?; record name of source file? 
     policyNames(names, true);
     for(list<string>::iterator it=names.begin(); it != names.end(); it++) {
-        PolicyPtrArray& policies = getPolicyArray(*it);
+        PolicyPtrArray policies = getPolicyArray(*it);
 
         // iterate through the Policies in this array
         PolicyPtrArray::iterator pi;
@@ -366,11 +422,10 @@ void Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
  * string "<null>" is printed if the name does not exist.
  */
 string Policy::str(const string& name, const string& indent) const {
-    Policy *me = const_cast<Policy*>(this);
     ostringstream out;
 
     try {
-        std::type_info& tp = _data->typeOf(name);
+        const std::type_info& tp = _data->typeOf(name);
         if (tp == typeid(bool)) {
             BoolArray b = getBoolArray(name);
             BoolArray::iterator vi;
@@ -416,7 +471,7 @@ string Policy::str(const string& name, const string& indent) const {
             }
         }
         else if (tp == typeid(FilePtr)) {
-            FilePtrArray f = _data->getArray<StringPtr>(name);
+            FilePtrArray f = _data->getArray<FilePtr>(name);
             FilePtrArray::iterator vi;
             for(vi= f.begin(); vi != f.end(); ++vi) {
                 out << "FILE:" << (*vi)->getPath();
