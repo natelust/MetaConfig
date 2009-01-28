@@ -516,8 +516,7 @@ string Policy::toString() const {
     return os.str();
 }
 
-
-
 } // namespace policy
 } // namespace pex
 } // namespace lsst
+
