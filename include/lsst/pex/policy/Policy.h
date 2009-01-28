@@ -17,6 +17,7 @@
 #include <map>
 
 #include "lsst/daf/base/Citizen.h"
+#include "lsst/daf/base/Persistable.h"
 #include "lsst/daf/base/PropertySet.h"
 #include "lsst/pex/policy/exceptions.h"
 #include <boost/shared_ptr.hpp>
@@ -41,8 +42,6 @@
 namespace lsst {
 namespace pex {
 namespace policy {
-
-namespace pexExcept = lsst::pex::exceptions;
 
 // forward declaration
 class PolicySource;
@@ -122,7 +121,7 @@ namespace dafBase = lsst::daf::base;
  * reference, and (3) added functions for greater consistancy with 
  * PropertySet.
  */
-class Policy : public dafBase::Citizen {
+class Policy : public dafBase::Citizen, public dafBase::Persistable {
 public:
 
     typedef boost::shared_ptr<Policy> Ptr;
@@ -688,7 +687,7 @@ protected:
      * use a PropertySet as the data for a new Policy object
      */
     Policy(const dafBase::PropertySet::Ptr ps) 
-        : Citizen(typeid(this)), _data(ps) 
+        : Citizen(typeid(this)), Persistable(), _data(ps) 
     { }
 
     template <class T>
