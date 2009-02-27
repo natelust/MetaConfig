@@ -26,6 +26,7 @@ namespace pex {
 namespace policy {
 
 using dafBase::PropertySet;
+using dafBase::Persistable;
 
 const char * const Policy::typeName[] = {
     "undefined",
@@ -40,13 +41,15 @@ const char * const Policy::typeName[] = {
 /*
  * Create an empty policy
  */
-Policy::Policy() : Citizen(typeid(this)), _data(new PropertySet()) { }
+Policy::Policy() 
+    : Citizen(typeid(this)), Persistable(), _data(new PropertySet()) 
+{ }
 
 /*
  * Create policy
  */
 Policy::Policy(const PolicyFile& file) 
-    : Citizen(typeid(this)), _data(new PropertySet()) 
+    : Citizen(typeid(this)), Persistable(), _data(new PropertySet()) 
 { 
     file.load(*this);
 }
@@ -55,7 +58,7 @@ Policy::Policy(const PolicyFile& file)
  * Create a Policy from a named file
  */
 Policy::Policy(const string& filePath) 
-    : Citizen(typeid(this)), _data(new PropertySet()) 
+    : Citizen(typeid(this)), Persistable(), _data(new PropertySet()) 
 {
     PolicyFile file(filePath);
     file.load(*this);
@@ -72,7 +75,7 @@ Policy::Policy(const string& filePath)
  * @param dict      the Dictionary file load defaults from
  */
 Policy::Policy(bool validate, const Dictionary& dict) 
-    : Citizen(typeid(this)), _data(new PropertySet()) 
+    : Citizen(typeid(this)), Persistable(), _data(new PropertySet()) 
 { 
     list<string> names;
     dict.definedNames(names);
@@ -88,7 +91,7 @@ Policy::Policy(bool validate, const Dictionary& dict)
  * copy a Policy.  Sub-policy objects will not be shared.  
  */
 Policy::Policy(const Policy& pol) 
-    : Citizen(typeid(this)), _data() 
+    : Citizen(typeid(this)), Persistable(), _data() 
 {
     _data = pol._data->deepCopy();
 }
@@ -97,7 +100,7 @@ Policy::Policy(const Policy& pol)
  * copy a Policy.  Sub-policy objects will be shared unless deep is true
  */
 Policy::Policy(Policy& pol, bool deep) 
-    : Citizen(typeid(this)), _data() 
+    : Citizen(typeid(this)), Persistable(), _data() 
 {
     if (deep)
         _data = pol._data->deepCopy();
@@ -247,10 +250,25 @@ T Policy::_getScalarValue(const string& name, const char *expectedType) const {
         return _data->get<T>(name);
     } catch (pexExcept::NotFoundException&) {
         throw LSST_EXCEPT(NameNotFound, name);
+    } catch (dafBase::TypeMismatchException&) {
+        throw LSST_EXCEPT(TypeError, name, string(expectedType));
     } catch (BADANYCAST&) {
         throw LSST_EXCEPT(TypeError, name, string(expectedType));
     }
 }
+
+template
+bool Policy::_getScalarValue<bool>(const string& name, 
+                                   const char *expectedType) const;
+template
+int Policy::_getScalarValue<int>(const string& name, 
+                                 const char *expectedType) const;
+template
+double Policy::_getScalarValue<double>(const string& name, 
+                                       const char *expectedType) const;
+template
+string Policy::_getScalarValue<string>(const string& name, 
+                                       const char *expectedType) const;
 
 template <class T>
 std::vector<T> Policy::_getList(const string& name, 
@@ -260,10 +278,30 @@ std::vector<T> Policy::_getList(const string& name,
         return _data->getArray<T>(name);
     } catch (pexExcept::NotFoundException&) {
         throw LSST_EXCEPT(NameNotFound, name);
+    } catch (dafBase::TypeMismatchException&) {
+        throw LSST_EXCEPT(TypeError, name, string(expectedType));
     } catch (BADANYCAST&) {
-        throw LSST_EXCEPT(TypeError, name, std::string(expectedType));
+        throw LSST_EXCEPT(TypeError, name, string(expectedType));
     } 
 }        
+
+template
+std::vector<bool> Policy::_getList<bool>(const string& name, 
+                                         const char *expectedType) const;
+template
+std::vector<int> Policy::_getList<int>(const string& name, 
+                                       const char *expectedType) const;
+template
+std::vector<double> Policy::_getList<double>(const string& name, 
+                                             const char *expectedType) const;
+template
+std::vector<string> Policy::_getList<string>(const string& name, 
+                                             const char *expectedType) const;
+template
+std::vector<Persistable::Ptr> 
+Policy::_getList<Persistable::Ptr>(const string& name, 
+                                   const char *expectedType) const;
+
 
 /*
  * return the type information for the underlying type associated with
@@ -272,6 +310,15 @@ std::vector<T> Policy::_getList(const string& name,
 Policy::ValueType Policy::getValueType(const string& name) const {
     try {
         const std::type_info& tp = _data->typeOf(name);
+
+        // handle the special case of FilePtr first
+        if (tp == typeid(Persistable::Ptr)) {
+            try {  
+                getFile(name); 
+                return FILE;
+            } catch(...) { }
+        }
+
         if (tp == typeid(bool)) {
             return BOOL;
         }
@@ -287,46 +334,57 @@ Policy::ValueType Policy::getValueType(const string& name) const {
         else if (tp == typeid(PropertySet::Ptr)) {
             return POLICY;
         }
-        else if (tp == typeid(FilePtr)) {
-            return FILE;
-        }
         else {
             throw LSST_EXCEPT(pexExcept::LogicErrorException, string("Policy: illegal type held by PropertySet: ") + tp.name());
         }
-    } catch (NameNotFound&) {
+    } catch (pexExcept::NotFoundException&) {
         return UNDEF;
     }
 }
 
-Policy::ConstPolicyPtrArray Policy::getPolicyArray(const std::string& name) const {
-    ConstPolicyPtrArray out;
-    Policy *me = const_cast<Policy*>(this);
-    PolicyPtrArray src = me->getPolicyArray(name);
-    PolicyPtrArray::const_iterator i;
-    for(i=src.begin(); i != src.end(); ++i) 
-        out.push_back(*i);
+Policy::PolicyPtrArray Policy::getPolicyArray(const std::string& name) const {
+    PolicyPtrArray out;
+    std::vector<PropertySet::Ptr> psa = 
+        _getList<PropertySet::Ptr>(name, typeName[POLICY]);
+
+    std::vector<PropertySet::Ptr>::const_iterator i;
+    for(i=psa.begin(); i != psa.end(); ++i) 
+        out.push_back(Ptr(new Policy(*i)));
     return out;
 }
 
-Policy::ConstStringPtrArray Policy::getStringArray(const std::string& name) const {
-    ConstStringPtrArray out;
-    Policy *me = const_cast<Policy*>(this);
-    StringPtrArray src = me->getStringArray(name);
-    StringPtrArray::const_iterator i;
-    for(i=src.begin(); i != src.end(); ++i) 
-        out.push_back(*i);
+Policy::FilePtr Policy::getFile(const std::string& name) const {
+    FilePtr out = 
+        boost::dynamic_pointer_cast<PolicyFile>(_data->getAsPersistablePtr(name));
+    if (! out.get()) 
+        throw LSST_EXCEPT(TypeError, name, std::string(typeName[FILE]));
     return out;
 }
 
-const Policy::StringArray Policy::getStrings(const std::string& name) const {
-    StringArray out;
-    Policy *me = const_cast<Policy*>(this);
-    StringPtrArray src = me->getStringArray(name);
-    for(StringPtrArray::iterator i = src.begin(); i != src.end(); ++i) 
-        out.push_back(*(i->get()));
+Policy::FilePtrArray Policy::getFileArray(const std::string& name) const
+{
+    FilePtrArray out;
+    vector<Persistable::Ptr> pfa = 
+        _getList<Persistable::Ptr>(name, typeName[FILE]);
+    vector<Persistable::Ptr>::const_iterator i;
+    FilePtr fp;
+    for(i = pfa.begin(); i != pfa.end(); ++i) {
+        fp = boost::dynamic_pointer_cast<PolicyFile>(*i);
+        if (! fp.get())
+            throw LSST_EXCEPT(TypeError, name, string(typeName[FILE]));
+        out.push_back(fp);
+    }
+
     return out;
 }
 
+void Policy::set(const std::string& name, const FilePtr& value) {
+    _data->set(name, boost::dynamic_pointer_cast<Persistable>(value));
+}
+
+void Policy::add(const std::string& name, const FilePtr& value) {
+    _data->add(name, boost::dynamic_pointer_cast<Persistable>(value));
+}
 
 /*
  * recursively replace all PolicyFile values with the contents of the 
@@ -450,11 +508,11 @@ string Policy::str(const string& name, const string& indent) const {
                 if (vi+1 != d.end()) out << ", ";
             }
         }
-        else if (tp == typeid(StringPtr)) {
-            StringPtrArray s = _data->getArray<StringPtr>(name);
-            StringPtrArray::iterator vi;
+        else if (tp == typeid(std::string)) {
+            StringArray s = _data->getArray<std::string>(name);
+            StringArray::iterator vi;
             for(vi= s.begin(); vi != s.end(); ++vi) {
-                out << '"' << **vi << '"';
+                out << '"' << *vi << '"';
                 if (vi+1 != s.end()) out << ", ";
             }
         }
@@ -471,7 +529,7 @@ string Policy::str(const string& name, const string& indent) const {
             }
         }
         else if (tp == typeid(FilePtr)) {
-            FilePtrArray f = _data->getArray<FilePtr>(name);
+            FilePtrArray f = getFileArray(name);
             FilePtrArray::iterator vi;
             for(vi= f.begin(); vi != f.end(); ++vi) {
                 out << "FILE:" << (*vi)->getPath();

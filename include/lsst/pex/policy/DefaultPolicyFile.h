@@ -15,6 +15,8 @@
 
 #include "lsst/pex/policy/PolicyFile.h"
 
+namespace fs = boost::filesystem;
+
 namespace lsst {
 namespace pex {
 namespace policy {
@@ -39,22 +41,53 @@ namespace policy {
  *
  * This class is the recommended PolicySource type to return in the 
  * PolicyConfigured interface's getDefaultPolicySource().  
+ *
+ * This class can be subclassed to provide a different implementation of 
+ * determining the installation directory by overriding getInstallPath().
  */
 class DefaultPolicyFile : public PolicyFile {
 public:
 
     /**
      * define a default policy file
+     * @param packageName    the name of the product that the default 
+     *                         policy is installed as part of
+     * @param filepath       the relative pathname to the policy file.  
+     * @param repos          the subdirectory with the product's install
+     *                         directory where policy files are stored.
+     *                         If an empty string (default), the filepath
+     *                         argument is relative to the installation
+     *                         directory.
+     * @param strict         if true (default), load() will throw an exception
+     *                         if it encounters recoverable parsing errors in
+     *                         the underlying file (or any of the files it
+     *                         references).  Otherwise, the loaded Policy will
+     *                         be incomplete.  This is identical to the strict
+     *                         argument to Policy's loadPolicyFiles().  
      */
-    DefaultPolicyFile(const char const* packageName, std::string filepath) 
-        : PolicyFile(makeFullPath(packageName, filepath)) 
-    { }
+    DefaultPolicyFile(const char* const productName, 
+                      const std::string& filepath,
+                      const std::string& repos="",
+                      bool strict=true);
 
     /**
-     * construct the full file path to a default policy file found in 
+     * return the file path to the installation directory of a given
+     * named product.  This implementation uses the implementation 
+     * provided by DefaultPolicyFile::installPathFor().
+     * @exception lsst::pex::exception::NotFoundException  if the 
+     *    environement variable is not defined.
      */
-    static fs::path makeFullPath(const char const* packageName, 
-                                 std::string filepath);
+    virtual fs::path getInstallPath(const char* const productName);
+
+    /**
+     * return the file path to the installation directory of a given
+     * named product.  In this implementation, the installation directory 
+     * will be taken from the value of an environment variable 
+     * PRODUCTNAME_DIR where PRODUCTNAME is the given name of the product 
+     * with all letters converted to upper case.  
+     */
+    static fs::path installPathFor(const char* const productName);
+        
 
     /**
      * load the data from this Policy source into a Policy object.  This
@@ -67,6 +100,9 @@ public:
      */
     virtual void load(Policy& policy) const;
 
+private:
+    fs::path _repos;
+    bool _strict;
 };
 
 }}}  // end namespace lsst::pex::policy

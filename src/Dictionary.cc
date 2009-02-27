@@ -126,15 +126,15 @@ void Definition::setDefaultIn(Policy& policy, const string& withName) const {
 
     case Policy::STRING:
     {
-        const Policy::StringPtrArray& defs = 
+        const Policy::StringArray defs = 
             _policy->getStringArray("default");
-        Policy::StringPtrArray::const_iterator it;
+        Policy::StringArray::const_iterator it;
         for(it=defs.begin(); it != defs.end(); ++it) {
             if (it == defs.begin()) 
                 // erase previous values
-                policy.set(withName, **it);
+                policy.set(withName, *it);
             else 
-                policy.add(withName, **it);
+                policy.add(withName, *it);
         }
         break;
     }
@@ -572,7 +572,7 @@ void Definition::validate(const string& name, const Policy::DoubleArray& value,
     if (errs == 0 && ve.getParamCount() > 0) throw ve;
 }
 void Definition::validate(const string& name, 
-                          const Policy::StringPtrArray& value, 
+                          const Policy::StringArray& value, 
                           ValidationError *errs) const 
 { 
     ValidationError ve(LSST_EXCEPT_HERE);
@@ -609,9 +609,9 @@ void Definition::validate(const string& name,
         }
 
         if (allvals.size() > 0) {
-            Policy::StringPtrArray::const_iterator it;
+            Policy::StringArray::const_iterator it;
             for (it = value.begin(); it != value.end(); ++it) {
-                if (allvals.find(**it) != allvals.end()) 
+                if (allvals.find(*it) != allvals.end()) 
                     use->addError(name, ValidationError::VALUE_DISALLOWED);
             }
         }

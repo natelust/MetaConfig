@@ -17,6 +17,15 @@ namespace pex {
 namespace policy {
 namespace paf {
 
+using namespace std;
+using lsst::pex::policy::Policy;
+using lsst::pex::policy::PolicyParser;
+using boost::regex;
+using boost::match_results;
+using boost::regex_search;
+using boost::regex_match;
+using boost::smatch;
+
 const regex PAFParser::COMMENT_LINE("^\\s*#");
 const regex PAFParser::SPACE_SRCH("^(\\s+)");
 const regex PAFParser::PARAM_SRCH("^(\\s*)(\\w[\\w\\d\\.]*)\\s*:\\s*");

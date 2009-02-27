@@ -81,7 +81,7 @@ namespace dafBase = lsst::daf::base;
  *  - arrays of any of the above
  *
  * As implied by the inclusion of Policy as a value type, a Policy can be 
- * hierarchical (like a DataProperty).  Values deep within the hierarchy 
+ * hierarchical (like a PropertySet).  Values deep within the hierarchy 
  * can be retrieved via a hiearchical name.  Such a name is made up of 
  * name fields delimited by dots (.) where each name field represents a 
  * level of the hierarchy.  The first field represents the top level of 
@@ -126,17 +126,13 @@ public:
 
     typedef boost::shared_ptr<Policy> Ptr;
     typedef boost::shared_ptr<PolicyFile> FilePtr;
-    typedef boost::shared_ptr<std::string> StringPtr;
     typedef boost::shared_ptr<const Policy> ConstPtr;
-    typedef boost::shared_ptr<const std::string> ConstStringPtr;
     typedef std::vector<bool> BoolArray;
     typedef std::vector<int> IntArray;
     typedef std::vector<double> DoubleArray;
     typedef std::vector<std::string> StringArray;
-    typedef std::vector<StringPtr> StringPtrArray;
     typedef std::vector<Ptr> PolicyPtrArray;
     typedef std::vector<FilePtr> FilePtrArray;
-    typedef std::vector<ConstStringPtr> ConstStringPtrArray;
     typedef std::vector<ConstPtr> ConstPolicyPtrArray;
 
     /**
@@ -190,7 +186,7 @@ public:
      * @param deep  if true, do a deep copy.  Otherwise, Policy data will
      *                 be shared.
      */
-    Policy(Policy& pol, bool deep);
+    Policy(Policy& pol, bool deep=false);
 
     /**
      * deep-copy a Policy.  
@@ -410,7 +406,7 @@ public:
      * @exception TypeError     if the value associated the given name is not
      *                             a Policy type.  
      */
-    FilePtr getFile(const std::string& name) const;          // inlined below
+    FilePtr getFile(const std::string& name) const;
 
     /**
      * return a boolean value associated with the given name.  If the 
@@ -464,31 +460,10 @@ public:
      * @exception TypeError     if the value associated the given name is not
      *                             an integer type.  
      */
-    const std::string& getString(const std::string& name) const { 
-        return *_getScalarValue<StringPtr>(name, typeName[STRING]); 
+    const std::string getString(const std::string& name) const { 
+        return _getScalarValue<std::string>(name, typeName[STRING]); 
     }
 
-    //@{
-    /**
-     * return a string value associated with the given name.  The value is 
-     * returned as a shared_ptr.  If the 
-     * underlying value is an array, only the last value added will be 
-     * returned.  
-     * @param name     the name of the parameter.  This can be a hierarchical
-     *                    name with fields delimited with "."
-     * @exception NameNotFound  if no value is associated with the given name.
-     * @exception TypeError     if the value associated the given name is not
-     *                             an integer type.  
-     */
-    ConstStringPtr getStringPtr(const std::string& name) const { 
-        return _getScalarValue<StringPtr>(name, typeName[STRING]); 
-    }
-    StringPtr getStringPtr(const std::string& name) { 
-        return _getScalarValue<StringPtr>(name, typeName[STRING]); 
-    }
-    //@}
-
-    //@{
     /**
      * return an array of Policy pointers associated with the given name.  
      * 
@@ -501,9 +476,7 @@ public:
      * @exception TypeError     if the value associated the given name is not
      *                             a Policy type.  
      */
-    ConstPolicyPtrArray getPolicyArray(const std::string& name) const;
-    PolicyPtrArray getPolicyArray(const std::string& name);  //inlined
-    //@}
+    PolicyPtrArray getPolicyArray(const std::string& name) const;
 
     /**
      * return an array of PolicyFile pointers associated with the given name.  
@@ -518,7 +491,7 @@ public:
      * @exception TypeError     if the value associated the given name is not
      *                             a Policy type.  
      */
-    FilePtrArray getFileArray(const std::string& name) const;   //inlined
+    FilePtrArray getFileArray(const std::string& name) const; 
 
     /**
      * return an array of booleans associated with the given name
@@ -550,7 +523,6 @@ public:
      */
     DoubleArray getDoubleArray(const std::string& name) const; // inlined
     
-    //@{
     /**
      * return an array of string pointers associated with the given name
      * @param name     the name of the parameter.  This can be a hierarchical
@@ -559,21 +531,7 @@ public:
      * @exception TypeError     if the value associated the given name is not
      *                             a string type.  
      */
-    ConstStringPtrArray getStringArray(const std::string& name) const;
-    StringPtrArray getStringArray(const std::string& name);  //inlined
-    //@}
-
-    /**
-     * return an array of strings associated with the given name.  This 
-     * returns a vector of strings (not shared pointers to strings) at the cost
-     * of another copy of the strings (over getStringArray()).
-     * @param name     the name of the parameter.  This can be a hierarchical
-     *                    name with fields delimited with "."
-     * @exception NameNotFound  if no value is associated with the given name.
-     * @exception TypeError     if the value associated the given name is not
-     *                             a string type.  
-     */
-    const StringArray getStrings(const std::string& name) const;
+    StringArray getStringArray(const std::string& name) const;  //inlined
 
     //@{
     /**
@@ -657,7 +615,8 @@ public:
      *                 includes embedded newline characters, each line 
      *                 should be preceded by this indent string.
      */
-    virtual std::string str(const std::string& name, const std::string& indent="") const;
+    virtual std::string str(const std::string& name, 
+                            const std::string& indent="") const;
 
     /**
      * print the contents of this policy to an output stream.  This 
@@ -687,14 +646,14 @@ protected:
      * use a PropertySet as the data for a new Policy object
      */
     Policy(const dafBase::PropertySet::Ptr ps) 
-        : Citizen(typeid(this)), Persistable(), _data(ps) 
+        : Citizen(typeid(this)), dafBase::Persistable(), _data(ps) 
     { }
 
     template <class T>
     std::vector<T> _getList(const std::string& name, 
                             const char *expectedType) const;
 
-    template <typename T> 
+    template <class T> 
     T _getScalarValue(const std::string& name, 
                       const char *expectedType) const;
 
@@ -799,7 +758,7 @@ inline bool Policy::isDouble(const std::string& name) const {
 
 inline bool Policy::isString(const std::string& name) const {
     try {
-        return (_data->typeOf(name) == typeid(StringPtr));
+        return (_data->typeOf(name) == typeid(std::string));
     }
     catch (...) {
         return false;
@@ -816,8 +775,9 @@ inline bool Policy::isPolicy(const std::string& name) const {
 }
 
 inline bool Policy::isFile(const std::string& name) const {
+    
     try {
-        return (_data->typeOf(name) == typeid(FilePtr));
+        return (getValueType(name) == FILE);
     }
     catch (...) {
         return false;
@@ -826,11 +786,14 @@ inline bool Policy::isFile(const std::string& name) const {
 
 inline const std::type_info& Policy::getTypeInfo(const std::string& name) const
 {
-    return _data->typeOf(name); 
+    try {  return _data->typeOf(name); }
+    catch (pexExcept::NotFoundException& e) {
+        throw LSST_EXCEPT(NameNotFound, name);
+    }
 }
 
 inline const std::type_info& Policy::typeOf(const std::string& name) const {
-    return _data->typeOf(name); 
+    return getTypeInfo(name); 
 }
 
 inline Policy::ConstPtr Policy::getPolicy(const std::string& name) const {
@@ -840,70 +803,26 @@ inline Policy::Ptr Policy::getPolicy(const std::string& name) {
     return Ptr(new Policy(_data->get<dafBase::PropertySet::Ptr>(name)));
 }
 
-inline Policy::FilePtr Policy::getFile(const std::string& name) const {
-    return _data->get<FilePtr>(name);
-}
-
-inline Policy::PolicyPtrArray Policy::getPolicyArray(const std::string& name) {
-    return _getList<Ptr>(name, typeName[POLICY]);
-}
-
-inline Policy::FilePtrArray Policy::getFileArray(const std::string& name) const
-{
-    try {
-        return _data->getArray<FilePtr>(name);
-    } catch (pexExcept::NotFoundException&) {
-        throw LSST_EXCEPT(NameNotFound, name);
-    } catch (BADANYCAST&) {
-        throw LSST_EXCEPT(TypeError, name, std::string(getTypeName(name)));
-    } 
+inline 
+Policy::StringArray Policy::getStringArray(const std::string& name) const {
+    return _data->getArray<std::string>(name);
 }
 
 inline Policy::BoolArray Policy::getBoolArray(const std::string& name) const {
-    try {
-        return _data->getArray<bool>(name);
-    } catch (pexExcept::NotFoundException&) {
-        throw LSST_EXCEPT(NameNotFound, name);
-    } catch (BADANYCAST&) {
-        throw LSST_EXCEPT(TypeError, name, std::string(getTypeName(name)));
-    } 
+    return _getList<bool>(name, typeName[BOOL]);
 }
 
 inline Policy::IntArray Policy::getIntArray(const std::string& name) const {
-    try {
-        return _data->getArray<int>(name);
-    } catch (pexExcept::NotFoundException&) {
-        throw LSST_EXCEPT(NameNotFound, name);
-    } catch (BADANYCAST&) {
-        throw LSST_EXCEPT(TypeError, name, std::string(getTypeName(name)));
-    } 
+    return _getList<int>(name, typeName[INT]);
 }
 
-inline Policy::DoubleArray Policy::getDoubleArray(const std::string& name) const {
-    try {
-        return _data->getArray<double>(name);
-    } catch (pexExcept::NotFoundException&) {
-        throw LSST_EXCEPT(NameNotFound, name);
-    } catch (BADANYCAST&) {
-        throw LSST_EXCEPT(TypeError, name, std::string(getTypeName(name)));
-    } 
-}
-
-inline Policy::StringPtrArray Policy::getStringArray(const std::string& name) {
-    try {
-        return _data->getArray<StringPtr>(name);
-    } catch (pexExcept::NotFoundException&) {
-        throw LSST_EXCEPT(NameNotFound, name);
-    } catch (BADANYCAST&) {
-        throw LSST_EXCEPT(TypeError, name, std::string(getTypeName(name)));
-    } 
+inline 
+Policy::DoubleArray Policy::getDoubleArray(const std::string& name) const {
+    return _getList<double>(name, typeName[DOUBLE]);
 }
 
 inline void Policy::set(const std::string& name, const Ptr& value) {
     _data->set(name, value->asPropertySet());
-}
-inline void Policy::set(const std::string& name, const FilePtr& value) {
-    _data->set(name, value);
 }
 inline void Policy::set(const std::string& name, bool value) { 
     _data->set(name, value); 
@@ -915,32 +834,35 @@ inline void Policy::set(const std::string& name, double value) {
     _data->set(name, value); 
 }
 inline void Policy::set(const std::string& name, const std::string& value) { 
-    _data->set(name, StringPtr(new std::string(value))); 
+    _data->set(name, value); 
 }
 inline void Policy::set(const std::string& name, const char *value) { 
-    _data->set(name, StringPtr(new std::string(value))); 
+    _data->set(name, std::string(value)); 
 }
 
+#define POL_ADD(name, value) \
+    try {  _data->add(name, value);  } \
+    catch(dafBase::TypeMismatchException&) { \
+        throw LSST_EXCEPT(TypeError, name, getTypeName(name));  \
+    }
+
 inline void Policy::add(const std::string& name, const Ptr& value) {
-    _data->add(name, value->asPropertySet()); 
-}
-inline void Policy::add(const std::string& name, const FilePtr& value) {
-    _data->add(name, value); 
+    POL_ADD(name, value->asPropertySet())
 }
 inline void Policy::add(const std::string& name, bool value) { 
-    _data->add(name, value); 
+    POL_ADD(name, value); 
 }
 inline void Policy::add(const std::string& name, int value) { 
-    _data->add(name, value); 
+    POL_ADD(name, value); 
 }
 inline void Policy::add(const std::string& name, double value) { 
-    _data->add(name, value); 
+    POL_ADD(name, value); 
 }
 inline void Policy::add(const std::string& name, const std::string& value) { 
-    _data->add(name, StringPtr(new std::string(value))); 
+    POL_ADD(name, value); 
 }
 inline void Policy::add(const std::string& name, const char *value) { 
-    _data->add(name, StringPtr(new std::string(value))); 
+    POL_ADD(name, std::string(value)); 
 }
 
 

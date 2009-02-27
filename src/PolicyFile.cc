@@ -21,6 +21,8 @@ namespace lsst {
 namespace pex {
 namespace policy {
 
+using std::string;
+using std::ifstream;
 using boost::regex;
 using boost::regex_match;
 using boost::regex_search;
@@ -43,29 +45,32 @@ const regex
  * @param filepath   the path to the file
  */
 PolicyFile::PolicyFile(const SupportedFormats::Ptr& fmts) 
-    : PolicySource(fmts), _file(PolicyParserFactory::UNRECOGNIZED) 
+    : PolicySource(fmts), Persistable(), 
+      _file(PolicyParserFactory::UNRECOGNIZED) 
 { }
 
 PolicyFile::PolicyFile(const string& filepath, 
                        const SupportedFormats::Ptr& fmts) 
-    : PolicySource(fmts), _file(filepath) 
+    : PolicySource(fmts), Persistable(), _file(filepath) 
 { }
 
 PolicyFile::PolicyFile(const fs::path& filepath, 
                        const SupportedFormats::Ptr& fmts) 
-    : PolicySource(fmts), _file(filepath), _format(), _pfact()
+    : PolicySource(fmts), Persistable(), _file(filepath), _format(), _pfact()
 { }
 
 PolicyFile::PolicyFile(const string& filepath, 
                        const PolicyParserFactory::Ptr& parserFactory)
-    : PolicySource(), _file(filepath), _format(), _pfact(parserFactory)
+    : PolicySource(), Persistable(), 
+      _file(filepath), _format(), _pfact(parserFactory)
 { 
     if (! _pfact.get()) _format = _pfact->getFormatName();
 }
 
 PolicyFile::PolicyFile(const fs::path& filepath, 
                        const PolicyParserFactory::Ptr& parserFactory)
-    : PolicySource(), _file(filepath), _format(), _pfact(parserFactory) 
+    : PolicySource(), Persistable(), 
+      _file(filepath), _format(), _pfact(parserFactory) 
 { 
     if (! _pfact.get()) _format = _pfact->getFormatName();
 }

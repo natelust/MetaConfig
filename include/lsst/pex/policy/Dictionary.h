@@ -285,7 +285,7 @@ public:
     /**
      * return the semantic definition for the parameter
      */
-    const std::string& getDescription() const {
+    const std::string getDescription() const {
         if (! _policy->isString("description")) 
             return ValidationError::EMPTY;
         return _policy->getString("description");
@@ -416,7 +416,7 @@ public:
     void validate(const std::string& name, const Policy::DoubleArray& value, 
                   ValidationError *errs=0) const;
     void validate(const std::string& name, 
-                  const Policy::StringPtrArray& value, 
+                  const Policy::StringArray& value, 
                   ValidationError *errs=0) const;
     void validate(const std::string& name, 
                   const Policy::PolicyPtrArray& value, 

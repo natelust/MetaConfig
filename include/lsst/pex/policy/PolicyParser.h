@@ -21,13 +21,13 @@ namespace lsst {
 namespace pex {
 namespace policy {
 
-using namespace std;
+namespace dafBase = lsst::daf::base;
 
 /**
  * @brief an abstract class for parsing serialized Policy data and loading
  * it into a Policy object.  
  */
-class PolicyParser : public Citizen {
+class PolicyParser : public dafBase::Citizen {
 public: 
 
     /**
@@ -39,7 +39,7 @@ public:
      *                   result in some data not getting loaded.
      */
     PolicyParser(Policy& policy, bool strict=true) 
-        : Citizen(typeid(this)), _pol(policy), _strict(strict) { }
+        : dafBase::Citizen(typeid(this)), _pol(policy), _strict(strict) { }
 
     /**
      * destroy this factory
@@ -67,7 +67,7 @@ public:
      * @returns int   the number of parameters values loaded.  This does not
      *                   include sub-Policy objects.  
      */
-    virtual int parse(istream& is) = 0;
+    virtual int parse(std::istream& is) = 0;
 
     //@{
     /**

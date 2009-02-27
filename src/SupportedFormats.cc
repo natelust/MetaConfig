@@ -16,6 +16,7 @@ namespace pex {
 namespace policy {
 
 using lsst::pex::policy::paf::PAFParserFactory;
+using lsst::pex::policy::PolicyParserFactory;
 
 void SupportedFormats::initDefaultFormats(SupportedFormats& sf) { 
     sf.registerFormat(PolicyParserFactory::Ptr(new PAFParserFactory()));
@@ -40,7 +41,8 @@ void SupportedFormats::registerFormat(const PolicyParserFactory::Ptr& factory)
  * the format supported by this parser.  If it is, return the name of 
  * the this format; if not return an empty string.  
  */
-const string& SupportedFormats::recognizeType(const string& leaders) const {
+const std::string& 
+SupportedFormats::recognizeType(const std::string& leaders) const {
 
     Lookup::const_iterator f;
     for(f=_formats.begin(); f != _formats.end(); ++f) {
@@ -55,8 +57,9 @@ const string& SupportedFormats::recognizeType(const string& leaders) const {
  * get a pointer to a factory with a given name.  A null pointer is 
  * returned if the name is not recognized.
  */
-PolicyParserFactory::Ptr SupportedFormats::getFactory(const string& name) const
-{
+PolicyParserFactory::Ptr 
+SupportedFormats::getFactory(const std::string& name) const {
+
     SupportedFormats *me = const_cast<SupportedFormats*>(this);
 
     Lookup::iterator found = me->_formats.find(name);

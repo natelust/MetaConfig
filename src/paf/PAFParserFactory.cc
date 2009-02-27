@@ -16,6 +16,10 @@ namespace policy {
 namespace paf {
 
 using boost::regex_search;
+using boost::regex;
+using std::string;
+using lsst::pex::policy::Policy;
+using lsst::pex::policy::PolicyParser;
 
 /** 
  * a name for the format

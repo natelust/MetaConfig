@@ -21,7 +21,7 @@ namespace lsst {
 namespace pex {
 namespace policy {
 
-using namespace std;
+namespace dafBase = lsst::daf::base;
 
 // class SupportedFormats : public Citizen { // causes problems in construction
 
@@ -49,12 +49,12 @@ public:
      * the format supported by this parser.  If it is, return the name of 
      * the this format; 
      */
-    const string& recognizeType(const string& leaders) const;
+    const std::string& recognizeType(const std::string& leaders) const;
 
     /**
      * return true if the name resolves to a registered format
      */
-    bool supports(const string& name) const {
+    bool supports(const std::string& name) const {
         return (_formats.find(name) != _formats.end());
     }
 
@@ -62,7 +62,7 @@ public:
      * get a pointer to a factory with a given name.  A null pointer is 
      * returned if the name is not recognized.
      */
-    PolicyParserFactory::Ptr getFactory(const string& name) const;
+    PolicyParserFactory::Ptr getFactory(const std::string& name) const;
 
     /**
      * initialize a given SupportFormats instance with the formats known
@@ -76,7 +76,7 @@ public:
     int size() { return _formats.size(); } 
 
 private:
-    typedef map<string, PolicyParserFactory::Ptr> Lookup;
+    typedef std::map<std::string, PolicyParserFactory::Ptr> Lookup;
     Lookup _formats;
 };
 

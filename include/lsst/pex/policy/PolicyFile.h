@@ -20,19 +20,21 @@
 
 #include "lsst/pex/policy/PolicySource.h"
 #include "lsst/pex/policy/SupportedFormats.h"
+#include "lsst/daf/base/Persistable.h"
 
 namespace lsst {
 namespace pex {
 namespace policy {
 
 namespace fs = boost::filesystem;
+namespace dafBase = lsst::daf::base;
 
 /**
  * @brief a representation of a file containing Policy parameter data.  When
  * this class represents a file that actually exists on disk, then it can 
  * determine which format it is in and load its contents into a Policy.
  */
-class PolicyFile : public PolicySource {
+class PolicyFile : public PolicySource, public dafBase::Persistable {
 public:
 
     //@{
@@ -138,13 +140,18 @@ public:
      */
     static const boost::regex CONTENTID;  
 
+protected:
+    /**
+     * the path to the underlying policy file
+     */
+    fs::path _file;
+
 private:
     const std::string& cacheName(const std::string& name) {
         _format = name;
         return _format;
     }
 
-    fs::path _file;
     std::string _format;
     PolicyParserFactory::Ptr _pfact;
 

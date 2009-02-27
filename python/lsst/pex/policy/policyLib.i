@@ -15,6 +15,7 @@ Access to the policy classes from the pex module
 %{
 #include "lsst/daf/base.h"
 #include "lsst/pex/policy/exceptions.h"
+#include "lsst/pex/policy/parserexceptions.h"
 #include "lsst/pex/policy/Policy.h"
 #include "lsst/pex/policy/PolicyFile.h"
 #include <sstream>
@@ -117,12 +118,22 @@ SWIG_SHARED_PTR_DERIVED(PolicyFile, lsst::pex::policy::PolicySource, lsst::pex::
 %newobject lsst::pex::policy::Policy::createPolicy;
 
 %include "lsst/pex/policy/Policy.h"
+%include "lsst/pex/policy/exceptions.h"
+%include "lsst/pex/policy/parserexceptions.h"
 
 %extend lsst::pex::policy::Policy {
     std::string toString() {
        std::ostringstream msg;
        self->print(msg);
        return msg.str();
+    }
+
+    void _setBool(const std::string& name, bool value) {
+       self->set(name, value);
+    }
+
+    void _addBool(const std::string& name, bool value) {
+       self->add(name, value);
     }
 }
 
@@ -144,9 +155,9 @@ def _Policy_get(p, name, defval=None):
     elif (type == p.POLICY):
         return p.getPolicy(name)
 
-def _Policy_getArray(p, name, defarray=None):
+def _Policy_getArray(p, name):
     type = p.getValueType(name);
-    if (type == p.UNDEF):  return defarray
+    if (type == p.UNDEF):  return None
 
     if (type == p.INT):
         return p.getIntArray(name)
@@ -161,6 +172,22 @@ def _Policy_getArray(p, name, defarray=None):
 
 Policy.get = _Policy_get
 Policy.getArray = _Policy_getArray
+
+_Policy_wrap_set = Policy.set
+def _Policy_set(p, name, value):
+    if isinstance(value, bool):
+        p._setBool(name, value)
+    else:
+        _Policy_wrap_set(p, name, value)
+Policy.set = _Policy_set
+
+_Policy_wrap_add = Policy.add
+def _Policy_add(p, name, value):
+    if isinstance(value, bool):
+        p._addBool(name, value)
+    else:
+        _Policy_wrap_add(p, name, value)
+Policy.add = _Policy_add
 %}
 
 %ignore lsst::pex::policy::PolicySource::defaultFormats;
