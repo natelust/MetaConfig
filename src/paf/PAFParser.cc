@@ -1,10 +1,7 @@
 /**
- * @class PAFParser
- * 
+ * @file PAFParser.cc
  * @ingroup pex
- *
  * @author Ray Plante
- * 
  */
 
 #include "lsst/pex/policy/paf/PAFParser.h"
@@ -16,6 +13,8 @@ namespace lsst {
 namespace pex {
 namespace policy {
 namespace paf {
+
+//@cond
 
 using namespace std;
 using lsst::pex::policy::Policy;
@@ -377,6 +376,6 @@ int PAFParser::_addValue(const string& propname, string& value,
     return count;
 }
 
-
+//@endcond
 
 }}}}   // end lsst::pex::policy::paf

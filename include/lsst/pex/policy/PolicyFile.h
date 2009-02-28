@@ -1,10 +1,10 @@
 // -*- lsst-c++ -*-
 /**
- * @class PolicyFile
+ * @file PolicyFile.h
  * 
  * @ingroup pex
  *
- * @brief a representation of a file containing Policy parameter data
+ * @brief definition of the PolicyFile class
  * 
  * @author Ray Plante
  * 
@@ -30,9 +30,10 @@ namespace fs = boost::filesystem;
 namespace dafBase = lsst::daf::base;
 
 /**
- * @brief a representation of a file containing Policy parameter data.  When
- * this class represents a file that actually exists on disk, then it can 
- * determine which format it is in and load its contents into a Policy.
+ * @brief a representation of a file containing Policy parameter data.  
+ * 
+ * When this class represents a file that actually exists on disk, then it 
+ * can determine which format it is in and load its contents into a Policy.
  */
 class PolicyFile : public PolicySource, public dafBase::Persistable {
 public:
@@ -45,7 +46,8 @@ public:
      * you want to control what formats (and the particular parsers) to allow,
      * you can provide your own SupportedFormats instance.  To force 
      * interpretation as a particular format, you can a PolicyParserFactory 
-     * instance in lieu of a SupportedFormats.  
+     * instance in lieu of a SupportedFormats (see 
+     * PolicyFile(const std::string&, const SupportedFormats::Ptr&) ).  
      * @param filepath       the path to the file, either as a string or a
      *                          boost::filesystem::path instance
      * @param fmts           a SupportedFormats object to use.  An instance 
@@ -59,13 +61,9 @@ public:
 
     //@{
     /**
-     * create a Policy file that points a file with given path.  Typically,
-     * one need only provide a file path; this class will determine the 
-     * type automatically using the default set of supported formats.  If 
-     * you want to control what formats (and the particular parsers) to allow,
-     * you can provide your own SupportedFormats instance.  To force 
-     * interpretation as a particular format, you can a PolicyParserFactory 
-     * instance in lieu of a SupportedFormats.  
+     * create a Policy file that points a file with given path.  These 
+     * constructors allow you to force interpretation as a 
+     * particular format by passing in the PolicyParserFactory to use.
      * @param filepath       the path to the file, either as a string or a
      *                          boost::filesystem::path instance
      * @param parserFactory  a PolicyParserFactory implementation to be used
@@ -76,8 +74,15 @@ public:
                const PolicyParserFactory::Ptr& parserFactory);
     PolicyFile(const fs::path& filepath, 
                const PolicyParserFactory::Ptr& parserFactory);
-    PolicyFile(const SupportedFormats::Ptr& fmts = defaultFormats);
     //@}
+
+    /**
+     * create a "null" Policy file that points to an unspecified file.  
+     * @param fmts           a SupportedFormats object to use.  An instance 
+     *                          encapsulates a configured set of known formats.
+     */
+    PolicyFile(const SupportedFormats::Ptr& fmts = defaultFormats);
+
 
 //     /**
 //      * determine the format that the data is stored in and return its format

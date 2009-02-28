@@ -1,11 +1,10 @@
 // -*- lsst-c++ -*-
 /**
- * @class SupportedFormats
- * 
- * @brief a representation of a src of serialized Policy parameter data
- * 
+ * @file SupportedFormats.h
+ *
+ * @ingroup pex
+ * @brief definition of the SupportedFormats class
  * @author Ray Plante
- * 
  */
 
 #ifndef LSST_PEX_POLICY_SUPPORTEDFORMATS_H

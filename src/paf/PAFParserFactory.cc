@@ -1,10 +1,7 @@
 /**
- * @class PAFParserFactory
- * 
+ * @file PAFParserFactory.cc
  * @ingroup pex
- *
  * @author Ray Plante
- * 
  */
 
 #include "lsst/pex/policy/paf/PAFParserFactory.h"
@@ -14,6 +11,8 @@ namespace lsst {
 namespace pex {
 namespace policy {
 namespace paf {
+
+//@cond
 
 using boost::regex_search;
 using boost::regex;
@@ -59,6 +58,6 @@ bool PAFParserFactory::recognize(const string& leaders) const {
 }
 
 
-
+//@endcond
 
 }}}}   // end lsst::pex::policy::paf

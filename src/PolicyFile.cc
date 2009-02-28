@@ -1,5 +1,5 @@
 /**
- * @class PolicyFile
+ * @file PolicyFile.cc
  * 
  * @ingroup pex
  *
@@ -20,6 +20,8 @@
 namespace lsst {
 namespace pex {
 namespace policy {
+
+//@cond
 
 using std::string;
 using std::ifstream;
@@ -154,5 +156,7 @@ void PolicyFile::load(Policy& policy) {
     parser->parse(fs);
     fs.close();
 }
+
+//@endcond
 
 }}}   // end lsst::pex::policy

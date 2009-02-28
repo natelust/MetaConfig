@@ -1,13 +1,9 @@
 // -*- lsst-c++ -*-
 /**
- * @class Dictionary
- * 
+ * @file Dictionary.h
  * @ingroup pex
- *
- * @brief an object for holding configuration data
- * 
+ * @brief definition of the Dictionary class
  * @author Ray Plante
- * 
  */
 
 #ifndef LSST_PEX_POLICY_DICTIONARY_H
@@ -309,18 +305,20 @@ public:
         catch (NameNotFound& ex) {  return 0;  }
     }
 
-    //@{
     /**
      * the default value into the given policy
      * @param policy    the policy object update
+     */
+    void setDefaultIn(Policy& policy) const {
+        setDefaultIn(policy, _name);
+    }
+
+    /**
+     * @copydoc setDefaultIn(Policy&) const
      * @param withName  the name to look for the value under.  If not given
      *                    the name set in this definition will be used.
      */
     void setDefaultIn(Policy& policy, const std::string& withName) const;
-    void setDefaultIn(Policy& policy) const {
-        setDefaultIn(policy, _name);
-    }
-    //@}
 
     /**
      * confirm that a Policy parameter conforms to this definition.  

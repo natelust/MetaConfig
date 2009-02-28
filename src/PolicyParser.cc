@@ -1,10 +1,7 @@
 /**
- * @class PolicyParser
- * 
+ * @file PolicyParser.cc
  * @ingroup pex
- *
  * @author Ray Plante
- * 
  */
 
 #include "lsst/pex/policy/PolicyParser.h"

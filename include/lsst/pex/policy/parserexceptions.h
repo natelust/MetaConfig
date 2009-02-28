@@ -1,11 +1,9 @@
 // -*- lsst-c++ -*-
-/*
+/**
+ * @file parserexceptions.h
  * @ingroup pex
- *
- * @brief exceptions characterizing errors in the use of Policies
- * 
+ * @brief definition of Policy parsing exceptions
  * @author Ray Plante
- * 
  */
 
 #ifndef LSST_PEX_POLICY_PARSER_EXCEPTIONS_H

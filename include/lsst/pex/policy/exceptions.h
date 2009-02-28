@@ -1,11 +1,9 @@
 // -*- lsst-c++ -*-
-/*
+/**
+ * @file exceptions.h
  * @ingroup pex
- *
- * @brief exceptions characterizing errors in the use of Policies
- * 
+ * @brief definition of Policy-specific exceptions classes
  * @author Ray Plante
- * 
  */
 
 #ifndef LSST_PEX_POLICY_EXCEPTIONS_H

@@ -1,10 +1,10 @@
 // -*- lsst-c++ -*-
 /**
- * @class DefaultPolicyFile
+ * @file DefaultPolicyFile.h
  * 
  * @ingroup pex
  *
- * @brief a representation of a file containing Policy parameter data
+ * @brief the definition of the DefaultPolicyFile class
  * 
  * @author Ray Plante
  * 
@@ -50,7 +50,7 @@ public:
 
     /**
      * define a default policy file
-     * @param packageName    the name of the product that the default 
+     * @param productName    the name of the product that the default 
      *                         policy is installed as part of
      * @param filepath       the relative pathname to the policy file.  
      * @param repos          the subdirectory with the product's install

@@ -1,9 +1,10 @@
 // -*- lsst-c++ -*-
 /**
- * @class PAFParserFactory
+ * @file PAFParserFactory.h
  * 
  * @ingroup pex
  *
+ * @brief definition of the PAFParserFactory class
  * @author Ray Plante
  * 
  */

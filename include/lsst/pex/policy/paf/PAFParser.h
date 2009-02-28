@@ -1,10 +1,10 @@
 // -*- lsst-c++ -*-
 /**
- * @class Lexer
+ * @file PAFParser.h
  * 
  * @ingroup pex
  *
- * @brief an object for tokenizing a Policy file in PAF format.
+ * @brief definition of the PAFParser class
  * 
  * @author Ray Plante
  * 
@@ -34,10 +34,14 @@ namespace pexPolicy = lsst::pex::policy;
 class PAFParser : public pexPolicy::PolicyParser {
 public: 
 
-    //@{
     /**
      * create a parser to load a Policy
      * @param policy   the Policy object to load the parsed data into
+     */
+    PAFParser(pexPolicy::Policy& policy);
+
+    /**
+     * @copydoc PAFParser(pexPolicy::Policy&)
      * @param strict   if true, be strict in reporting errors in file 
      *                   contents and syntax.  If false, errors will be 
      *                   ignored if possible; often, such errors will 
@@ -45,8 +49,6 @@ public:
      *                   default (set by PolicyParser) is true.
      */
     PAFParser(pexPolicy::Policy& policy, bool strict);
-    PAFParser(pexPolicy::Policy& policy);
-    //@}
 
     /**
      * delete this parser

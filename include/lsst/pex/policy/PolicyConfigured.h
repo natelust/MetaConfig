@@ -1,13 +1,9 @@
 // -*- lsst-c++ -*-
 /**
- * @class PolicyConfigured
- * 
+ * @file PolicyConfigured.h
  * @ingroup pex
- *
- * @brief an interface to indicate that a class is configured with a Policy
- * 
+ * @brief definition of the PolicyConfigured interface class
  * @author Ray Plante
- * 
  */
 
 #ifndef LSST_PEX_POLICY_POLICYCONFIGURED_H

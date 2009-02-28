@@ -25,6 +25,8 @@ namespace lsst {
 namespace pex {
 namespace policy {
 
+//@cond
+
 using dafBase::PropertySet;
 using dafBase::Persistable;
 
@@ -244,65 +246,6 @@ int Policy::_names(list<string>& names,
 }
 
 
-template <typename T>
-T Policy::_getScalarValue(const string& name, const char *expectedType) const {
-    try {
-        return _data->get<T>(name);
-    } catch (pexExcept::NotFoundException&) {
-        throw LSST_EXCEPT(NameNotFound, name);
-    } catch (dafBase::TypeMismatchException&) {
-        throw LSST_EXCEPT(TypeError, name, string(expectedType));
-    } catch (BADANYCAST&) {
-        throw LSST_EXCEPT(TypeError, name, string(expectedType));
-    }
-}
-
-template
-bool Policy::_getScalarValue<bool>(const string& name, 
-                                   const char *expectedType) const;
-template
-int Policy::_getScalarValue<int>(const string& name, 
-                                 const char *expectedType) const;
-template
-double Policy::_getScalarValue<double>(const string& name, 
-                                       const char *expectedType) const;
-template
-string Policy::_getScalarValue<string>(const string& name, 
-                                       const char *expectedType) const;
-
-template <class T>
-std::vector<T> Policy::_getList(const string& name, 
-                                const char *expectedType) const
-{
-    try {
-        return _data->getArray<T>(name);
-    } catch (pexExcept::NotFoundException&) {
-        throw LSST_EXCEPT(NameNotFound, name);
-    } catch (dafBase::TypeMismatchException&) {
-        throw LSST_EXCEPT(TypeError, name, string(expectedType));
-    } catch (BADANYCAST&) {
-        throw LSST_EXCEPT(TypeError, name, string(expectedType));
-    } 
-}        
-
-template
-std::vector<bool> Policy::_getList<bool>(const string& name, 
-                                         const char *expectedType) const;
-template
-std::vector<int> Policy::_getList<int>(const string& name, 
-                                       const char *expectedType) const;
-template
-std::vector<double> Policy::_getList<double>(const string& name, 
-                                             const char *expectedType) const;
-template
-std::vector<string> Policy::_getList<string>(const string& name, 
-                                             const char *expectedType) const;
-template
-std::vector<Persistable::Ptr> 
-Policy::_getList<Persistable::Ptr>(const string& name, 
-                                   const char *expectedType) const;
-
-
 /*
  * return the type information for the underlying type associated with
  * a given name.  
@@ -344,9 +287,7 @@ Policy::ValueType Policy::getValueType(const string& name) const {
 
 Policy::PolicyPtrArray Policy::getPolicyArray(const std::string& name) const {
     PolicyPtrArray out;
-    std::vector<PropertySet::Ptr> psa = 
-        _getList<PropertySet::Ptr>(name, typeName[POLICY]);
-
+    std::vector<PropertySet::Ptr> psa = _getPropSetList(name);
     std::vector<PropertySet::Ptr>::const_iterator i;
     for(i=psa.begin(); i != psa.end(); ++i) 
         out.push_back(Ptr(new Policy(*i)));
@@ -364,8 +305,7 @@ Policy::FilePtr Policy::getFile(const std::string& name) const {
 Policy::FilePtrArray Policy::getFileArray(const std::string& name) const
 {
     FilePtrArray out;
-    vector<Persistable::Ptr> pfa = 
-        _getList<Persistable::Ptr>(name, typeName[FILE]);
+    vector<Persistable::Ptr> pfa = _getPersistList(name);
     vector<Persistable::Ptr>::const_iterator i;
     FilePtr fp;
     for(i = pfa.begin(); i != pfa.end(); ++i) {
@@ -573,6 +513,8 @@ string Policy::toString() const {
     print(os);
     return os.str();
 }
+
+//@endcond
 
 } // namespace policy
 } // namespace pex

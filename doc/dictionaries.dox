@@ -1,0 +1,213 @@
+namespace lsst { namespace pex { namespace policy {
+
+/**
+\page pageDictionary The Dictionary Schema
+
+A Dictionary is intended to provide a definitions for a set of policy
+parameters. A dictionary file uses the same underlying format as its
+policy counterpart. The difference is that a defined set of parameter
+names are used to define the policy parameters. A simple example of a
+Dictionary in PAF format can be found as
+examples/policies/EventTransmitter_dict.paf. The example below defines
+a single parameter called "verbosity": 
+
+\verbatim
+#<?cfg paf dictionary ?>
+#
+# this is a comment
+#
+target: Log
+
+definitions: {
+   verbosity: {
+      type:         "string"
+      description:  "the threshold message 'loudness' that a log message must 
+                     exceed in order for it to be recorded to the log, given 
+                     as a logical name."
+      default:      "WARN"
+      minOccurs:    0        # means parameter is optional
+      maxOccurs:    1        # parameter may occur only once in policy file
+      allowed:  {
+         value:        "DEBUG"
+         description:  "include messages intended for recording while debugging"
+      }
+      allowed:  {
+         value:        "INFO"
+         description:  "include informational messages reporting on normal behavior"
+      }
+      allowed:  {
+         value:        "WARN"
+         description:  "include messages warning about abnormal but non-fatal behavior"
+      }
+      allowed:  { 
+         value:        "FATAL"
+         descripiton:  "include messages reporting severe or fatal behavior"
+      }
+   }
+}
+\endverbatim
+
+In this example, the verbosity takes a string value that is restricted
+to a defined set. The parameter is optional, but it should not appear
+more than once. If not provided, it's default values is "WARN".  
+
+\section secDictLeadingLine Leading Line
+
+Just as in a policy file, it is recommended, but required, to start
+with a comment line containing the content identifier, 
+\c "<?cfg paf dictionary ?>". This indicates that the file is a policy
+dictionary in \ref pagePAF "PAF format". If this identifier is not
+present, the file can be recognized as a dictionary either from its
+file extension or by the presence of a top-level parameter named
+"definitions".  
+
+\section secDictTopLevel Top-level Parameters 
+
+As can be seen from the example above, a dictionary takes advantage of
+the hierarchical formatting capabilities of the policy format. At the
+top level of the hierarchy, two parameters can appear: 
+
+<table>
+<tr>
+<th>Name</th> <th>Required?</th>  <th>Type</th> <th>Defintion</th>
+</tr><tr>
+<td>target</td> 	<td>recommended</td> 	<td>string</td> 	
+<td>The name of the class, object, or system that this dictionary is
+intended for. Currently, this is only used for documentation
+purposes.</td>
+</tr><tr>
+<td>definitions</td> 	<td>required</td> 	<td>Policy</td> 	
+<td>The definitions of each term, where each parameter name is a
+Policy parameter being defined. </td>
+</tr>
+</table>
+
+\section secDictdef The definitions Parameter
+
+All the policy parameters defined by the dictionary is stored under
+the definitions parameter. Each of the names that appear under the
+definitions "policy" is the name of a policy parameter being
+defined. The name cannot be hierarchical (that is, it must not contain
+any dots, '.'). Its value represents the definition of the parameter,
+and it must be of Policy type; that is, its value will be a set of
+parameters that provide the formal definition. 
+
+\section secDictdefparam Definition Parameters
+
+The parameters that may appear within a definition include:
+
+<table>
+<tr>
+<th>Name</th><th>Required?</th><th>Type</th><th>Defintion</th>
+</tr><tr>
+<td>type</td><td>recommended</td><td>string</td>
+<td>the type of the value expected, one of "int", "bool", "double",
+"string", and "policy". If not provided, any type ("undefined") should
+be assumed. If the type is Policy, a dictionary for its terms can be
+provided via "dictionary"/"dictionaryFile". </td>
+</tr><tr>
+<td>description</td><td>recommended</td><td>string</td>
+<td>The semantic meaning of the term or explanation of how it will be
+used.</td> 
+</tr><tr>
+<td>minOccurs</td><td>optional</td><td>int</td>
+<td>The minimun number of values expected. 0 means that the parameter
+is optional, > 0 means that it is required, > 1 means that a vector is
+required. If not specified or < 0, 0 should be assumed.</td> 
+</tr><tr>
+<td>maxOccurs</td><td>optional</td><td>int</td>
+<td>The maximun number of values expected. 0 means that the parameter
+is forbidden to occur, 1 means that the value must be a scalar, and >
+1 means that an array value is allowed. If not specified or < 0, any
+number of values is allowed; the user should assume a vector
+value.</td> 
+</tr><tr>
+<td>default</td><td>optional</td><td>*</td>
+<td>A value that will be assumed if none is provided.</td>
+</tr><tr>
+<td>dictionaryFile</td><td>optional</td><td>string</td>
+<td>A file path to the definition of the sub-policy parameters. This
+is ignored unless "type" equals "Policy".</td> 
+</tr><tr>
+<td>dictionary</td><td>optional</td><td>Policy</td>
+<td>the dictionary policy object that defines sub-policy parameters
+using this above, top-level schema. This is ignored unless "type"
+equals "Policy".</td> 
+</tr><tr>
+<td>allowed</td><td>optional</td><td>Policy</td>
+<td>A description of the allowed values.</td>
+</tr></table>
+* *the type must be that specified by the type parameter.
+
+When the policy parameter being defined has the type Policy, the
+dictionary parameter provides a means to define the "sub-Policy
+parameters" supported below the parent parameter. The contents of the
+dictionary parameter is the same as the top level of a dictionary
+file: it contains the names target and definitions, the latter
+containing the definitions of the "sub-Policy" terms. For example, a
+dictionary like this: 
+
+\verbatim
+definitions: {
+   function: {
+      type:        Policy
+      dictionary:  {
+         target: Function
+         definitions: {
+            name:  {
+               type:  string
+               ...
+            }
+            width: {
+               type:  double
+               ...
+            }
+         } 
+      }
+   }
+}
+\endverbatim
+
+implies a policy file that can look like this:
+
+\verbatim
+function.name:   Airy
+function.width:  5.7
+\endverbatim
+
+Often when the policy parameter is defined to be of type Policy, the
+definition will include a dictionaryFile item instead of a
+dictionary. The path provided as the value is the path to another
+dictionary file containing the definitions of the "sub-Policy"
+paramters. Normally, this path should _not_ be absolute; that is, the
+application should look for the file relative to current working
+directory (as set by the application). 
+
+The allowed term let's you describe the allowed values the polic
+parameter may have. If no allowed parameter is provided, then now
+restrictions on the the value will be assumed. This parameter can
+include the following "sub-Policy" parameters: 
+
+<table>
+<tr>
+<th>Name</th><th>Required?</th><th>Type</th><th>Defintion</th>
+</tr><tr>
+<td>value</td><td>optional</td><td>*</td>
+<td>One allowed value. This should not be an an array of values.</td>
+</tr><tr>
+<td>description</td><td>optional</td><td>*</td>
+<td>a description of what this value indicates.</td>
+</tr><tr>
+<td>min</td><td>optional</td><td>*</td>
+<td>The minimum allowed value, used for int and double typed
+parameters.</td> 
+</tr><tr>
+<td>max</td><td>optional</td><td>*</td>
+<td>The maximum allowed value, used for int and double typed
+parameters.</td> 
+</tr></table>
+* *the type must be that specified by the type parameter. 
+
+*/
+
+}}}

@@ -1,13 +1,9 @@
 // -*- lsst-c++ -*-
 /**
- * @class PolicyParserFactory
- * 
+ * @file PolicyParserFactory.h
  * @ingroup pex
- *
- * @brief a factory class for creating PolicyParsers for specific formats
- * 
+ * @brief a definition of the PolicyParserFactory class
  * @author Ray Plante
- * 
  */
 
 #ifndef LSST_PEX_POLICY_PARSERFACTORY_H

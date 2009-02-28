@@ -1,13 +1,9 @@
 // -*- lsst-c++ -*-
 /**
- * @class PolicyParser
- * 
+ * @file PolicyParser.h
  * @ingroup pex
- *
- * @brief a class that can parse serialized Policy data from a stream.
- * 
+ * @brief definition of the PolicyParser class
  * @author Ray Plante
- * 
  */
 
 #ifndef LSST_PEX_POLICY_PARSER_H

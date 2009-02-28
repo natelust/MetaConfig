@@ -1,8 +1,10 @@
 // -*- lsst-c++ -*-
 /**
- * @class Policy
+ * @file Policy.h
  * 
- * @brief an object for holding configuration data
+ * @ingroup pex
+ *
+ * @brief the definition of the Policy class
  * 
  * @author Ray Plante
  * 
@@ -24,21 +26,6 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 
-/*
-#define FIX_ANY_POINTER_RTTI
-*/
-#ifdef FIX_ANY_POINTER_RTTI
-#include "lsst/pex/policy/any.h"
-#define ANYTYPE lsst::pex::policy::anyfix::any
-#define ANYCAST lsst::pex::policy::anyfix::any_cast
-#define BADANYCAST lsst::pex::policy::anyfix::bad_any_cast
-#else
-#include <boost/any.hpp>
-#define ANYTYPE boost::any
-#define ANYCAST boost::any_cast
-#define BADANYCAST boost::bad_any_cast
-#endif
-
 namespace lsst {
 namespace pex {
 namespace policy {
@@ -51,6 +38,29 @@ class Dictionary;
 namespace fs = boost::filesystem;
 namespace pexExcept = lsst::pex::exceptions;
 namespace dafBase = lsst::daf::base;
+
+#define POL_GETSCALAR(name, type, vtype) \
+    try { \
+        return _data->get<type>(name); \
+    } catch (pexExcept::NotFoundException&) {   \
+        throw LSST_EXCEPT(NameNotFound, name);  \
+    } catch (dafBase::TypeMismatchException&) { \
+        throw LSST_EXCEPT(TypeError, name, std::string(typeName[vtype])); \
+    } catch (boost::bad_any_cast&) { \
+        throw LSST_EXCEPT(TypeError, name, std::string(typeName[vtype])); \
+    }
+
+#define POL_GETLIST(name, type, vtype) \
+    try { \
+        return _data->getArray<type>(name); \
+    } catch (pexExcept::NotFoundException&) {   \
+        throw LSST_EXCEPT(NameNotFound, name);  \
+    } catch (dafBase::TypeMismatchException&) { \
+        throw LSST_EXCEPT(TypeError, name, std::string(typeName[vtype])); \
+    } catch (boost::bad_any_cast&) { \
+        throw LSST_EXCEPT(TypeError, name, std::string(typeName[vtype])); \
+    } 
+
 
 /**
  * @brief  a container for holding hierarchical configuration data in memory.
@@ -78,6 +88,7 @@ namespace dafBase = lsst::daf::base;
  *  - string
  *  - boolean (bool)
  *  - Policy
+ *  - PolicyFile, a reference to file containing additional Policy data
  *  - arrays of any of the above
  *
  * As implied by the inclusion of Policy as a value type, a Policy can be 
@@ -105,14 +116,25 @@ namespace dafBase = lsst::daf::base;
  * resolve to a Policy object.  You can retrieve the "zub" parameter from 
  * that "sub-Policy" object by asking for "zub".  
  * 
- * Loading Data From a File
+ * \section secPolicyLoading Loading a Policy File
  *
- * Dictionaries
+ * One can read Policy data via the constructors that take a file name in 
+ * some form as an input argument; however the prefered manner is via one
+ * of the createPolicy() functions.  The latter is able to intelligently 
+ * differentiate between simple Policy file and a Dictionary file.  In 
+ * either case, the formats supported would be restricted by default to 
+ * those currently built into this package.  Support for other formats 
+ * can be plugged in using the PolicyFile and SupportFormats classes.  
  *
+ * For more information about about Policy files, file formats, and 
+ * dictionaries, see the \ref main "package overview" as well as the 
+ * PolicyFile and Dictionary class descriptions.
+ *
+ * \section secPolicyVer Version Notes
+ *
+ * With version 3.1, support for the JSON format was dropped.  
  * 
- * Version Notes:
- *
- * After version 3.1, Policy's internal implementation was changed to be 
+ * After version 3.2, Policy's internal implementation was changed to be 
  * a wrapper around PropertySet.  Prior to this, it used its own internal 
  * data map.  The API (which had been optimized for the old implementation), 
  * remained largely unchanged for the purposes of backward compatibility.  
@@ -160,13 +182,17 @@ public:
      */
     Policy();
 
-    //@{
     /**
      * Create a Policy from a named file
+     * @param filePath   the file name, which can be a file path
      */
     Policy(const std::string& filePath);
+
+    /**
+     * Create a Policy from a named file
+     * @param file       the file name, represented as a PolicyFile
+     */
     Policy(const PolicyFile& file);
-    //@}
 
     /**
      * Create a default Policy from a Dictionary.  
@@ -280,13 +306,9 @@ public:
      * only returns the Policy names, and fileNames() only returns PolicyFile
      * names.  
      * 
-     * @param names         the list object to be loaded
      * @param topLevelOnly  if true, only parameter names at the top of the 
      *                         hierarchy will be returned; no hierarchical 
      *                         names will be included.
-     * @param append        if false, the contents of the given list will 
-     *                         be erased before loading the names.  
-     * @return int  the number of names added
      */
     StringArray names(bool topLevelOnly=false) const;        // inlined below
     StringArray paramNames(bool topLevelOnly=false) const;   // inlined below
@@ -419,7 +441,7 @@ public:
      *                             a boolean type.  
      */
     bool getBool(const std::string& name) const { 
-        return _getScalarValue<bool>(name, typeName[BOOL]); 
+        POL_GETSCALAR(name, bool, BOOL) 
     }
 
     /**
@@ -433,7 +455,7 @@ public:
      *                             an integer type.  
      */
     int getInt(const std::string& name) const { 
-        return _getScalarValue<int>(name, typeName[INT]); 
+        POL_GETSCALAR(name, int, INT) 
     }
 
     /**
@@ -447,7 +469,7 @@ public:
      *                             a double type.  
      */
     double getDouble(const std::string& name) const { 
-        return _getScalarValue<double>(name, typeName[DOUBLE]); 
+        POL_GETSCALAR(name, double, DOUBLE) 
     }
 
     /**
@@ -461,7 +483,7 @@ public:
      *                             an integer type.  
      */
     const std::string getString(const std::string& name) const { 
-        return _getScalarValue<std::string>(name, typeName[STRING]); 
+        POL_GETSCALAR(name, std::string, STRING) 
     }
 
     /**
@@ -584,15 +606,18 @@ public:
     void add(const std::string& name, const char *value);     // inlined below
     //@}
 
-    //@{
     /**
      * recursively replace all PolicyFile values with the contents of the 
      * files they refer to.  The type of a parameter containing a PolicyFile
      * will consequently change to a Policy upon successful completion.  If
      * the value is an array, all PolicyFiles in the array must load without
-     * error before the PolicyFile values themselves are erased (unless 
+     * error before the PolicyFile values themselves are erased 
+     */
+    void loadPolicyFiles() { loadPolicyFiles(fs::path()); }
+
+    /**
+     * \copydoc loadPolicyFiles() (unless 
      * strict=true; see arguments below).  
-     *
      * @param repository  a directory to look in for the referenced files.  
      *                      Only when the name of the file to be included is an
      *                      absolute path will this.  If empty or not provided,
@@ -604,8 +629,6 @@ public:
      *                      Policy.  
      */
     void loadPolicyFiles(const fs::path& repository, bool strict=false);
-    void loadPolicyFiles() { loadPolicyFiles(fs::path()); }
-    //@}
 
     /**
      * return a string representation of the value given by a name.  The
@@ -649,14 +672,6 @@ protected:
         : Citizen(typeid(this)), dafBase::Persistable(), _data(ps) 
     { }
 
-    template <class T>
-    std::vector<T> _getList(const std::string& name, 
-                            const char *expectedType) const;
-
-    template <class T> 
-    T _getScalarValue(const std::string& name, 
-                      const char *expectedType) const;
-
 private:
     dafBase::PropertySet::Ptr _data;
 
@@ -664,6 +679,17 @@ private:
                bool append=false, int want=3) const;
     int _names(std::vector<std::string>& names, bool topLevelOnly=false, 
                bool append=false, int want=3) const;
+
+    std::vector<dafBase::Persistable::Ptr> 
+        _getPersistList(const std::string& name) const 
+    {
+        POL_GETLIST(name, Persistable::Ptr, FILE)
+    }
+    std::vector<dafBase::PropertySet::Ptr> 
+        _getPropSetList(const std::string& name) const 
+    {
+        POL_GETLIST(name, dafBase::PropertySet::Ptr, POLICY)
+    }
 
     static Policy *_createPolicy(PolicySource& input, bool doIncludes,
                                  const fs::path& repos, bool validate);
@@ -809,16 +835,16 @@ Policy::StringArray Policy::getStringArray(const std::string& name) const {
 }
 
 inline Policy::BoolArray Policy::getBoolArray(const std::string& name) const {
-    return _getList<bool>(name, typeName[BOOL]);
+    POL_GETLIST(name, bool, BOOL) 
 }
 
 inline Policy::IntArray Policy::getIntArray(const std::string& name) const {
-    return _getList<int>(name, typeName[INT]);
+    POL_GETLIST(name, int, INT) 
 }
 
 inline 
 Policy::DoubleArray Policy::getDoubleArray(const std::string& name) const {
-    return _getList<double>(name, typeName[DOUBLE]);
+    POL_GETLIST(name, double, DOUBLE) 
 }
 
 inline void Policy::set(const std::string& name, const Ptr& value) {

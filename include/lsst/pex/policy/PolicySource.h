@@ -1,11 +1,9 @@
 // -*- lsst-c++ -*-
 /**
- * @class PolicySource
+ * @file PolicySource.h
  * 
  * @ingroup pex
- *
- * @brief a representation of a src of serialized Policy parameter data
- * 
+ * @brief definition of the PolicySource class
  * @author Ray Plante
  * 
  */

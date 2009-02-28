@@ -12,15 +12,16 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/regex.hpp>
 
-using namespace std;
-
 namespace lsst {
 namespace pex {
 namespace policy {
 
+//@cond
+
 using boost::regex;
 using boost::sregex_token_iterator;
 using boost::scoped_ptr;
+using namespace std;
 
 const string ValidationError::EMPTY;
 
@@ -730,7 +731,7 @@ void Dictionary::validate(const Policy& pol, ValidationError *errs) const {
     if (errs == 0 && ve.getParamCount() > 0) throw ve;
 }
 
-
+//@endcond
 
 } // namespace policy
 } // namespace pex

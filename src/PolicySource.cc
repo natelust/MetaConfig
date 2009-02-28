@@ -1,10 +1,7 @@
 /**
- * @class PolicySource
- * 
+ * @file PolicySource.cc
  * @ingroup pex
- *
  * @author Ray Plante
- * 
  */
 
 #include "lsst/pex/policy/PolicySource.h"
