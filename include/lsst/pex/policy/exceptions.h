@@ -1,11 +1,9 @@
 // -*- lsst-c++ -*-
-/*
+/**
+ * @file exceptions.h
  * @ingroup pex
- *
- * @brief exceptions characterizing errors in the use of Policies
- * 
+ * @brief definition of Policy-specific exceptions classes
  * @author Ray Plante
- * 
  */
 
 #ifndef LSST_PEX_POLICY_EXCEPTIONS_H
@@ -15,6 +13,11 @@
 
 #define POL_EARGS_TYPED char const* ex_file, int ex_line, char const* ex_func
 #define POL_EARGS_UNTYPED ex_file, ex_line, ex_func
+#define POL_EXCEPT_VIRTFUNCS(etn) \
+char const *etn::getType(void) const throw() { return #etn " *"; } \
+lsst::pex::exceptions::Exception *etn::clone(void) const { \
+    return new etn(*this); \
+}
 
 namespace lsst {
 namespace pex {
@@ -38,8 +41,14 @@ public:
         : pexExcept::RuntimeErrorException(POL_EARGS_UNTYPED, 
               std::string("Illegal Policy parameter name: ") + badname) 
     { }
+    virtual char const *getType(void) const throw();
+    virtual pexExcept::Exception *clone() const;
 };
 
+/**
+ * an exception indicating that a policy parameter of a given name can
+ * not be found in a Policy object.
+ */
 class NameNotFound : public pexExcept::NotFoundException {
 public:
     NameNotFound(POL_EARGS_TYPED) 
@@ -50,8 +59,14 @@ public:
         : pexExcept::NotFoundException(POL_EARGS_UNTYPED, 
                   std::string("Policy parameter name not found: ") + parameter) 
     { }
+    virtual char const *getType(void) const throw();
+    virtual pexExcept::Exception *clone() const;
 };
 
+/**
+ * an exception indicating that a policy parameter with a given name has a
+ * type different from the one that was requested.
+ */
 class TypeError : public pexExcept::DomainErrorException {
 public:
     TypeError(POL_EARGS_TYPED) 
@@ -64,6 +79,8 @@ public:
                                std::string("Parameter \"") + parameter + 
                                "\" has wrong type; expecting " + expected + ".") 
     { }
+    virtual char const *getType(void) const throw();
+    virtual pexExcept::Exception *clone() const;
 };
 
 }}}  // end namespace lsst::pex::policy

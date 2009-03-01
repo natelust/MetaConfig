@@ -1,11 +1,9 @@
 // -*- lsst-c++ -*-
-/*
+/**
+ * @file parserexceptions.h
  * @ingroup pex
- *
- * @brief exceptions characterizing errors in the use of Policies
- * 
+ * @brief definition of Policy parsing exceptions
  * @author Ray Plante
- * 
  */
 
 #ifndef LSST_PEX_POLICY_PARSER_EXCEPTIONS_H
@@ -55,9 +53,12 @@ public:
 
     static std::string makeLocatedMessage(const std::string& msg, int lineno) {
         std::ostringstream out;
-        out << "Policy Parsing Error:" << lineno << ": " << msg << ends;
+        out << "Policy Parsing Error:" << lineno << ": " << msg << std::ends;
         return out.str();
     }
+
+    virtual char const *getType() const throw();
+    virtual pexExcept::Exception *clone() const;
 };
 
 /**
@@ -101,6 +102,9 @@ public:
      */
     EOFError(POL_EARGS_TYPED, const std::string& msg, int lineno) 
         : ParserError(POL_EARGS_UNTYPED, msg, lineno) { }
+
+    virtual char const *getType() const throw();
+    virtual pexExcept::Exception *clone() const;
 };
 
 /**
@@ -132,6 +136,8 @@ public:
     SyntaxError(POL_EARGS_TYPED, const std::string& msg, int lineno) 
         : ParserError(POL_EARGS_UNTYPED, msg, lineno) { }
 
+    virtual char const *getType() const throw();
+    virtual pexExcept::Exception *clone() const;
 };
 
 /**
@@ -163,6 +169,9 @@ public:
      */
     FormatSyntaxError(POL_EARGS_TYPED, const std::string& msg, int lineno) 
         : SyntaxError(POL_EARGS_UNTYPED, msg, lineno) { }
+
+    virtual char const *getType() const throw();
+    virtual pexExcept::Exception *clone() const;
 };
 
 /**
@@ -194,6 +203,9 @@ public:
      */
     UnsupportedSyntax(POL_EARGS_TYPED, const std::string& msg, int lineno) 
         : SyntaxError(POL_EARGS_UNTYPED, msg, lineno) { }
+
+    virtual char const *getType() const throw();
+    virtual pexExcept::Exception *clone() const;
 };
 
 

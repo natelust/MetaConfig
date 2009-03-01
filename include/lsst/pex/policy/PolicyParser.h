@@ -1,13 +1,9 @@
 // -*- lsst-c++ -*-
 /**
- * @class PolicyParser
- * 
+ * @file PolicyParser.h
  * @ingroup pex
- *
- * @brief a class that can parse serialized Policy data from a stream.
- * 
+ * @brief definition of the PolicyParser class
  * @author Ray Plante
- * 
  */
 
 #ifndef LSST_PEX_POLICY_PARSER_H
@@ -21,13 +17,13 @@ namespace lsst {
 namespace pex {
 namespace policy {
 
-using namespace std;
+namespace dafBase = lsst::daf::base;
 
 /**
  * @brief an abstract class for parsing serialized Policy data and loading
  * it into a Policy object.  
  */
-class PolicyParser : public Citizen {
+class PolicyParser : public dafBase::Citizen {
 public: 
 
     /**
@@ -39,7 +35,7 @@ public:
      *                   result in some data not getting loaded.
      */
     PolicyParser(Policy& policy, bool strict=true) 
-        : Citizen(typeid(this)), _pol(policy), _strict(strict) { }
+        : dafBase::Citizen(typeid(this)), _pol(policy), _strict(strict) { }
 
     /**
      * destroy this factory
@@ -63,11 +59,11 @@ public:
     /**
      * parse data from the input stream and load results into the attached 
      * Policy.  
-     * @param is      the stream to read JSON-encoded data from
+     * @param is      the stream to read encoded data from
      * @returns int   the number of parameters values loaded.  This does not
      *                   include sub-Policy objects.  
      */
-    virtual int parse(istream& is) = 0;
+    virtual int parse(std::istream& is) = 0;
 
     //@{
     /**

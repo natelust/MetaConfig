@@ -1,9 +1,10 @@
 // -*- lsst-c++ -*-
 /**
- * @class PAFParserFactory
+ * @file PAFParserFactory.h
  * 
  * @ingroup pex
  *
+ * @brief definition of the PAFParserFactory class
  * @author Ray Plante
  * 
  */
@@ -23,16 +24,12 @@ class PolicyParser;
 
 namespace paf {
 
-using namespace std;
-using lsst::pex::policy::Policy;
-using lsst::pex::policy::PolicyParser;
-using lsst::pex::policy::PolicyParserFactory;
-using boost::regex;
+namespace pexPolicy = lsst::pex::policy;
 
 /**
  * a class for creating PAFParser objects
  */
-class PAFParserFactory : public PolicyParserFactory {
+class PAFParserFactory : public pexPolicy::PolicyParserFactory {
 public:
 
     /**
@@ -42,8 +39,8 @@ public:
      *                       (#-leading) comment as the first line of the 
      *                       file.  The default is "<?cfg JSON ... ?>"
      */
-    PAFParserFactory(const regex& contIdPatt=CONTENTID) 
-        : PolicyParserFactory(), contentid(contIdPatt) { }
+    PAFParserFactory(const boost::regex& contIdPatt=CONTENTID) 
+        : pexPolicy::PolicyParserFactory(), contentid(contIdPatt) { }
 
     /**
      * create a new PolicyParser class and return a pointer to it.  The 
@@ -56,8 +53,8 @@ public:
      *                    result in some data not getting loaded.  The 
      *                    default (set by PolicyParser) is true.
      */
-    virtual PolicyParser* createParser(Policy& policy, 
-                                       bool strict=true) const;
+    virtual pexPolicy::PolicyParser* createParser(pexPolicy::Policy& policy, 
+                                                  bool strict=true) const;
 
     /**
      * analyze the given string assuming contains the leading characters 
@@ -65,32 +62,32 @@ public:
      * the format supported by this parser.  If it is, return the name of 
      * the this format; 
      */
-    virtual bool recognize(const string& leaders) const;
+    virtual bool recognize(const std::string& leaders) const;
 
     /**
      * return the name for the format supported by the parser
      */
-    virtual const string& getFormatName();
+    virtual const std::string& getFormatName();
 
     /** 
      * a name for the format
      */
-    static const string FORMAT_NAME;
+    static const std::string FORMAT_NAME;
 
     /**
      * a pattern for the leading data characters for this format
      */
-    static const regex LEADER_PATTERN;
+    static const boost::regex LEADER_PATTERN;
 
     /**
      * a default pattern for the content identifier.  The content ID
      * is encoded in a (#-leading) comment as the first line of the 
      * file.  This default is "<?cfg PAF ... ?>"
      */
-    static const regex CONTENTID;
+    static const boost::regex CONTENTID;
 
 private:
-    regex contentid;
+    boost::regex contentid;
 };
 
 }}}}   // end lsst::pex::policy::paf

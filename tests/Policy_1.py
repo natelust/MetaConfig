@@ -1,5 +1,6 @@
 import pdb                          # we may want to say pdb.set_trace()
 import unittest
+import math
 
 import lsst.utils.tests as tests
 from lsst.pex.policy import Policy
@@ -14,7 +15,6 @@ class PolicyTestCase(unittest.TestCase):
         self.assertEqual(p.valueCount("foo.bar"), 0,
                          "empty valueCount test failed")
 
-        self.assertEqual(p.getInt("foo", 5), 5, "providing default failed")
         self.assertRaises(LsstCppException, p.getTypeInfo, "foo")
 
         p.set("doall", "true")
@@ -67,7 +67,21 @@ class PolicyTestCase(unittest.TestCase):
 
         # list names
 
-        # show types
+        # test types
+        p.set("pint", 5)
+        self.assertEquals(p.getInt("pint"), 5, "support for type int failed")
+        self.assertEquals(type(p.get("pint")), type(5),
+                          "auto-typing for int failed")
+        p.set("pdbl", 5.1)
+        self.assertAlmostEquals(p.getDouble("pdbl"), 5.1, 7, 
+                                "support for type double failed")
+        self.assertEquals(type(p.get("pdbl")), type(5.1),
+                          "auto-typing for double failed")
+        p.set("pbool", True)
+        self.assert_(p.getBool("pbool"), "support for type bool failed")
+        self.assertEquals(type(p.get("pbool")), type(True),
+                          "auto-typing for bool failed")
+        p.add("pbool", False)
 
         # test shallow & deep copies
 

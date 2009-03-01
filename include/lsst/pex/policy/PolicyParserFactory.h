@@ -1,13 +1,9 @@
 // -*- lsst-c++ -*-
 /**
- * @class PolicyParserFactory
- * 
+ * @file PolicyParserFactory.h
  * @ingroup pex
- *
- * @brief a factory class for creating PolicyParsers for specific formats
- * 
+ * @brief a definition of the PolicyParserFactory class
  * @author Ray Plante
- * 
  */
 
 #ifndef LSST_PEX_POLICY_PARSERFACTORY_H
@@ -27,8 +23,7 @@ namespace policy {
 // forward declaration
 class PolicyParser;
 
-using namespace std;
-using lsst::daf::base::Citizen;
+namespace dafBase = lsst::daf::base;
 
 // class PolicyParserFactory : public Citizen {  // causing deletion problems
 
@@ -42,7 +37,7 @@ using lsst::daf::base::Citizen;
 class PolicyParserFactory {
 public: 
 
-    typedef shared_ptr<PolicyParserFactory> Ptr;
+    typedef boost::shared_ptr<PolicyParserFactory> Ptr;
 
     /**
      * create a factory
@@ -75,17 +70,17 @@ public:
      * the format supported by this parser.  If it is, return the name of 
      * the this format; 
      */
-    virtual bool recognize(const string& leaders) const = 0;
+    virtual bool recognize(const std::string& leaders) const = 0;
 
     /**
      * return the name for the format supported by the parser
      */
-    virtual const string& getFormatName();
+    virtual const std::string& getFormatName();
 
     /** 
      * an empty string representing an unrecognized format
      */
-    static const string UNRECOGNIZED;
+    static const std::string UNRECOGNIZED;
 };
 
 }}}  // end namespace lsst::pex::policy

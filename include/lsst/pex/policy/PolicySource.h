@@ -1,11 +1,9 @@
 // -*- lsst-c++ -*-
 /**
- * @class PolicySource
+ * @file PolicySource.h
  * 
  * @ingroup pex
- *
- * @brief a representation of a src of serialized Policy parameter data
- * 
+ * @brief definition of the PolicySource class
  * @author Ray Plante
  * 
  */
@@ -22,9 +20,7 @@ namespace lsst {
 namespace pex {
 namespace policy {
 
-using namespace std;
-
-using lsst::daf::base::Citizen;
+namespace dafBase = lsst::daf::base;
 
 /**
  * @brief an abstract class representing a source of serialized Policy 
@@ -33,7 +29,7 @@ using lsst::daf::base::Citizen;
  * data is in (which may involve reading the first few characters) and 
  * load it into a Policy.
  */
-class PolicySource : public Citizen {
+class PolicySource : public dafBase::Citizen {
 public:
 
     /**
@@ -41,7 +37,7 @@ public:
      * @param fmts   the list of formats to support
      */
     PolicySource(SupportedFormats::Ptr fmts=defaultFormats) 
-        : Citizen(typeid(this)), _formats(fmts) 
+        : dafBase::Citizen(typeid(this)), _formats(fmts) 
     { 
         if (defaultFormats->size() == 0) 
             SupportedFormats::initDefaultFormats(*defaultFormats);
@@ -88,7 +84,7 @@ public:
      * @exception IOError   if an error occurs while reading the first few
      *                      characters of the source stream.
      */
-    virtual const string& getFormatName() = 0;
+    virtual const std::string& getFormatName() = 0;
 
     /**
      * load the data from this Policy source into a Policy object
@@ -105,7 +101,7 @@ public:
 //      * a content id of "<?cfg ... dictionary ?>" (where ... indicates 
 //      * the format); policy data has an id of "<?cfg ... policy ?>".  
 //      */
-//     static bool indicatesDictionary(const string& contentid) {
+//     static bool indicatesDictionary(const std::string& contentid) {
 //         return regex_search(contentid, DICTIONARY_CONTENT);
 //     }
 

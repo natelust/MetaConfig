@@ -12,15 +12,16 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/regex.hpp>
 
-using namespace std;
-
 namespace lsst {
 namespace pex {
 namespace policy {
 
+//@cond
+
 using boost::regex;
 using boost::sregex_token_iterator;
 using boost::scoped_ptr;
+using namespace std;
 
 const string ValidationError::EMPTY;
 
@@ -126,15 +127,15 @@ void Definition::setDefaultIn(Policy& policy, const string& withName) const {
 
     case Policy::STRING:
     {
-        const Policy::StringPtrArray& defs = 
+        const Policy::StringArray defs = 
             _policy->getStringArray("default");
-        Policy::StringPtrArray::const_iterator it;
+        Policy::StringArray::const_iterator it;
         for(it=defs.begin(); it != defs.end(); ++it) {
             if (it == defs.begin()) 
                 // erase previous values
-                policy.set(withName, **it);
+                policy.set(withName, *it);
             else 
-                policy.add(withName, **it);
+                policy.add(withName, *it);
         }
         break;
     }
@@ -572,7 +573,7 @@ void Definition::validate(const string& name, const Policy::DoubleArray& value,
     if (errs == 0 && ve.getParamCount() > 0) throw ve;
 }
 void Definition::validate(const string& name, 
-                          const Policy::StringPtrArray& value, 
+                          const Policy::StringArray& value, 
                           ValidationError *errs) const 
 { 
     ValidationError ve(LSST_EXCEPT_HERE);
@@ -609,9 +610,9 @@ void Definition::validate(const string& name,
         }
 
         if (allvals.size() > 0) {
-            Policy::StringPtrArray::const_iterator it;
+            Policy::StringArray::const_iterator it;
             for (it = value.begin(); it != value.end(); ++it) {
-                if (allvals.find(**it) != allvals.end()) 
+                if (allvals.find(*it) != allvals.end()) 
                     use->addError(name, ValidationError::VALUE_DISALLOWED);
             }
         }
@@ -668,7 +669,7 @@ Dictionary::Dictionary(const char *filePath) : Policy(filePath) {
     if (!exists("definitions"))
         throw LSST_EXCEPT(pexExcept::RuntimeErrorException, string(filePath) + ": does not contain a dictionary");
 }
-Dictionary::Dictionary(PolicyFile filePath) : Policy(filePath) { 
+Dictionary::Dictionary(const PolicyFile& filePath) : Policy(filePath) { 
     if (!exists("definitions"))
         throw LSST_EXCEPT(pexExcept::RuntimeErrorException, filePath.getPath() + ": does not contain a dictionary");
 }
@@ -712,11 +713,9 @@ void Dictionary::validate(const Policy& pol, ValidationError *errs) const {
     ValidationError *use = &ve;
     if (errs != 0) use = errs;
 
-    list<string> params;
-    pol.names(params, true);
-
+    Policy::StringArray params = pol.names(true);
     try {
-        list<string>::iterator ni;
+        Policy::StringArray::iterator ni;
         for(ni = params.begin(); ni != params.end(); ++ni) {
             scoped_ptr<Definition> def(makeDef(*ni));
             def->validate(pol, *ni, use);
@@ -732,7 +731,7 @@ void Dictionary::validate(const Policy& pol, ValidationError *errs) const {
     if (errs == 0 && ve.getParamCount() > 0) throw ve;
 }
 
-
+//@endcond
 
 } // namespace policy
 } // namespace pex

@@ -38,8 +38,6 @@ int main() {
     try {  p.getTypeInfo("foo"); }
     catch (NameNotFound&) { }
 
-    Assert(p.getInt("foo", 5) == 5, "providing default failed");
-
     p.set("doall", "true");
 
     // non-existence tests on a non-empty policy
@@ -71,9 +69,9 @@ int main() {
     Assert(p.getString("doall") == "duh", "top-level reset failed");
 
     // test that we can access this property as an array
-    vector<Policy::StringPtr> ary = p.getStringArray("doall");
+    vector<std::string> ary = p.getStringArray("doall");
     Assert(ary.size() == 1, "scalar property has more than one value");
-    Assert(*(ary[0]) == "duh", "scalar access via array failed");
+    Assert(ary[0] == "duh", "scalar access via array failed");
 
     p.add("doall", "never");
     cout << "doall: " << p.getString("doall") << endl;
@@ -86,12 +84,23 @@ int main() {
     // test array access
     ary = p.getStringArray("doall");
     cout << "doall (" << ary.size() << "):";
-    for(vector<Policy::StringPtr>::iterator pi=ary.begin();pi!=ary.end();++pi) 
-        cout << ' ' << **pi;
+    for(vector<std::string>::iterator pi=ary.begin();pi!=ary.end();++pi) 
+        cout << ' ' << *pi;
     cout << endl;
     Assert(ary.size() == 2, "scalar property has wrong number of values");
-    Assert(*(ary[0]) == "duh", "scalar access via (2-el) array failed");
-    Assert(*(ary.back()) == "never", "scalar access via (2-el) array failed");
+    Assert(ary[0] == "duh", "scalar access via (2-el) array failed");
+    Assert(ary.back() == "never", "scalar access via (2-el) array failed");
+
+    // test type support
+    p.set("pint", 5);
+    Assert(p.getInt("pint") == 5, "support for type int failed");
+    p.set("pdbl", 5.1);
+    Assert(abs(p.getDouble("pdbl") - 5.1) < 0.0000001, 
+           "support for type double failed");
+    p.set("ptrue", true);
+    Assert(p.getBool("ptrue"), "support for boolean true failed");
+    p.set("pfalse", false);
+    Assert(! p.getBool("pfalse"), "support for boolean false failed");
 
     // test PolicyFile type
     string pfile("test.paf");
@@ -151,12 +160,15 @@ int main() {
 
     // Test shallow and deep copies
     Policy shallow(p);
+    const Policy& cp = p;
+    Policy deep(cp);
     sp->add("score", 1.355);
-    Assert(shallow.getDouble(standalone + ".score") - 1.355 < 0.000000001,
-           "shallow copy failure");
-
-    Policy deep(p);
-    sp->add("score", 1.355);
-    Assert(shallow.getDouble(standalone + ".score") - 3.4 < 0.000000001,
-           "shallow copy failure");
+    double deepscore = deep.getDouble(standalone + ".score");
+    double shallowscore = shallow.getDouble(standalone + ".score");
+    cout << "shallow copy score: " << shallowscore << endl;
+    cout << "deep copy score: " << deepscore << endl;
+    Assert(abs(shallowscore - 1.355) < 0.000000001,
+           "shallow copy failure: score should = 1.355");
+    Assert(abs(deepscore - 3.4) < 0.000000001,
+           "deep copy failure: score should = 3.4");
 }

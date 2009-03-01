@@ -51,6 +51,22 @@ int main(int argc, char** argv) {
         Policy p(pfile);
         p.loadPolicyFiles("examples");
         cout << p << endl;
+
+        if (i==0) {
+            Assert(p.getBool("standalone"), "wrong value: standalone");
+            Assert(p.getDouble("threshold") == 4.5,
+                   "wrong value: threshold");
+            Assert(p.getInt("offsets") == 313, "wrong value: offsets");
+            Assert(p.valueCount("offsets") == 8,
+                   "wrong # of values: offsets");
+            Assert(p.getString("receiver.logVerbosity") == "debug",
+                   "wrong value: receiver.logVerbosity");
+            Assert(p.getString("transmitter.logVerbosity") == "debug",
+                   "wrong value: transmitter.logVerbosity");
+            Assert(p.getString("transmitter.serializationFormat") == "deluxe",
+                   "wrong value: transmitter.serializationFormat");
+            Assert(p.getString("polish") == "fancy","wrong value: polish");
+        }
     }
 
 }

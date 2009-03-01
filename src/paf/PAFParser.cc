@@ -1,10 +1,7 @@
 /**
- * @class PAFParser
- * 
+ * @file PAFParser.cc
  * @ingroup pex
- *
  * @author Ray Plante
- * 
  */
 
 #include "lsst/pex/policy/paf/PAFParser.h"
@@ -16,6 +13,17 @@ namespace lsst {
 namespace pex {
 namespace policy {
 namespace paf {
+
+//@cond
+
+using namespace std;
+using lsst::pex::policy::Policy;
+using lsst::pex::policy::PolicyParser;
+using boost::regex;
+using boost::match_results;
+using boost::regex_search;
+using boost::regex_match;
+using boost::smatch;
 
 const regex PAFParser::COMMENT_LINE("^\\s*#");
 const regex PAFParser::SPACE_SRCH("^(\\s+)");
@@ -68,14 +76,15 @@ ios::iostate PAFParser::_nextLine(istream& is, string& line) {
     if (_buffer.size() > 0) {
         line = _buffer.front(); 
         _buffer.pop_front();
-        _lineno++;
-        return ios::iostate(0);
     }
     else {
+        line = "";
         getline(is, line);
-        if (!is.rdstate()) _lineno++;
-        return is.rdstate();
+        if (is.fail()) return is.rdstate();
+        if (is.eof() and line.length() == 0) return ios::eofbit;
     }
+    _lineno++;
+    return ios::iostate(0);
 }
 
 void PAFParser::_pushBackLine(const string& line) {
@@ -368,6 +377,6 @@ int PAFParser::_addValue(const string& propname, string& value,
     return count;
 }
 
-
+//@endcond
 
 }}}}   // end lsst::pex::policy::paf

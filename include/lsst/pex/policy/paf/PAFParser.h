@@ -1,10 +1,10 @@
 // -*- lsst-c++ -*-
 /**
- * @class Lexer
+ * @file PAFParser.h
  * 
  * @ingroup pex
  *
- * @brief an object for tokenizing a Policy file in PAF format.
+ * @brief definition of the PAFParser class
  * 
  * @author Ray Plante
  * 
@@ -25,35 +25,30 @@ namespace pex {
 namespace policy {
 namespace paf {
 
-using namespace std;
-using lsst::daf::base::Citizen;
-using lsst::pex::policy::Policy;
-using lsst::pex::policy::PolicyParser;
-using boost::regex;
-using boost::match_results;
-using boost::regex_search;
-using boost::regex_match;
-using boost::smatch;
+namespace dafBase = lsst::daf::base;
+namespace pexPolicy = lsst::pex::policy;
 
 /**
  * @brief  a parser for reading PAF-formatted data into a Policy object
  */
-class PAFParser : public PolicyParser {
+class PAFParser : public pexPolicy::PolicyParser {
 public: 
 
-    //@{
     /**
      * create a parser to load a Policy
      * @param policy   the Policy object to load the parsed data into
+     */
+    PAFParser(pexPolicy::Policy& policy);
+
+    /**
+     * @copydoc PAFParser(pexPolicy::Policy&)
      * @param strict   if true, be strict in reporting errors in file 
      *                   contents and syntax.  If false, errors will be 
      *                   ignored if possible; often, such errors will 
      *                   result in some data not getting loaded.  The 
      *                   default (set by PolicyParser) is true.
      */
-    PAFParser(Policy& policy, bool strict);
-    PAFParser(Policy& policy);
-    //@}
+    PAFParser(pexPolicy::Policy& policy, bool strict);
 
     /**
      * delete this parser
@@ -66,41 +61,41 @@ public:
      * @returns int   the number of parameters values loaded.  This does not
      *                   include sub-Policy objects.  
      */
-    virtual int parse(istream& is);
+    virtual int parse(std::istream& is);
 
 private:
     // read next line from stream into the line string
-    ios::iostate _nextLine(istream& is, string& line);
+    std::ios::iostate _nextLine(std::istream& is, std::string& line);
 
     // push a line back onto the stream
-    void _pushBackLine(const string& line);
+    void _pushBackLine(const std::string& line);
 
-    int _parseIntoPolicy(istream& is, Policy& policy);
-    int _addValue(const string& propname, string& value, 
-                  Policy& policy, istream& is);
+    int _parseIntoPolicy(std::istream& is, pexPolicy::Policy& policy);
+    int _addValue(const std::string& propname, std::string& value, 
+                  pexPolicy::Policy& policy, std::istream& is);
 
-    static const regex COMMENT_LINE;
-    static const regex SPACE_SRCH;
-    static const regex PARAM_SRCH;
-    static const regex NAME_MTCH;
-    static const regex OPEN_SRCH;
-    static const regex CLOSE_SRCH;
-    static const regex DOUBLE_VALUE;
-    static const regex INT_VALUE;
-    static const regex ATRUE_VALUE;
-    static const regex AFALSE_VALUE;
-    static const regex QQSTRING_VALUE;
-    static const regex QSTRING_VALUE;
-    static const regex QQSTRING_START;
-    static const regex QSTRING_START;
-    static const regex QQSTRING_END;
-    static const regex QSTRING_END;
-    static const regex BARE_STRING_LINE;
-    static const regex BARE_STRING;
-    static const regex FILE_VALUE;
+    static const boost::regex COMMENT_LINE;
+    static const boost::regex SPACE_SRCH;
+    static const boost::regex PARAM_SRCH;
+    static const boost::regex NAME_MTCH;
+    static const boost::regex OPEN_SRCH;
+    static const boost::regex CLOSE_SRCH;
+    static const boost::regex DOUBLE_VALUE;
+    static const boost::regex INT_VALUE;
+    static const boost::regex ATRUE_VALUE;
+    static const boost::regex AFALSE_VALUE;
+    static const boost::regex QQSTRING_VALUE;
+    static const boost::regex QSTRING_VALUE;
+    static const boost::regex QQSTRING_START;
+    static const boost::regex QSTRING_START;
+    static const boost::regex QQSTRING_END;
+    static const boost::regex QSTRING_END;
+    static const boost::regex BARE_STRING_LINE;
+    static const boost::regex BARE_STRING;
+    static const boost::regex FILE_VALUE;
 
     // the policy reference, Policy& _pol, is a member of the parent class
-    list<string> _buffer;
+    std::list<std::string> _buffer;
     int _lineno;
     int _depth;
 };
