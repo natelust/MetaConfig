@@ -485,7 +485,7 @@ string Policy::str(const string& name, const string& indent) const {
         out << "<null>";
     }
 
-    out << ends;
+    // out << ends;   // unnecessary but problematic, according to #316
     return out.str();
 }
 
