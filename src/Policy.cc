@@ -468,7 +468,7 @@ string Policy::str(const string& name, const string& indent) const {
                 out.flush();
             }
         }
-        else if (tp == typeid(FilePtr)) {
+        else if (tp == typeid(Persistable::Ptr)) {
             FilePtrArray f = getFileArray(name);
             FilePtrArray::iterator vi;
             for(vi= f.begin(); vi != f.end(); ++vi) {
