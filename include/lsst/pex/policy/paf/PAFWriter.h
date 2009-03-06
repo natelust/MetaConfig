@@ -41,6 +41,13 @@ public:
     { }
 
     /**
+     * create a writer attached to an output file
+     * @param file     the output file
+     */
+    PAFWriter(const std::string& file) 
+        : pexPolicy::PolicyWriter(file), _indent() { }
+
+    /**
      * delete this writer
      */
     virtual ~PAFWriter();
@@ -49,6 +56,8 @@ public:
      * write the contents of a policy the attached stream.  Each top-level
      * parameter will be recursively printed.
      * @param policy     the policy data to write
+     * @param doDecl     if true, precede the data with the appropriate 
+     *                     file format type. 
      */
     virtual void write(const Policy& policy, bool doDecl=false);
 

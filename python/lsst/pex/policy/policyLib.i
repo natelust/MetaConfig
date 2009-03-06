@@ -119,17 +119,12 @@ SWIG_SHARED_PTR_DERIVED(PolicyFile, lsst::pex::policy::PolicySource, lsst::pex::
 %newobject lsst::pex::policy::Policy::createPolicy;
 
 %include "lsst/pex/policy/Policy.h"
+%include "lsst/pex/policy/PolicyWriter.h"
 %include "lsst/pex/policy/paf/PAFWriter.h"
 %include "lsst/pex/policy/exceptions.h"
 %include "lsst/pex/policy/parserexceptions.h"
 
 %extend lsst::pex::policy::Policy {
-    std::string toString() {
-       std::ostringstream msg;
-       self->print(msg);
-       return msg.str();
-    }
-
     void _setBool(const std::string& name, bool value) {
        self->set(name, value);
     }

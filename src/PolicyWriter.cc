@@ -6,6 +6,7 @@
 #include "lsst/pex/policy/PolicyFile.h"
 
 #include <fstream>
+#include <sstream>
 
 namespace lsst {
 namespace pex {
@@ -18,15 +19,47 @@ using lsst::daf::base::Persistable;
  * create a writer attached to an output stream
  * @param out     the output stream to write data to
  */
-PolicyWriter::PolicyWriter(std::ostream *out) : _nullos(0), _os(out) {
+PolicyWriter::PolicyWriter(std::ostream *out) : _myos(0), _os(out) {
     if (! out) {
-        _nullos = new std::ofstream(NULL_FILENAME);
-        _os = _nullos;
+        _myos = new std::ostringstream();
+        _os = _myos;
     }
 }
 
+/*
+ * create a writer attached to a file.  The file will be immediately 
+ * opened for writing.
+ * @param file     the path to the output file
+ */
+PolicyWriter::PolicyWriter(const std::string& file, bool append) 
+    : _myos(new std::ofstream(file.c_str(), append ? std::ios_base::app 
+                                                   : std::ios_base::trunc)),
+      _os(0)
+{
+    _os = _myos;
+}
+
 PolicyWriter::~PolicyWriter() {
-    if (_nullos) delete _nullos;
+    if (_myos) delete _myos;
+}
+
+/*
+ * return the written data as a string.  This string will be non-empty 
+ * only if this class was was instantiated without an attached stream.
+ */
+std::string PolicyWriter::toString() {
+    std::ostringstream *ss = dynamic_cast<std::ostringstream*>(_os);
+    if (ss) return ss->str();
+    return std::string();
+}
+
+/*
+ * close the output stream.  This has no effect if the attached 
+ * stream is not a file stream.  
+ */
+void PolicyWriter::close() {  
+    std::ofstream *fs = dynamic_cast<std::ofstream*>(_os);
+    if (fs) fs->close();
 }
 
 /*

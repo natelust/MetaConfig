@@ -10,6 +10,7 @@ namespace pex {
 namespace policy {
 namespace paf {
 
+//@cond
 using lsst::pex::policy::Policy;
 using lsst::pex::policy::PolicyWriter;
 
@@ -101,10 +102,5 @@ void PAFWriter::write(const std::string& name,
     (*_os) << std::endl;
 }
     
-
-
-
-
-
-
+//@endcond
 }}}} // end lsst::pex::policy::paf

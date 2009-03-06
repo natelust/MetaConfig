@@ -18,9 +18,6 @@ namespace lsst {
 namespace pex {
 namespace policy {
 
-// forward declaration
-class PolicyFile;
-
 /**
  * An abstract interface for writing policy data to streams
  */
@@ -28,10 +25,20 @@ class PolicyWriter {
 public: 
 
     /**
-     * create a writer attached to an output stream
+     * create a writer attached to an output stream.  If no stream is 
+     * provided, it will write policy data to an internal string stream; 
+     * toString() can be used to retrieve the results.  
      * @param out     the output stream to write data to
      */
     PolicyWriter(std::ostream *out = 0);
+
+    /**
+     * create a writer attached to a file.  This file will be immediately 
+     * opened for writing.
+     * @param file     the path to the output file
+     * @param append   if true, open the file to append.  (default is false.)
+     */
+    PolicyWriter(const std::string& file, bool append=false);
 
     /**
      * delete this writer
@@ -87,8 +94,21 @@ public:
                        const Policy::FilePtrArray& values) = 0;
     //@}
 
+    /**
+     * close the output stream.  This has no effect if the attached 
+     * stream is not a file stream.  
+     */
+    void close();
+
+    /**
+     * return the written data as a string.  This string will be non-empty 
+     * only if this class was was instantiated without an attached stream.
+     */
+    std::string toString();
+        
+
 private:
-    std::ostream *_nullos;
+    std::ostream *_myos;
 protected:
 
     /**
