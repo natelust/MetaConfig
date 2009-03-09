@@ -1,15 +1,4 @@
 // -*- lsst-c++ -*-
-/**
- * @file Policy.h
- * 
- * @ingroup pex
- *
- * @brief the definition of the Policy class
- * 
- * @author Ray Plante
- * 
- */
-
 #ifndef LSST_PEX_POLICY_POLICY_H
 #define LSST_PEX_POLICY_POLICY_H
 

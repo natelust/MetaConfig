@@ -7,7 +7,7 @@
 #include <sstream>
 #include <string>
 #include <stdexcept>
-#include "lsst/pex/policy/Policy.h"
+#include "lsst/pex/policy.h"
 #include "lsst/pex/policy/PolicyFile.h"
 
 using namespace std;

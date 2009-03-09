@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <list>
 #include "lsst/pex/policy/paf/PAFParser.h"
-#include "lsst/pex/policy/Policy.h"
+#include "lsst/pex/policy.h"
 
 using namespace std;
 using lsst::pex::policy::Policy;
