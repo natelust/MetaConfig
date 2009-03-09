@@ -52,15 +52,6 @@ public:
      */
     virtual ~PAFWriter();
 
-    /**
-     * write the contents of a policy the attached stream.  Each top-level
-     * parameter will be recursively printed.
-     * @param policy     the policy data to write
-     * @param doDecl     if true, precede the data with the appropriate 
-     *                     file format type. 
-     */
-    virtual void write(const Policy& policy, bool doDecl=false);
-
     //@{
     /**
      * write an array of property values with a given name
@@ -70,18 +61,18 @@ public:
      *                  it should raise an exception.
      * @param values   the values to save under that name.
      */
-    virtual void write(const std::string& name, 
-                       const pexPolicy::Policy::BoolArray& values);
-    virtual void write(const std::string& name, 
-                       const pexPolicy::Policy::IntArray& values);
-    virtual void write(const std::string& name, 
-                       const pexPolicy::Policy::DoubleArray& values);
-    virtual void write(const std::string& name, 
-                       const pexPolicy::Policy::StringArray& values);
-    virtual void write(const std::string& name, 
-                       const pexPolicy::Policy::PolicyPtrArray& values);
-    virtual void write(const std::string& name, 
-                       const pexPolicy::Policy::FilePtrArray& values);
+    virtual void writeBools(const std::string& name, 
+                            const pexPolicy::Policy::BoolArray& values);
+    virtual void writeInts(const std::string& name, 
+                           const pexPolicy::Policy::IntArray& values);
+    virtual void writeDoubles(const std::string& name, 
+                              const pexPolicy::Policy::DoubleArray& values);
+    virtual void writeStrings(const std::string& name, 
+                              const pexPolicy::Policy::StringArray& values);
+    virtual void writePolicies(const std::string& name, 
+                              const pexPolicy::Policy::PolicyPtrArray& values);
+    virtual void writeFiles(const std::string& name, 
+                            const pexPolicy::Policy::FilePtrArray& values);
     //@}
 
 protected:

@@ -27,8 +27,8 @@ PAFWriter::~PAFWriter() { }
  *                  it should raise an exception.
  * @param values   the values to save under that name.
  */
-void PAFWriter::write(const std::string& name, 
-                      const Policy::BoolArray& values) 
+void PAFWriter::writeBools(const std::string& name, 
+                           const Policy::BoolArray& values) 
 {
     (*_os) << _indent << name << ": ";
     Policy::BoolArray::const_iterator vi;
@@ -38,8 +38,8 @@ void PAFWriter::write(const std::string& name,
     }
     (*_os) << std::endl;
 }
-void PAFWriter::write(const std::string& name, 
-                      const Policy::IntArray& values) 
+void PAFWriter::writeInts(const std::string& name, 
+                          const Policy::IntArray& values) 
 {
     (*_os) << _indent << name << ": ";
     Policy::IntArray::const_iterator vi;
@@ -49,8 +49,8 @@ void PAFWriter::write(const std::string& name,
     }
     (*_os) << std::endl;
 }
-void PAFWriter::write(const std::string& name, 
-                      const Policy::DoubleArray& values) 
+void PAFWriter::writeDoubles(const std::string& name, 
+                             const Policy::DoubleArray& values) 
 {
     (*_os) << _indent << name << ": ";
     Policy::DoubleArray::const_iterator vi;
@@ -60,8 +60,8 @@ void PAFWriter::write(const std::string& name,
     }
     (*_os) << std::endl;
 }
-void PAFWriter::write(const std::string& name, 
-                      const Policy::StringArray& values) {
+void PAFWriter::writeStrings(const std::string& name, 
+                             const Policy::StringArray& values) {
     (*_os) << _indent << name << ": ";
     Policy::StringArray::const_iterator vi;
     for(vi = values.begin(); vi != values.end(); ++vi) {
@@ -70,8 +70,8 @@ void PAFWriter::write(const std::string& name,
     }
     (*_os) << std::endl;
 }
-void PAFWriter::write(const std::string& name, 
-                      const Policy::PolicyPtrArray& values) {
+void PAFWriter::writePolicies(const std::string& name, 
+                              const Policy::PolicyPtrArray& values) {
     PAFWriter subwrtr(_os, _indent+"  ");
 
     Policy::PolicyPtrArray::const_iterator vi;
@@ -82,17 +82,9 @@ void PAFWriter::write(const std::string& name,
     }
 }
 
-/*
- * write the contents of a policy the attached stream.  Each top-level
- * parameter will be recursively printed.
- * @param policy     the policy data to write
- */
-void PAFWriter::write(const Policy& policy, bool doDecl) {
-    PolicyWriter::write(policy, doDecl);
-}
-
-void PAFWriter::write(const std::string& name, 
-                      const Policy::FilePtrArray& values) {
+void PAFWriter::writeFiles(const std::string& name, 
+                           const Policy::FilePtrArray& values) 
+{
     (*_os) << _indent << name << ": ";
     Policy::FilePtrArray::const_iterator vi;
     for(vi = values.begin(); vi != values.end(); ++vi) {

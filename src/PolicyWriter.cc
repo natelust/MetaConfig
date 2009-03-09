@@ -12,6 +12,7 @@ namespace lsst {
 namespace pex {
 namespace policy {
 
+//@cond
 using lsst::daf::base::PropertySet;
 using lsst::daf::base::Persistable;
 
@@ -77,22 +78,22 @@ void PolicyWriter::write(const Policy& policy, bool doDecl) {
         try {
             const std::type_info& tp = policy.typeOf(*ni);
             if (tp == typeid(bool)) {
-                write(*ni, policy.getBoolArray(*ni));
+                writeBools(*ni, policy.getBoolArray(*ni));
             }
             else if (tp == typeid(int)) {
-                write(*ni, policy.getIntArray(*ni));
+                writeInts(*ni, policy.getIntArray(*ni));
             }
             else if (tp == typeid(double)) {
-                write(*ni, policy.getDoubleArray(*ni));
+                writeDoubles(*ni, policy.getDoubleArray(*ni));
             }
             else if (tp == typeid(std::string)) {
-                write(*ni, policy.getStringArray(*ni));
+                writeStrings(*ni, policy.getStringArray(*ni));
             }
             else if (tp == typeid(PropertySet::Ptr)) {
-                write(*ni, policy.getPolicyArray(*ni));
+                writePolicies(*ni, policy.getPolicyArray(*ni));
             }
             else if (tp == typeid(Persistable::Ptr)) {
-                write(*ni, policy.getFileArray(*ni));
+                writeFiles(*ni, policy.getFileArray(*ni));
             }
             else {
                 throw LSST_EXCEPT(pexExcept::LogicErrorException, "Policy: unexpected type for name=" + *ni);
@@ -106,36 +107,47 @@ void PolicyWriter::write(const Policy& policy, bool doDecl) {
 
 }
 
-#define PW_WRITE_PRIMITIVE(vtype) \
-void PolicyWriter::write(const std::string& name, vtype value) {    \
-    std::vector<vtype> vals;                                        \
-    vals.push_back(value); \
-    write(name, vals); \
+void PolicyWriter::writeBool(const std::string& name, bool value) { 
+    std::vector<bool> vals;
+    vals.push_back(value);
+    writeBools(name, vals);
 }
 
-PW_WRITE_PRIMITIVE(int)
-PW_WRITE_PRIMITIVE(double)
-PW_WRITE_PRIMITIVE(bool)
+void PolicyWriter::writeInt(const std::string& name, int value) { 
+    std::vector<int> vals;
+    vals.push_back(value);
+    writeInts(name, vals);
+}
 
-void PolicyWriter::write(const std::string& name, const std::string& value) {
+void PolicyWriter::writeDouble(const std::string& name, double value) { 
+    std::vector<double> vals;
+    vals.push_back(value);
+    writeDoubles(name, vals);
+}
+
+void PolicyWriter::writeString(const std::string& name, 
+                               const std::string& value) 
+{
     std::vector<std::string> vals; 
     vals.push_back(value); 
-    write(name, vals); 
+    writeStrings(name, vals); 
 }
 
-void PolicyWriter::write(const std::string& name, const Policy& value) {   
+void PolicyWriter::writePolicy(const std::string& name, const Policy& value) {
     std::vector<Policy::Ptr> vals; 
     vals.push_back(Policy::Ptr(new Policy(value))); 
-    write(name, vals); 
+    writePolicies(name, vals); 
 }
 
-void PolicyWriter::write(const std::string& name, const PolicyFile& value) {   
+void PolicyWriter::writeFile(const std::string& name, 
+                             const PolicyFile& value) 
+{ 
     std::vector<Policy::FilePtr> vals; 
     vals.push_back(Policy::FilePtr(new PolicyFile(value))); 
-    write(name, vals); 
+    writeFiles(name, vals); 
 }
 
 
-
+//@endcond
 
 }}}  // end lsst::pex::policy

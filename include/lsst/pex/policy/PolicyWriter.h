@@ -63,12 +63,13 @@ public:
      *                  it should raise an exception.
      * @param value   the value to save under that name.
      */
-    virtual void write(const std::string& name, bool value);
-    virtual void write(const std::string& name, int value);
-    virtual void write(const std::string& name, double value);
-    virtual void write(const std::string& name, const std::string& value);
-    virtual void write(const std::string& name, const Policy& value);
-    virtual void write(const std::string& name, const PolicyFile& value);
+    virtual void writeBool(const std::string& name, bool value);
+    virtual void writeInt(const std::string& name, int value);
+    virtual void writeDouble(const std::string& name, double value);
+    virtual void writeString(const std::string& name, 
+                             const std::string& value);
+    virtual void writePolicy(const std::string& name, const Policy& value);
+    virtual void writeFile(const std::string& name, const PolicyFile& value);
     //@}
 
     //@{
@@ -80,18 +81,18 @@ public:
      *                  it should raise an exception.
      * @param values   the values to save under that name.
      */
-    virtual void write(const std::string& name, 
-                       const Policy::BoolArray& values) = 0;
-    virtual void write(const std::string& name, 
-                       const Policy::IntArray& values) = 0;
-    virtual void write(const std::string& name, 
-                       const Policy::DoubleArray& values) = 0;
-    virtual void write(const std::string& name, 
-                       const Policy::StringArray& values) = 0;
-    virtual void write(const std::string& name, 
-                       const Policy::PolicyPtrArray& values) = 0;
-    virtual void write(const std::string& name, 
-                       const Policy::FilePtrArray& values) = 0;
+    virtual void writeBools(const std::string& name, 
+                            const Policy::BoolArray& values) = 0;
+    virtual void writeInts(const std::string& name, 
+                           const Policy::IntArray& values) = 0;
+    virtual void writeDoubles(const std::string& name, 
+                              const Policy::DoubleArray& values) = 0;
+    virtual void writeStrings(const std::string& name, 
+                              const Policy::StringArray& values) = 0;
+    virtual void writePolicies(const std::string& name, 
+                               const Policy::PolicyPtrArray& values) = 0;
+    virtual void writeFiles(const std::string& name, 
+                            const Policy::FilePtrArray& values) = 0;
     //@}
 
     /**
