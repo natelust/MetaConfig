@@ -9,7 +9,7 @@
 #include <string>
 #include <memory>
 #include <stdexcept>
-#include "lsst/pex/policy/Policy.h"
+#include "lsst/pex/policy.h"
 #include "lsst/pex/policy/Dictionary.h"
 
 using namespace std;
