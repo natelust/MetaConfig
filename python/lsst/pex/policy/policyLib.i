@@ -131,6 +131,8 @@ SWIG_SHARED_PTR_DERIVED(PolicyFile, lsst::pex::policy::PolicySource, lsst::pex::
 %include "lsst/pex/policy/exceptions.h"
 %include "lsst/pex/policy/parserexceptions.h"
 
+%template(vector_Policy_Ptr) std::vector<boost::shared_ptr<lsst::pex::policy::Policy> >;
+
 %extend lsst::pex::policy::Policy {
     void _setBool(const std::string& name, bool value) {
        self->set(name, value);
