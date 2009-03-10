@@ -18,6 +18,7 @@ Access to the policy classes from the pex module
 #include "lsst/pex/policy/parserexceptions.h"
 #include "lsst/pex/policy/Policy.h"
 #include "lsst/pex/policy/PolicyFile.h"
+#include "lsst/pex/policy/paf/PAFWriter.h"
 #include <sstream>
 
 using lsst::pex::policy::SupportedFormats;
@@ -106,6 +107,7 @@ SWIG_SHARED_PTR(PolicySource, lsst::pex::policy::PolicySource)
 SWIG_SHARED_PTR_DERIVED(PolicyFile, lsst::pex::policy::PolicySource, lsst::pex::policy::PolicyFile)
 
 %newobject lsst::pex::policy::Policy::createPolicy;
+%feature("notabstract") lsst::pex::policy::paf::PAFWriter;
 
 %ignore lsst::pex::policy::Policy::Policy(const Policy& pol);
 
@@ -124,16 +126,12 @@ SWIG_SHARED_PTR_DERIVED(PolicyFile, lsst::pex::policy::PolicySource, lsst::pex::
 %ignore lsst::pex::policy::Policy::fileNames(std::list<std::string>& names);
 
 %include "lsst/pex/policy/Policy.h"
+%include "lsst/pex/policy/PolicyWriter.h"
+%include "lsst/pex/policy/paf/PAFWriter.h"
 %include "lsst/pex/policy/exceptions.h"
 %include "lsst/pex/policy/parserexceptions.h"
 
 %extend lsst::pex::policy::Policy {
-    std::string toString() {
-       std::ostringstream msg;
-       self->print(msg);
-       return msg.str();
-    }
-
     void _setBool(const std::string& name, bool value) {
        self->set(name, value);
     }
