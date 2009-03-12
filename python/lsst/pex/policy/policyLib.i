@@ -13,6 +13,7 @@ Access to the policy classes from the pex module
 
 
 %{
+#include "boost/filesystem/path.hpp"
 #include "lsst/daf/base.h"
 #include "lsst/pex/policy/exceptions.h"
 #include "lsst/pex/policy/parserexceptions.h"
@@ -109,15 +110,27 @@ namespace boost { namespace filesystem { } }
         PyList_SetItem($result,i,PyString_FromString(sp->c_str()));
     }
 }
-%typemap(in) const boost::filesystem::path& {
-   std::string * temp = 0;
-   SWIG_AsVal_std_string($input, temp);
-   if (temp == 0) {
-       PyErr_SetString(PyExc_ValueError, "Failed to convert string input"); 
-       return NULL;
-   }
-   $1 = boost::filesystem::path(*temp);
-   delete temp;
+
+// Tell SWIG that boost::filesystem::path is equivalent to a string for typechecking purposes
+%typemap(typecheck) const lsst::pex::policy::fs::path & = char *;
+
+// Convert Python strings to boost::filesystem::path objects
+%typemap(in) const lsst::pex::policy::fs::path & {
+    std::string * temp;
+    int cnvRes = SWIG_AsPtr_std_string($input, &temp);
+    if (!SWIG_IsOK(cnvRes)) {
+        SWIG_exception_fail(SWIG_ArgError(cnvRes), "failed to convert Python input to C++ string");
+    }
+    if (!temp) {
+        SWIG_exception_fail(SWIG_ValueError, "invalid null reference in input");
+    }
+    $1 = new boost::filesystem::path(*temp);
+    delete temp;
+}
+
+// Make sure temporary created above is freed inside wrapper code
+%typemap(freearg) const lsst::pex::policy::fs::path & {
+    delete $1;
 }
 
 
