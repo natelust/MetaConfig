@@ -13,6 +13,7 @@ Access to the policy classes from the pex module
 
 
 %{
+#include "boost/filesystem/path.hpp"
 #include "lsst/daf/base.h"
 #include "lsst/pex/policy/exceptions.h"
 #include "lsst/pex/policy/parserexceptions.h"
@@ -100,6 +101,39 @@ namespace boost { namespace filesystem { } }
     $1 = &temp;
 }
 
+%typemap(argout) std::list<std::string > &names {
+    int len = (*$1).size();
+    $result = PyList_New(len);
+    std::list<std::string >::iterator sp;
+    int i = 0;
+    for (sp = (*$1).begin(); sp != (*$1).end(); sp++, i++) {
+        PyList_SetItem($result,i,PyString_FromString(sp->c_str()));
+    }
+}
+
+// Tell SWIG that boost::filesystem::path is equivalent to a string for typechecking purposes
+%typemap(typecheck) const lsst::pex::policy::fs::path & = char *;
+
+// Convert Python strings to boost::filesystem::path objects
+%typemap(in) const lsst::pex::policy::fs::path & {
+    std::string * temp;
+    int cnvRes = SWIG_AsPtr_std_string($input, &temp);
+    if (!SWIG_IsOK(cnvRes)) {
+        SWIG_exception_fail(SWIG_ArgError(cnvRes), "failed to convert Python input to C++ string");
+    }
+    if (!temp) {
+        SWIG_exception_fail(SWIG_ValueError, "invalid null reference in input");
+    }
+    $1 = new boost::filesystem::path(*temp);
+    delete temp;
+}
+
+// Make sure temporary created above is freed inside wrapper code
+%typemap(freearg) const lsst::pex::policy::fs::path & {
+    delete $1;
+}
+
+
 %template(NameList) std::list<std::string >;
 
 SWIG_SHARED_PTR(Policy, lsst::pex::policy::Policy)
@@ -110,20 +144,6 @@ SWIG_SHARED_PTR_DERIVED(PolicyFile, lsst::pex::policy::PolicySource, lsst::pex::
 %feature("notabstract") lsst::pex::policy::paf::PAFWriter;
 
 %ignore lsst::pex::policy::Policy::Policy(const Policy& pol);
-
-// there is perhaps a better way to deal with this
-%ignore lsst::pex::policy::Policy::names(std::list<std::string>& names, bool topLevelOnly, bool append);
-%ignore lsst::pex::policy::Policy::paramNames(std::list<std::string>& names, bool topLevelOnly, bool append);
-%ignore lsst::pex::policy::Policy::policyNames(std::list<std::string>& names, bool topLevelOnly, bool append);
-%ignore lsst::pex::policy::Policy::fileNames(std::list<std::string>& names, bool topLevelOnly, bool append);
-%ignore lsst::pex::policy::Policy::names(std::list<std::string,std::allocator< std::string > >& names, bool topLevelOnly);
-%ignore lsst::pex::policy::Policy::paramNames(std::list<std::string>& names, bool topLevelOnly);
-%ignore lsst::pex::policy::Policy::policyNames(std::list<std::string>& names, bool topLevelOnly);
-%ignore lsst::pex::policy::Policy::fileNames(std::list<std::string>& names, bool topLevelOnly);
-%ignore lsst::pex::policy::Policy::names(std::list<std::string>& names);
-%ignore lsst::pex::policy::Policy::paramNames(std::list<std::string>& names);
-%ignore lsst::pex::policy::Policy::policyNames(std::list<std::string>& names);
-%ignore lsst::pex::policy::Policy::fileNames(std::list<std::string>& names);
 
 %include "lsst/pex/policy/Policy.h"
 %include "lsst/pex/policy/PolicyWriter.h"
