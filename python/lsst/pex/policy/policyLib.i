@@ -100,6 +100,27 @@ namespace boost { namespace filesystem { } }
     $1 = &temp;
 }
 
+%typemap(argout) std::list<std::string > &names {
+    int len = (*$1).size();
+    $result = PyList_New(len);
+    std::list<std::string >::iterator sp;
+    int i = 0;
+    for (sp = (*$1).begin(); sp != (*$1).end(); sp++, i++) {
+        PyList_SetItem($result,i,PyString_FromString(sp->c_str()));
+    }
+}
+%typemap(in) const boost::filesystem::path& {
+   std::string * temp = 0;
+   SWIG_AsVal_std_string($input, temp);
+   if (temp == 0) {
+       PyErr_SetString(PyExc_ValueError, "Failed to convert string input"); 
+       return NULL;
+   }
+   $1 = boost::filesystem::path(*temp);
+   delete temp;
+}
+
+
 %template(NameList) std::list<std::string >;
 
 SWIG_SHARED_PTR(Policy, lsst::pex::policy::Policy)
@@ -110,20 +131,6 @@ SWIG_SHARED_PTR_DERIVED(PolicyFile, lsst::pex::policy::PolicySource, lsst::pex::
 %feature("notabstract") lsst::pex::policy::paf::PAFWriter;
 
 %ignore lsst::pex::policy::Policy::Policy(const Policy& pol);
-
-// there is perhaps a better way to deal with this
-%ignore lsst::pex::policy::Policy::names(std::list<std::string>& names, bool topLevelOnly, bool append);
-%ignore lsst::pex::policy::Policy::paramNames(std::list<std::string>& names, bool topLevelOnly, bool append);
-%ignore lsst::pex::policy::Policy::policyNames(std::list<std::string>& names, bool topLevelOnly, bool append);
-%ignore lsst::pex::policy::Policy::fileNames(std::list<std::string>& names, bool topLevelOnly, bool append);
-%ignore lsst::pex::policy::Policy::names(std::list<std::string,std::allocator< std::string > >& names, bool topLevelOnly);
-%ignore lsst::pex::policy::Policy::paramNames(std::list<std::string>& names, bool topLevelOnly);
-%ignore lsst::pex::policy::Policy::policyNames(std::list<std::string>& names, bool topLevelOnly);
-%ignore lsst::pex::policy::Policy::fileNames(std::list<std::string>& names, bool topLevelOnly);
-%ignore lsst::pex::policy::Policy::names(std::list<std::string>& names);
-%ignore lsst::pex::policy::Policy::paramNames(std::list<std::string>& names);
-%ignore lsst::pex::policy::Policy::policyNames(std::list<std::string>& names);
-%ignore lsst::pex::policy::Policy::fileNames(std::list<std::string>& names);
 
 %include "lsst/pex/policy/Policy.h"
 %include "lsst/pex/policy/PolicyWriter.h"
