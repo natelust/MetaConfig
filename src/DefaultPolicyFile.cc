@@ -44,7 +44,7 @@ fs::path DefaultPolicyFile::installPathFor(const char* const productName) {
     // transform to upper case
     std::transform(productName_DIR.begin(), productName_DIR.end(),
                    productName_DIR.begin(), 
-                   std::ptr_fun<int, int>( std::tolower ));
+                   std::ptr_fun<int, int>( std::toupper ));
 
     // append _DIR
     productName_DIR += "_DIR";

@@ -19,6 +19,7 @@ Access to the policy classes from the pex module
 #include "lsst/pex/policy/parserexceptions.h"
 #include "lsst/pex/policy/Policy.h"
 #include "lsst/pex/policy/PolicyFile.h"
+#include "lsst/pex/policy/DefaultPolicyFile.h"
 #include "lsst/pex/policy/paf/PAFWriter.h"
 #include <sstream>
 
@@ -139,6 +140,7 @@ namespace boost { namespace filesystem { } }
 SWIG_SHARED_PTR(Policy, lsst::pex::policy::Policy)
 SWIG_SHARED_PTR(PolicySource, lsst::pex::policy::PolicySource)
 SWIG_SHARED_PTR_DERIVED(PolicyFile, lsst::pex::policy::PolicySource, lsst::pex::policy::PolicyFile)
+SWIG_SHARED_PTR_DERIVED(DefaultPolicyFile, lsst::pex::policy::PolicyFile, lsst::pex::policy::DefaultPolicyFile)
 
 %newobject lsst::pex::policy::Policy::createPolicy;
 %feature("notabstract") lsst::pex::policy::paf::PAFWriter;
@@ -219,4 +221,5 @@ Policy.add = _Policy_add
 %ignore lsst::pex::policy::PolicySource::defaultFormats;
 %include "lsst/pex/policy/PolicySource.h"
 %include "lsst/pex/policy/PolicyFile.h"
+%include "lsst/pex/policy/DefaultPolicyFile.h"
 
