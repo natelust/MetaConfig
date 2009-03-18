@@ -48,12 +48,12 @@ const regex
  */
 PolicyFile::PolicyFile(const SupportedFormats::Ptr& fmts) 
     : PolicySource(fmts), Persistable(), 
-      _file(PolicyParserFactory::UNRECOGNIZED) 
+      _file(PolicyParserFactory::UNRECOGNIZED), _format(), _pfact() 
 { }
 
 PolicyFile::PolicyFile(const string& filepath, 
                        const SupportedFormats::Ptr& fmts) 
-    : PolicySource(fmts), Persistable(), _file(filepath) 
+    : PolicySource(fmts), Persistable(), _file(filepath), _format(), _pfact() 
 { }
 
 PolicyFile::PolicyFile(const fs::path& filepath, 
@@ -74,6 +74,42 @@ PolicyFile::PolicyFile(const fs::path& filepath,
     : PolicySource(), Persistable(), 
       _file(filepath), _format(), _pfact(parserFactory) 
 { 
+    if (! _pfact.get()) _format = _pfact->getFormatName();
+}
+
+PolicyFile::PolicyFile(const string& filepath, const fs::path& reposDir,
+                       const SupportedFormats::Ptr& fmts) 
+    : PolicySource(fmts), Persistable(), _file(filepath), _format(), _pfact() 
+{ 
+    if (! _file.has_root_path() && ! reposDir.empty()) 
+        _file = reposDir / _file;
+}
+
+PolicyFile::PolicyFile(const fs::path& filepath, const fs::path& reposDir,
+                       const SupportedFormats::Ptr& fmts) 
+    : PolicySource(fmts), Persistable(), _file(filepath), _format(), _pfact()
+{ 
+    if (! _file.has_root_path() && ! reposDir.empty()) 
+        _file = reposDir / _file;
+}
+
+PolicyFile::PolicyFile(const string& filepath, const fs::path& reposDir,
+                       const PolicyParserFactory::Ptr& parserFactory)
+    : PolicySource(), Persistable(), 
+      _file(filepath), _format(), _pfact(parserFactory)
+{ 
+    if (! _file.has_root_path() && ! reposDir.empty()) 
+        _file = reposDir / _file;
+    if (! _pfact.get()) _format = _pfact->getFormatName();
+}
+
+PolicyFile::PolicyFile(const fs::path& filepath, const fs::path& reposDir,
+                       const PolicyParserFactory::Ptr& parserFactory)
+    : PolicySource(), Persistable(), 
+      _file(filepath), _format(), _pfact(parserFactory) 
+{ 
+    if (! _file.has_root_path() && ! reposDir.empty()) 
+        _file = reposDir / _file;
     if (! _pfact.get()) _format = _pfact->getFormatName();
 }
 

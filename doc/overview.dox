@@ -94,6 +94,17 @@ For explanation of the Dictionary schema and how to encode it using
 the \ref pagePAF "PAF format", see 
 \ref pageDictionary "The Dictionary Schema".  
 
+\section secDefaults Default Policy Data
+
+When an object using a Policy fails to find a parameter it was expecting,
+it is a little inelegant to provide a default hard-coded in the object's
+implementation, <em>by design</em>.  Instead it is recommended that 
+defaults be loaded from another Policy.  The intended way to do this is 
+to load defaults via a DefaultPolicyFile (which can located a policy file
+from any EUPS-setup installation directory) and to merge them into to the
+primary Policy instance via the Policy::mergeDefaults() function.  
+
+
 */
 }}}
 

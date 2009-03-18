@@ -76,6 +76,54 @@ public:
                const PolicyParserFactory::Ptr& parserFactory);
     //@}
 
+    //@{
+    /**
+     * create a Policy file that points a file with given path in a 
+     * policy file repository.  Typically,
+     * one need only provide a file path; this class will determine the 
+     * type automatically using the default set of supported formats.  If 
+     * you want to control what formats (and the particular parsers) to allow,
+     * you can provide your own SupportedFormats instance.  To force 
+     * interpretation as a particular format, you can a PolicyParserFactory 
+     * instance in lieu of a SupportedFormats (see 
+     * PolicyFile(const std::string&, const SupportedFormats::Ptr&) ).  
+     * @param filepath       the path to the file, either as a string or a
+     *                          boost::filesystem::path instance
+     * @param reposDir       the policy repository directory to assume.  If 
+     *                          \c filepath is a relative path, then the
+     *                          full path to the file will be relative to 
+     *                          this repository directory.  
+     * @param fmts           a SupportedFormats object to use.  An instance 
+     *                          encapsulates a configured set of known formats.
+     */
+    PolicyFile(const std::string& filepath, const fs::path& reposDir,
+               const SupportedFormats::Ptr& fmts = defaultFormats);
+    PolicyFile(const fs::path& filepath, const fs::path& reposDir,
+               const SupportedFormats::Ptr& fmts = defaultFormats);
+    //@}
+
+    //@{
+    /**
+     * create a Policy file that points a file with given path in a 
+     * policy file repository.  These 
+     * constructors allow you to force interpretation as a 
+     * particular format by passing in the PolicyParserFactory to use.
+     * @param filepath       the path to the file, either as a string or a
+     *                          boost::filesystem::path instance
+     * @param reposDir       the policy repository directory to assume.  If 
+     *                          \c filepath is a relative path, then the
+     *                          full path to the file will be relative to 
+     *                          this repository directory.  
+     * @param parserFactory  a PolicyParserFactory implementation to be used
+     *                          in parsing the file, assuming a particular 
+     *                          format.
+     */
+    PolicyFile(const std::string& filepath, const fs::path& reposDir,
+               const PolicyParserFactory::Ptr& parserFactory);
+    PolicyFile(const fs::path& filepath, const fs::path& reposDir,
+               const PolicyParserFactory::Ptr& parserFactory);
+    //@}
+
     /**
      * create a "null" Policy file that points to an unspecified file.  
      * @param fmts           a SupportedFormats object to use.  An instance 

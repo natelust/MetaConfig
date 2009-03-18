@@ -119,6 +119,16 @@ namespace dafBase = lsst::daf::base;
  * dictionaries, see the \ref main "package overview" as well as the 
  * PolicyFile and Dictionary class descriptions.
  *
+ * \section secPolicyDefaults Default Policy Data
+ *
+ * When an object using a Policy fails to find a parameter it was expecting,
+ * it is a little inelegant to provide a default hard-coded in the object's
+ * implementation, <em>by design</em>.  Instead it is recommended that 
+ * defaults be loaded from another Policy.  The intended way to do this is 
+ * to load defaults via a DefaultPolicyFile (which can located a policy file
+ * from any EUPS-setup installation directory) and to merge them into to the
+ * primary Policy instance via the mergeDefaults() function.  
+ * 
  * \section secPolicyVer Version Notes
  *
  * With version 3.1, support for the JSON format was dropped.  
@@ -131,6 +141,9 @@ namespace dafBase = lsst::daf::base;
  * the get*() functions, (2) returning array values by value rather than 
  * reference, and (3) added functions for greater consistancy with 
  * PropertySet.
+ *
+ * After 3.3.3, loading default data (including from Dictionarys) was 
+ * improved.  This included adding mergeDefaults()
  */
 class Policy : public dafBase::Citizen, public dafBase::Persistable {
 public:
@@ -184,16 +197,21 @@ public:
     Policy(const PolicyFile& file);
 
     /**
-     * Create a default Policy from a Dictionary.  
+     * Create a default Policy from a Dictionary.  If the Dictionary 
+     *   references files containing dictionaries for sub-Policies, an
+     *   attempt is made to open them and extract the default data.
      *
      * Note:  validation is not implemented yet.
      *
-     * @param validate  if true, a (shallow) copy of the Dictionary will be 
-     *                    held onto by this Policy and used to validate 
-     *                    future updates.  
-     * @param dict      the Dictionary file load defaults from
+     * @param validate    if true, a (shallow) copy of the Dictionary will be 
+     *                      held onto by this Policy and used to validate 
+     *                      future updates.  
+     * @param dict        the Dictionary file load defaults from
+     * @param repository  the directory to look for dictionary files referenced
+     *                      in \c dict.  The default is the current directory.
      */
-    Policy(bool validate, const Dictionary& dict);
+    Policy(bool validate, const Dictionary& dict, 
+           const fs::path& repository="");
 
     /**
      * copy a Policy.  
@@ -247,7 +265,15 @@ public:
      */
     static Policy *createPolicy(PolicySource& input, const fs::path& repos, 
                                 bool validate=false);
-    static Policy *createPolicy(const std::string& input, const fs::path& repos,
+    static Policy *createPolicy(PolicySource& input, const std::string& repos, 
+                                bool validate=false);
+    static Policy *createPolicy(PolicySource& input, const char *repos, 
+                                bool validate=false);
+    static Policy *createPolicy(const std::string& input, 
+                                const fs::path& repos, bool validate=false);
+    static Policy *createPolicy(const std::string& input, 
+                                const std::string& repos, bool validate=false);
+    static Policy *createPolicy(const std::string& input, const char *repos, 
                                 bool validate=false);
     //@}
 
@@ -617,7 +643,7 @@ public:
      *                      PolicyFile being replaced with an incomplete
      *                      Policy.  
      */
-    void loadPolicyFiles(const fs::path& repository, bool strict=false);
+    virtual void loadPolicyFiles(const fs::path& repository,bool strict=false);
 
     /**
      * use the values found in the given policy as default values for 
@@ -914,10 +940,38 @@ inline Policy* Policy::createPolicy(PolicySource& input,
     return _createPolicy(input, true, repository, validate);
 }
 
+inline Policy* Policy::createPolicy(PolicySource& input, 
+                                    const std::string& repository, 
+                                    bool validate) 
+{
+    return _createPolicy(input, true, fs::path(repository), validate);
+}
+
+inline Policy* Policy::createPolicy(PolicySource& input, 
+                                    const char *repository, 
+                                    bool validate) 
+{
+    return _createPolicy(input, true, fs::path(repository), validate);
+}
+
 inline Policy* Policy::createPolicy(const std::string& input, 
                                     const fs::path& repository, bool validate) 
 {
     return _createPolicy(input, true, repository, validate);
+}
+
+inline Policy* Policy::createPolicy(const std::string& input, 
+                                    const std::string& repository, 
+                                    bool validate) 
+{
+    return _createPolicy(input, true, fs::path(repository), validate);
+}
+
+inline Policy* Policy::createPolicy(const std::string& input, 
+                                    const char *repository, 
+                                    bool validate) 
+{
+    return _createPolicy(input, true, fs::path(repository), validate);
 }
 
 inline dafBase::PropertySet::Ptr Policy::asPropertySet() { return _data; }

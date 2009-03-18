@@ -705,6 +705,31 @@ Definition* Dictionary::makeDef(const string& name) const {
     return new Definition(name, sp);
 }
 
+void Dictionary::loadPolicyFiles(const fs::path& repository, bool strict) {
+    // find the "dictionaryFile" parameters
+    std::list<std::string> params;
+    paramNames(params, false);
+    std::list<std::string>::iterator ni;
+    for (ni=params.begin(); ni != params.end(); ++ni) { 
+        std::string endswith(".dictionaryFile");
+        size_t p = ni->rfind(endswith);
+        if (p == ni->length()-endswith.length()) {
+            std::string parent = ni->substr(0, p);
+            Policy::Ptr defin = getPolicy(parent);
+            PolicyFile subd;
+
+            // these will get dereferenced with the call to super method
+            if (isFile(*ni)) 
+                defin->set("dictionary", getFile(*ni));
+            else
+                defin->set("dictionary", 
+                           Policy::FilePtr(new PolicyFile(getString(*ni))));
+        }
+    }
+
+    Policy::loadPolicyFiles(repository, strict);
+}
+
 /*
  * validate a Policy against this Dictionary
  */

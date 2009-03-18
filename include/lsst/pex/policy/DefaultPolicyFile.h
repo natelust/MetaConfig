@@ -80,6 +80,12 @@ public:
     virtual fs::path getInstallPath(const char* const productName);
 
     /**
+     * return the full file path to the repository directory where this
+     * file will found.  
+     */
+    fs::path getRepositoryPath() { return _repos; }
+
+    /**
      * return the file path to the installation directory of a given
      * named product.  In this implementation, the installation directory 
      * will be taken from the value of an environment variable 

@@ -621,6 +621,26 @@ public:
      */
     void validate(const Policy& pol, ValidationError *errs=0) const;
 
+    /**
+     * recursively replace all PolicyFile values with the contents of the 
+     * files they refer to.  In addition support for the standard Policy
+     * behavior (see Policy::loadPolicyFiles()), this implementation will 
+     * also dereference values of the "dictionaryFile" parameters and save
+     * the results into a "dictionary" parameter at the same level in the 
+     * hierarchy, but only when the "dictionary" parameter does not already 
+     * exist. 
+     * @param repository  a directory to look in for the referenced files.  
+     *                      Only when the name of the file to be included is an
+     *                      absolute path will this.  If empty or not provided,
+     *                      the directorywill be assumed to be the current one.
+     * @param strict      if true, throw an exception if an error occurs 
+     *                      while reading and/or parsing the file.  Otherwise,
+     *                      an unrecoverable error will result in the failing
+     *                      PolicyFile being replaced with an incomplete
+     *                      Policy.  
+     */
+    virtual void loadPolicyFiles(const fs::path& repository,bool strict=false);
+
 protected:
     static const boost::regex FIELDSEP_RE;
 

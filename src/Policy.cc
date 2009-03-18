@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <string>
 #include <sstream>
+#include <iostream>
 
 using namespace std;
 namespace fs = boost::filesystem;
@@ -76,7 +77,8 @@ Policy::Policy(const string& filePath)
  *                    future updates.  
  * @param dict      the Dictionary file load defaults from
  */
-Policy::Policy(bool validate, const Dictionary& dict) 
+Policy::Policy(bool validate, const Dictionary& dict, 
+               const fs::path& repository) 
     : Citizen(typeid(this)), Persistable(), _data(new PropertySet()) 
 { 
     list<string> names;
@@ -91,7 +93,31 @@ Policy::Policy(bool validate, const Dictionary& dict)
 
             // look for defaults in sub-dictionary
             if (def->getData()->exists("dictionary")) {
-                Dictionary subd(*(def->getData()->getPolicy("dictionary")));
+                Dictionary subd;
+                if (def->getData()->isFile("dictionary")) {
+                    PolicyFile 
+                        file(def->getData()->getFile("dictionary")->getPath(),
+                             repository);
+                    subd = Dictionary(file);
+                }
+                else {
+                    subd=Dictionary(*(def->getData()->getPolicy("dictionary")));
+                }
+                subp->mergeDefaults(subd);
+            }
+            else if (def->getData()->exists("dictionaryFile")) {
+                Dictionary subd;
+                if (def->getData()->isFile("dictionaryFile")) {
+                   PolicyFile 
+                     file(def->getData()->getFile("dictionaryFile")->getPath(),
+                          repository);
+                   subd = Dictionary(file);
+                }
+                else {
+                   PolicyFile file(def->getData()->getString("dictionaryFile"),
+                                   repository);
+                   subd = Dictionary(file);
+                }
                 subp->mergeDefaults(subd);
             }
         }
@@ -127,7 +153,7 @@ Policy* Policy::_createPolicy(PolicySource& source, bool doIncludes,
 
     if (pol->exists("definitions")) {
         Dictionary d(*pol);
-        pol.reset(new Policy(validate, d));
+        pol.reset(new Policy(validate, d, repository));
     }
 
     if (doIncludes) pol->loadPolicyFiles(repository, true);

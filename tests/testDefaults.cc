@@ -28,7 +28,7 @@ int main() {
 
     DefaultPolicyFile df("pex_policy", "CacheManager_dict.paf", 
                          "examples", true);
-    Policy::Ptr p(Policy::createPolicy(df));
+    Policy::Ptr p(Policy::createPolicy(df, "examples"));
     Assert(p->exists("freeSpaceBuffer"), 
            "Failed to extract top-level defaults from Dictionary");
     Assert(p->exists("itemType.lifetimeFactor"), 
@@ -42,6 +42,10 @@ int main() {
     Assert(p2.exists("freeSpaceBuffer"), "Failed to load integer default");
     Assert(p2.exists("itemType.lifetimeFactor"), 
            "Failed to load double default");
+    Assert(p2.exists("itemType2.lifetimeFactor"), 
+           "Failed to load double default via std file include");
+    Assert(p2.exists("itemType3.lifetimeFactor"), 
+           "Failed to load double default via dictionaryFile");
     Assert(p2.getString("status") == "disabled", 
            "Wrong value for 'status': " + p2.getString("status"));
 
