@@ -106,11 +106,18 @@ public:
     /**
      * create an empty ValidationError message
      */
-    ValidationError(POL_EARGS_TYPED) 
-       : pexExcept::LogicErrorException(POL_EARGS_UNTYPED, 
+    ValidationError(char const* ex_file, int ex_line, char const* ex_func) 
+       : pexExcept::LogicErrorException(ex_file, ex_line, ex_func, 
                                         "policy has unknown validation errors"), 
        _errors() 
     { }
+
+// Swig is having trouble with this macro
+//    ValidationError(POL_EARGS_TYPED) 
+//       : pexExcept::LogicErrorException(POL_EARGS_UNTYPED, 
+//                                        "policy has unknown validation errors"), 
+//       _errors() 
+//    { }
 
     /**
      * destroy the exception
@@ -575,7 +582,7 @@ public:
     /**
      * return the top-level parameter names defined in this Dictionary
      */
-    StringArray definedNames(bool append=false) const {
+    StringArray definedNames() const {
         return getDefinitions()->names(true); 
     }
 

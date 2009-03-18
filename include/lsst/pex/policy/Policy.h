@@ -620,6 +620,20 @@ public:
     void loadPolicyFiles(const fs::path& repository, bool strict=false);
 
     /**
+     * use the values found in the given policy as default values for 
+     * parameters not specified in this policy.  This function will iterate
+     * through the parameter names in the given policy, and if the name is 
+     * not found in this policy, the value from the given one will by copied 
+     * into this one.  No attempt is made to add match the number of values 
+     * available per name.  
+     * @param defaultPol   the policy to pull default values from.  This may 
+     *                        be a Dictionary; if so, the default values will 
+     *                        drawn from the appropriate default keyword.
+     * @return int         the number of parameter names copied over
+     */
+    int mergeDefaults(const Policy& defaultPol);
+
+    /**
      * return a string representation of the value given by a name.  The
      * string "<null>" is printed if the name does not exist.
      * @param name     the name of the parameter to string-ify

@@ -30,8 +30,35 @@ void tattle(bool mustBeTrue, const string& failureMsg, int line) {
 
 int main() {
 
-    fs::path ipath = DefaultPolicyFile::installPathFor("policy");
-    cout << "Policy installation directory: " << fs::path << endl;
+    fs::path ipath = DefaultPolicyFile::installPathFor("pex_policy");
+    cout << "Policy installation directory: " << ipath << endl;
     Assert(fs::exists(ipath), "Policy installation directory does not exist");
 
+    DefaultPolicyFile df("pex_policy", "EventTranmitter_policy.paf", 
+                         "examples", true);
+    ipath = df.getInstallPath("pex_policy");
+    Assert(fs::exists(ipath), "DefaultPolicyFile failed to find product dir: "+
+                              ipath.file_string());
+
+    ipath = df.getPath();
+    Assert(fs::exists(ipath), "DefaultPolicyFile failed to find file path: " +
+                              ipath.file_string());
+
+    Policy p(df);
+    Assert(p.exists("standalone"), "Failed to load default data");
+
+    // test failures
+    try {
+        ipath = DefaultPolicyFile::installPathFor("pex_goober");
+        Assert(false, "Ignored undefined product name (pex_goober)");
+    }
+    catch (lsst::pex::exceptions::NotFoundException ex) {
+        cout << "Detected missing product" << endl;
+    }
+
+    df = DefaultPolicyFile("pex_policy", "EventTranmitter_policy.paf", 
+                           "goober", true);
+    ipath = df.getPath();
+    Assert(! fs::exists(ipath), "Failed to detect missing file: "+
+                                ipath.file_string());
 }

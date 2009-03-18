@@ -86,6 +86,15 @@ Policy::Policy(bool validate, const Dictionary& dict)
     for(list<string>::iterator it = names.begin(); it != names.end(); ++it) {
         def.reset(dict.makeDef(*it));
         def->setDefaultIn(*this);
+        if (def->getType() == Policy::POLICY && exists(*it)) {
+            Policy::Ptr subp = getPolicy(*it);
+
+            // look for defaults in sub-dictionary
+            if (def->getData()->exists("dictionary")) {
+                Dictionary subd(*(def->getData()->getPolicy("dictionary")));
+                subp->mergeDefaults(subd);
+            }
+        }
     }
 }
 
@@ -414,6 +423,77 @@ void Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
     }
 }
 
+
+/*
+ * use the values found in the given policy as default values for 
+ * parameters not specified in this policy.  This function will iterate
+ * through the parameter names in the given policy, and if the name is 
+ * not found in this policy, the value from the given one will by copied 
+ * into this one.  No attempt is made to add match the number of values 
+ * available per name.  
+ * @param defaultPol   the policy to pull default values from.  This may 
+ *                        be a Dictionary; if so, the default values will 
+ *                        drawn from the appropriate default keyword.
+ * @return int         the number of parameter names copied over
+ */
+int Policy::mergeDefaults(const Policy& defaultPol) {
+    int added = 0;
+
+    // if this is a dictionary, extract out the default values.  
+    auto_ptr<Policy> pol(0);
+    const Policy *def = &defaultPol;
+    if (def->exists("definitions")) {
+        pol.reset(new Policy(false, Dictionary(*def)));
+        def = pol.get();
+    }
+
+    std::list<std::string> params;
+    def->paramNames(params);
+    std::list<std::string>::iterator nm;
+    for(nm = params.begin(); nm != params.end(); ++nm) {
+
+        if (! exists(*nm)) {
+            const std::type_info& tp = def->getTypeInfo(*nm);
+            if (tp == typeid(bool)) {
+                BoolArray a = def->getBoolArray(*nm);
+                BoolArray::iterator vi;
+                for(vi=a.begin(); vi != a.end(); ++vi) 
+                    add(*nm, *vi);
+            }
+            else if (tp == typeid(int)) {
+                IntArray a = def->getIntArray(*nm);
+                IntArray::iterator vi;
+                for(vi=a.begin(); vi != a.end(); ++vi) 
+                    add(*nm, *vi);
+            }
+            else if (tp == typeid(double)) {
+                DoubleArray a = def->getDoubleArray(*nm);
+                DoubleArray::iterator vi;
+                for(vi=a.begin(); vi != a.end(); ++vi) 
+                    add(*nm, *vi);
+            }
+            else if (tp == typeid(std::string)) {
+                StringArray a = def->getStringArray(*nm);
+                StringArray::iterator vi;
+                for(vi=a.begin(); vi != a.end(); ++vi) 
+                    add(*nm, *vi);
+            }
+            else if (def->isFile(*nm)) {
+                FilePtrArray a = def->getFileArray(*nm);
+                FilePtrArray::iterator vi;
+                for(vi=a.begin(); vi != a.end(); ++vi) 
+                    add(*nm, *vi);
+            }
+            else {
+                // should not happen
+                added--;
+            }
+            added++;
+        }
+    }
+
+    return added;
+}
 
 /*
  * return a string representation of the value given by a name.  The

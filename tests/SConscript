@@ -5,6 +5,8 @@ env.Program(["Policy_1.cc"], LIBS=env.libs["pex_policy"])
 env.Program(["Policy_2.cc"], LIBS=env.libs["pex_policy"])
 env.Program(["Policy_3.cc"], LIBS=env.libs["pex_policy"])
 env.Program(["Policy_4.cc"], LIBS=env.libs["pex_policy"])
+env.Program(["testDefaults.cc"], LIBS=env.libs["pex_policy"])
+env.Program(["DefaultPolicyFile_1.cc"], LIBS=env.libs["pex_policy"])
 
 env.CheckSwig("python", ilang="c++")
 env.Append(SWIGFLAGS=" -Ipython")
@@ -17,7 +19,7 @@ import os
 
 tests = lsst.tests.Control(env, ignoreList=[], verbose=True)
 
-tests.run("Policy_*.cc")
+tests.run("*.cc")
 
 for target in tests.run("*.py"):
     env.Depends(target, "../python/lsst/pex/policy/_policyLib%s" % env['LDMODULESUFFIX'])

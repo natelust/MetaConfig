@@ -18,6 +18,7 @@ Access to the policy classes from the pex module
 #include "lsst/pex/policy/exceptions.h"
 #include "lsst/pex/policy/parserexceptions.h"
 #include "lsst/pex/policy/Policy.h"
+#include "lsst/pex/policy/Dictionary.h"
 #include "lsst/pex/policy/PolicyFile.h"
 #include "lsst/pex/policy/DefaultPolicyFile.h"
 #include "lsst/pex/policy/paf/PAFWriter.h"
@@ -138,6 +139,8 @@ namespace boost { namespace filesystem { } }
 %template(NameList) std::list<std::string >;
 
 SWIG_SHARED_PTR(Policy, lsst::pex::policy::Policy)
+SWIG_SHARED_PTR_DERIVED(Dictionary, lsst::pex::policy::Policy, lsst::pex::policy::Dictionary)
+SWIG_SHARED_PTR(Definition, lsst::pex::policy::Definition)
 SWIG_SHARED_PTR(PolicySource, lsst::pex::policy::PolicySource)
 SWIG_SHARED_PTR_DERIVED(PolicyFile, lsst::pex::policy::PolicySource, lsst::pex::policy::PolicyFile)
 SWIG_SHARED_PTR_DERIVED(DefaultPolicyFile, lsst::pex::policy::PolicyFile, lsst::pex::policy::DefaultPolicyFile)
@@ -148,6 +151,7 @@ SWIG_SHARED_PTR_DERIVED(DefaultPolicyFile, lsst::pex::policy::PolicyFile, lsst::
 %ignore lsst::pex::policy::Policy::Policy(const Policy& pol);
 
 %include "lsst/pex/policy/Policy.h"
+%include "lsst/pex/policy/Dictionary.h"
 %include "lsst/pex/policy/PolicyWriter.h"
 %include "lsst/pex/policy/paf/PAFWriter.h"
 %include "lsst/pex/policy/exceptions.h"
