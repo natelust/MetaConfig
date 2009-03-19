@@ -27,7 +27,7 @@ public:
      * create a writer attached to an output stream
      * @param out     the output stream to write data to
      */
-    PAFWriter(std::ostream *out = 0) 
+    explicit PAFWriter(std::ostream *out = 0) 
         : pexPolicy::PolicyWriter(out), _indent() { }
 
     /**
@@ -40,12 +40,16 @@ public:
         : pexPolicy::PolicyWriter(out), _indent(indent) 
     { }
 
+    //@{
     /**
      * create a writer attached to an output file
      * @param file     the output file
      */
-    PAFWriter(const std::string& file) 
+    explicit PAFWriter(const std::string& file) 
         : pexPolicy::PolicyWriter(file), _indent() { }
+    explicit PAFWriter(const char *file) 
+        : pexPolicy::PolicyWriter(file), _indent() { }
+    //@}
 
     /**
      * delete this writer
