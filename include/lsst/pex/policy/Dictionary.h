@@ -555,8 +555,9 @@ public:
     /**
      * load a dictionary from a file
      */
-    Dictionary(const char *filePath);
-    Dictionary(const PolicyFile& filePath);
+    explicit Dictionary(const char *filePath);
+    explicit Dictionary(const std::string& filePath);
+    explicit Dictionary(const PolicyFile& filePath);
     //@}
 
     //@{

@@ -184,17 +184,20 @@ public:
      */
     Policy();
 
+    //@{
     /**
      * Create a Policy from a named file
      * @param filePath   the file name, which can be a file path
      */
-    Policy(const std::string& filePath);
+    explicit Policy(const std::string& filePath);
+    explicit Policy(const char *filePath);
+    //@}
 
     /**
      * Create a Policy from a named file
      * @param file       the file name, represented as a PolicyFile
      */
-    Policy(const PolicyFile& file);
+    explicit Policy(const PolicyFile& file);
 
     /**
      * Create a default Policy from a Dictionary.  If the Dictionary 

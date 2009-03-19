@@ -101,7 +101,7 @@ void PolicyWriter::write(const Policy& policy, bool doDecl) {
         }
         catch (NameNotFound&) {
             // shouldn't happen
-            write(*ni, "<missing data>");
+            writeString(*ni, "<missing data>");
         }
     }
 

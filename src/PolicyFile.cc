@@ -56,6 +56,11 @@ PolicyFile::PolicyFile(const string& filepath,
     : PolicySource(fmts), Persistable(), _file(filepath), _format(), _pfact() 
 { }
 
+PolicyFile::PolicyFile(const char *filepath, 
+                       const SupportedFormats::Ptr& fmts) 
+    : PolicySource(fmts), Persistable(), _file(filepath), _format(), _pfact() 
+{ }
+
 PolicyFile::PolicyFile(const fs::path& filepath, 
                        const SupportedFormats::Ptr& fmts) 
     : PolicySource(fmts), Persistable(), _file(filepath), _format(), _pfact()

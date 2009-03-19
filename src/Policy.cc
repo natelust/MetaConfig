@@ -68,6 +68,16 @@ Policy::Policy(const string& filePath)
 }
 
 /*
+ * Create a Policy from a named file
+ */
+Policy::Policy(const char *filePath) 
+    : Citizen(typeid(this)), Persistable(), _data(new PropertySet()) 
+{
+    PolicyFile file(filePath);
+    file.load(*this);
+}
+
+/*
  * Create a default Policy from a Dictionary.  
  *
  * Note:  validation is not implemented yet.

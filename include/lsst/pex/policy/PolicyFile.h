@@ -53,10 +53,12 @@ public:
      * @param fmts           a SupportedFormats object to use.  An instance 
      *                          encapsulates a configured set of known formats.
      */
-    PolicyFile(const std::string& filepath, 
-               const SupportedFormats::Ptr& fmts = defaultFormats);
-    PolicyFile(const fs::path& filepath, 
-               const SupportedFormats::Ptr& fmts = defaultFormats);
+    explicit PolicyFile(const std::string& filepath, 
+                        const SupportedFormats::Ptr& fmts = defaultFormats);
+    explicit PolicyFile(const char *filepath, 
+                        const SupportedFormats::Ptr& fmts = defaultFormats);
+    explicit PolicyFile(const fs::path& filepath, 
+                        const SupportedFormats::Ptr& fmts = defaultFormats);
     //@}
 
     //@{
