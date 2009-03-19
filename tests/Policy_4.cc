@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 
     for(int i=0; i < nfiles; i++) {
 
-        d.reset(new Dictionary(files[i]));
+        d.reset(new Dictionary(Policy(files[i])));
         cout << *d << endl;
 
         Assert(d->exists("definitions"), "dictionary load error");
