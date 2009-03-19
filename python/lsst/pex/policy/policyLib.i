@@ -116,6 +116,14 @@ namespace boost { namespace filesystem { } }
 // Tell SWIG that boost::filesystem::path is equivalent to a string for typechecking purposes
 %typemap(typecheck) const lsst::pex::policy::fs::path & = char *;
 
+%typemap(out) const boost::filesystem::path& {
+   $result = PyString_FromString($1->file_string().c_str());
+} 
+
+%typemap(out) const lsst::pex::policy::fs::path& {
+   $result = PyString_FromString($1->file_string().c_str());
+} 
+
 // Convert Python strings to boost::filesystem::path objects
 %typemap(in) const lsst::pex::policy::fs::path & {
     std::string * temp;

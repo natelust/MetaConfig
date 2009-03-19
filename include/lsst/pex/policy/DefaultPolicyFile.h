@@ -83,7 +83,7 @@ public:
      * return the full file path to the repository directory where this
      * file will found.  
      */
-    fs::path getRepositoryPath() { return _repos; }
+    const fs::path& getRepositoryPath() const { return _repos; }
 
     /**
      * return the file path to the installation directory of a given
