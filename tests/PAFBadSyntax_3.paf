@@ -1,0 +1,7 @@
+#<?cfg paf policy ?>
+# ILLEGAL!
+filter: 
+{
+   threshold:      32.5
+   maxIterations:  13
+}

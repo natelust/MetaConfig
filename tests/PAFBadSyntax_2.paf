@@ -1,0 +1,3 @@
+#<?cfg paf policy ?>
+param name with internal spaces : "it's okay"
+

@@ -31,7 +31,7 @@ const regex PAFParser::PARAM_SRCH("^(\\s*)(\\w[\\w\\d\\.]*)\\s*:\\s*");
 const regex PAFParser::NAME_MTCH("\\w[\\w\\d]*(\\.\\w[\\w\\d])*");
 const regex PAFParser::OPEN_SRCH("^\\{\\s*");
 const regex PAFParser::CLOSE_SRCH("^\\s*\\}\\s*");
-const regex PAFParser::DOUBLE_VALUE("^([\\+\\-]?((\\d+\\.\\d*)|(\\d*\\.\\d+))([eE][\\-\\+]?\\d{1,3})?)\\s*");
+const regex PAFParser::DOUBLE_VALUE("^([\\+\\-]?((((\\d+\\.\\d*)|(\\d*\\.\\d+))([eE][\\-\\+]?\\d{1,3})?)|(\\d+[eE][\\-\\+]?\\d{1,3})))\\s*");
 const regex PAFParser::INT_VALUE("^([+-]?\\d+)\\s*");
 const regex PAFParser::ATRUE_VALUE("^(true)\\s*");
 const regex PAFParser::AFALSE_VALUE("^(false)\\s*");
@@ -96,6 +96,7 @@ int PAFParser::_parseIntoPolicy(istream& is, Policy& policy) {
 
     string line, name, value;
     smatch matched;
+    regex EMPTY_LINE("^(\\s*)$");
     int count = 0;
 
     while (!_nextLine(is, line)) {
@@ -127,6 +128,13 @@ int PAFParser::_parseIntoPolicy(istream& is, Policy& policy) {
 
             value = matched.suffix();
             count += _addValue(name, value, policy, is);
+        }
+        else if (! regex_search(line, matched, EMPTY_LINE)) {
+            string msg = "Bad parameter name format: " + line;
+            if (_strict)
+                throw LSST_EXCEPT(FormatSyntaxError, msg, _lineno);
+            // log warning
+            continue;
         }
     }
     if (! is.eof() && is.fail()) throw LSST_EXCEPT(ParserError, "read error", _lineno);
@@ -356,6 +364,13 @@ int PAFParser::_addValue(const string& propname, string& value,
                 break;
         } while (regex_search(value, QQSTRING_START) ||
                  regex_search(value, QSTRING_START));
+
+        if (value.size() > 0) {
+            msg = "Expecting quoted string value, found: ";
+            msg.append(value);
+            if (_strict) throw LSST_EXCEPT(FormatSyntaxError, msg, _lineno);
+            // log message
+        }
     }
     else if (regex_search(value, matched, BARE_STRING)) {
         string trimmed = matched.str(1);

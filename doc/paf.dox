@@ -70,6 +70,34 @@ convolve.gauss1.width:  1.2
 convolve.gauss2.width:  0.9
 convolve.gauss1.width:  .22
 convolve.gauss2.width:  1.457e-02
+convolve.gauss3.width:  1e-3
+\endverbatim
+
+\section secPAFbool Boolean Values
+
+The strings \c true and \c false are recognized as boolean values:
+
+\verbatim
+standalone: true
+verbose:  false
+\endverbatim
+
+If you want a \e string value set to either \c "true" or \c "false",
+enclose the value in quotes (see next section):
+
+\verbatim
+# These are string values, NOT booleans
+standalone: "true"
+verbose:  "false"
+\endverbatim
+
+Variations with different letter cases are \e not recognized as
+booleans; instead, they will be interpreted as strings:
+
+\verbatim
+# These are NOT booleans; they are loaded as strings
+standalone: True
+verbose:  FALSE
 \endverbatim
 
 \section secPAFstring String Values
@@ -120,7 +148,18 @@ filter.threshold:     1.457e-02
 
 In both examples above, "filter.threshold" will contain a 4-element array.
 
-It is illegal to mix types within an array. 
+It is illegal to mix types within an array.  It is also an error to
+separate array values with characters other than spaces (e.g. commas):
+
+\verbatim
+# ILLEGAL!
+filter.threshold:  3  4.7    # mixed types!
+graph.minimum:  5
+graph.minimum:  3.2          # changed types!
+
+filter.threshold:  3, 4.7    # don't use commas!
+graph.labels:  "x", "y"      # don't use commas!
+\endverbatim
 
 \section secPAFpolicy Policy Values
 
