@@ -134,7 +134,7 @@ public:
     PolicyFile(const SupportedFormats::Ptr& fmts = defaultFormats);
 
 
-//     /**
+//     /*
 //      * determine the format that the data is stored in and return its format
 //      * type identifier.  Note that UNKNOWN will be returned
 //      * if the format is supported--that is, the data can be read into a 
