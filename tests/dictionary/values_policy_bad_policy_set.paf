@@ -1,0 +1,7 @@
+# these are allowed by values_dictionary.paf, but Dictionary doesn't support
+# validating Policy values.
+policy_set_type: {
+    foo: 1
+    bar: baz
+}
+policy_set_type: { qux: false }

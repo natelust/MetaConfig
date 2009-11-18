@@ -1,0 +1,6 @@
+int_range_set_type: 0 11 111 11 111 111 11 11 111 111 11 11 111 1111 1111 11112
+double_range_count_type: -1. 0. 1. 2. 3. 4. 5. 6. 7.
+
+int_range_count_type: -4 -5
+string_count_type: "one" "two" "three" "four"
+policy_count_type: {}

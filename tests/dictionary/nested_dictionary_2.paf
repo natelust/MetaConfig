@@ -1,0 +1,8 @@
+#<?cfg paf dictionary ?>  
+definitions: {
+    2a.type: Policy
+    2a.dictionaryFile: nested_dictionary_3.paf
+
+    2b.type: Policy
+    2b.dictionaryFile: nested_dictionary_3.paf
+}

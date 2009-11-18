@@ -34,7 +34,7 @@ int main() {
     cout << "Policy installation directory: " << ipath << endl;
     Assert(fs::exists(ipath), "Policy installation directory does not exist");
 
-    DefaultPolicyFile df("pex_policy", "EventTranmitter_policy.paf", 
+    DefaultPolicyFile df("pex_policy", "EventTransmitter_policy.paf", 
                          "examples", true);
     ipath = df.getInstallPath("pex_policy");
     Assert(fs::exists(ipath), "DefaultPolicyFile failed to find product dir: "+
@@ -56,7 +56,7 @@ int main() {
         cout << "Detected missing product" << endl;
     }
 
-    df = DefaultPolicyFile("pex_policy", "EventTranmitter_policy.paf", 
+    df = DefaultPolicyFile("pex_policy", "EventTransmitter_policy.paf", 
                            "goober", true);
     ipath = df.getPath();
     Assert(! fs::exists(ipath), "Failed to detect missing file: "+

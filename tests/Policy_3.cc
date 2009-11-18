@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
 
     Policy p;
     string files[] = { 
-        string("examples/EventTranmitter_policy.paf"),
+        string("examples/EventTransmitter_policy.paf"),
         string("examples/pipeline_policy.paf") 
     };
     int nfiles = 2;
@@ -49,12 +49,12 @@ int main(int argc, char** argv) {
              << files[i] << endl;
 
         Policy p(pfile);
-        p.loadPolicyFiles("examples");
+        p.loadPolicyFiles("examples", false);
         cout << p << endl;
 
         if (i==0) {
             Assert(p.getBool("standalone"), "wrong value: standalone");
-            Assert(p.getDouble("threshold") == 4.5,
+            Assert(p.getDouble("threshold") == 4.5, /* parasoft-suppress LsstDm-5-12-1 */
                    "wrong value: threshold");
             Assert(p.getInt("offsets") == 313, "wrong value: offsets");
             Assert(p.valueCount("offsets") == 8,

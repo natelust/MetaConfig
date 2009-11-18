@@ -33,7 +33,7 @@ void tattle(bool mustBeTrue, const string& failureMsg, int line) {
 int main(int argc, char** argv) {
 
     string files[] = { 
-        string("examples/EventTranmitter_dict.paf"),
+        string("examples/EventTransmitter_dict.paf"),
     };
     int nfiles = 1;
 
@@ -60,7 +60,8 @@ int main(int argc, char** argv) {
         Assert(defp->getMaxOccurs() == 1, "wrong maxOccurs");
         Assert(defp->getMinOccurs() == 0, "wrong minOccurs");
 
-        p.reset(new Policy(false, *d));
+        d->loadPolicyFiles("examples", false);
+        p.reset(new Policy(false, *d, "examples"));
         cout << *p << endl;
         Assert(p->getInt("standalone") == 0, "default loading error");
 

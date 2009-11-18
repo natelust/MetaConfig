@@ -1,0 +1,15 @@
+simple: 1
+policy_1: { anything: true }
+policy_2: {
+    foo: false
+    bar: anything
+}
+policy_3: {
+    baz: {
+        qux: 45
+        paisley: anything
+    }
+}
+policy_load: {
+    height: 1.
+}

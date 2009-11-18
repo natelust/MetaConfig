@@ -144,7 +144,9 @@ const string& PolicyFile::getFormatName() {
     if (fs::exists(_file)) {
         ifstream is(_file.string().c_str());
         if (is.fail()) 
-            throw LSST_EXCEPT(pexExcept::IoErrorException, "failure opening Policy file: " + fs::complete(_file).string());
+            throw LSST_EXCEPT(pexExcept::IoErrorException,
+			      "failure opening Policy file: " 
+			      + fs::complete(_file).string());
 
         // skip over comments
         string line;
@@ -155,7 +157,9 @@ const string& PolicyFile::getFormatName() {
         { }
             
         if (is.fail()) 
-            throw LSST_EXCEPT(pexExcept::IoErrorException, "failure reading Policy file: " + fs::complete(_file).string());
+            throw LSST_EXCEPT(pexExcept::IoErrorException,
+			      "failure reading Policy file: " 
+			      + fs::complete(_file).string());
         if (is.eof() && 
             (regex_match(line, SPACE_RE) || 
              (regex_search(line, COMMENT) && !regex_search(line, COMMENT))))
@@ -192,7 +196,9 @@ void PolicyFile::load(Policy& policy) {
 
     ifstream fs(_file.string().c_str());
     if (fs.fail()) 
-        throw LSST_EXCEPT(pexExcept::IoErrorException, "failure opening Policy file: " + fs::complete(_file).string());
+        throw LSST_EXCEPT(pexExcept::IoErrorException,
+			  "failure opening Policy file: " 
+			  + fs::complete(_file).string());
 
     parser->parse(fs);
     fs.close();

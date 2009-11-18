@@ -26,12 +26,15 @@ using boost::regex_match;
 using boost::smatch;
 
 const regex PAFParser::COMMENT_LINE("^\\s*#");
+const regex PAFParser::EMPTY_LINE("^(\\s*)$");
 const regex PAFParser::SPACE_SRCH("^(\\s+)");
 const regex PAFParser::PARAM_SRCH("^(\\s*)(\\w[\\w\\d\\.]*)\\s*:\\s*");
 const regex PAFParser::NAME_MTCH("\\w[\\w\\d]*(\\.\\w[\\w\\d])*");
 const regex PAFParser::OPEN_SRCH("^\\{\\s*");
 const regex PAFParser::CLOSE_SRCH("^\\s*\\}\\s*");
-const regex PAFParser::DOUBLE_VALUE("^([\\+\\-]?((((\\d+\\.\\d*)|(\\d*\\.\\d+))([eE][\\-\\+]?\\d{1,3})?)|(\\d+[eE][\\-\\+]?\\d{1,3})))\\s*");
+const regex PAFParser::DOUBLE_VALUE
+    ("^([\\+\\-]?((((\\d+\\.\\d*)|(\\d*\\.\\d+))([eE][\\-\\+]?\\d{1,3})?)"
+     "|(\\d+[eE][\\-\\+]?\\d{1,3})))\\s*");
 const regex PAFParser::INT_VALUE("^([+-]?\\d+)\\s*");
 const regex PAFParser::ATRUE_VALUE("^(true)\\s*");
 const regex PAFParser::AFALSE_VALUE("^(false)\\s*");
@@ -96,7 +99,6 @@ int PAFParser::_parseIntoPolicy(istream& is, Policy& policy) {
 
     string line, name, value;
     smatch matched;
-    regex EMPTY_LINE("^(\\s*)$");
     int count = 0;
 
     while (!_nextLine(is, line)) {

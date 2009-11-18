@@ -1,0 +1,41 @@
+#<?cfg paf dictionary ?>  
+target: types
+definitions: {
+    bool_set_count: {
+	type: "bool"
+        maxOccurs: 1
+        allowed: { value: true }
+        default: true true
+    }
+
+    int_range_count: {
+        type: "int"
+        minOccurs: 2
+        allowed: {
+            min: -10
+            max: -3
+        }
+        default: -5
+    }
+
+    double: {
+        type: double
+        default: foo
+    }
+
+    deep: {
+        type: Policy
+        dictionary: {
+            definitions: {
+                sub_double: {
+                    type: double
+                    default: not a number
+                }
+            }
+        }
+    }
+
+    required: {
+        minOccurs: 1
+    }
+}

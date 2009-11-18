@@ -42,6 +42,12 @@ int main(int argc, char** argv) {
 
     try {
         Policy p = Policy("tests/PAFBadSyntax_4.paf");
+        throw runtime_error("Failed to detect bad PAF syntax (mixed types)");
+    }
+    catch (lsst::pex::policy::FormatSyntaxError e) {   }
+
+    try {
+        Policy p = Policy("tests/PAFBadSyntax_4.paf");
         throw runtime_error("Failed to detect bad PAF syntax (bad sub-policy)");
     }
     catch (lsst::pex::policy::FormatSyntaxError e) {   }

@@ -1,0 +1,11 @@
+bool_set_count_type: true true
+double_range_count_type: 2.01 2.02 5.98 5.99 4. 4.5 5.1
+string_count_type: "one" "two"
+policy_count_type: {
+    foo: 1
+    bar: 2
+}
+policy_count_type: {}
+policy_count_type: { baz: false }
+policy_count_type: { qux: "lovely" }
+disallowed: foo

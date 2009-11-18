@@ -1,0 +1,15 @@
+simple: 1
+policy_1: not a policy value     # should be a policy
+policy_2: {
+    foo: true                    # should be false
+                                 # missing value for "bar"
+}
+policy_3: {
+    baz: {
+        qux: 45.                 # should be int
+                                 # missing value for "paisley"
+    }
+}
+policy_load: {
+    foo: bar                     # missing value for "height"
+}

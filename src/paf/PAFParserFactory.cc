@@ -52,7 +52,7 @@ const string& PAFParserFactory::getFormatName() { return FORMAT_NAME; }
  * the format supported by this parser.  If it is, return the name of 
  * the this format; 
  */
-bool PAFParserFactory::recognize(const string& leaders) const { 
+bool PAFParserFactory::isRecognized(const string& leaders) const { 
     return (regex_search(leaders, contentid) || 
             regex_search(leaders, LEADER_PATTERN));
 }

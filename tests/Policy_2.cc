@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 
     Policy p2;
     PAFParser pp(p2);
-    ifstream is("examples/EventTranmitter_policy.paf");
+    ifstream is("examples/EventTransmitter_policy.paf");
 
     pp.parse(is);
 
@@ -46,7 +46,8 @@ int main(int argc, char** argv) {
     Assert(p2.getString("transmitter.serializationFormat") == "deluxe", 
            dataerror+"transmitter.serializationFormat");
     Assert(p2.getBool("standalone"), dataerror+"standalone");
-    Assert(p2.getDouble("threshold") == 4.5, dataerror+"threshold");
+    Assert(p2.getDouble("threshold") == 4.5, /* parasoft-suppress LsstDm-5-12-1 */
+	   dataerror+"threshold");
 
 //     list<string> names;
 //     p.paramNames(names);

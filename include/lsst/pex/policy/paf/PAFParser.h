@@ -75,6 +75,7 @@ private:
                   pexPolicy::Policy& policy, std::istream& is);
 
     static const boost::regex COMMENT_LINE;
+    static const boost::regex EMPTY_LINE;
     static const boost::regex SPACE_SRCH;
     static const boost::regex PARAM_SRCH;
     static const boost::regex NAME_MTCH;

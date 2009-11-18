@@ -1,0 +1,12 @@
+#<?cfg paf dictionary ?>  
+target: types
+definitions: {
+    1to0: {
+        maxOccurs: 0
+        minOccurs: 1
+    }
+    2to1: {
+        maxOccurs: 1
+        minOccurs: 2
+    }
+}

@@ -1,0 +1,30 @@
+#<?cfg paf dictionary ?>  
+target: simple
+definitions: {
+   name: {
+     type:         "string"
+     description:  "The name of this simple entity"
+     default:      "unnamed"
+     minOccurs:    0
+     maxOccurs:    1
+   }
+
+   foo: {
+#     type:         "string"
+     description:  "An arbitrary property of this simple entity"
+     default:      "bar"
+     minOccurs:    0
+     maxOccurs:    -1
+   }
+
+   height: {
+     type:         "double"
+#     type:         "not_a_type"
+     description:  "this entity's height (in cubits)"
+     default:      0.
+     minOccurs:    1
+     maxOccurs:    10
+     minValue:     0.
+     maxValue:     5.
+   }
+}

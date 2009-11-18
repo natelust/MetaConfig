@@ -10,7 +10,9 @@ Access to the policy classes from the pex module
 
 // Supress warnings
 #pragma SWIG nowarn=314     // print is a python keyword (--> _print)
-
+#pragma SWIG nowarn=362     // operator= ignored
+#pragma SWIG nowarn=451     // const char* may leak memory
+#pragma SWIG nowarn=509     // overloaded method is shadowed
 
 %{
 #include "boost/filesystem/path.hpp"

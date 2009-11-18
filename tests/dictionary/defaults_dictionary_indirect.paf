@@ -1,0 +1,8 @@
+#<?cfg paf dictionary ?>  
+target: types
+definitions: {
+    string_type: {
+        type: string
+        default: foo
+    }
+}

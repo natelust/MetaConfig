@@ -1,0 +1,8 @@
+bool_set_count_type: false
+int_range_set_type: 11 111 112
+double_set_type: 1.00001 11. 1111. 1111. 1111.000001
+string_set_type: "qux" "foo"
+
+int_range_count_type: -4 -5
+string_count_type: "one" "two" "three" "four"
+policy_count_type: {}

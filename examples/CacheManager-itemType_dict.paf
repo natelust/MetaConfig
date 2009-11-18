@@ -34,7 +34,7 @@ definitions: {
       maxOccurs: 1
    }
    requireMinAge: {
-      type: boolean
+      type: bool
       default: false
       description: "if true, prevent deleting files younger than
                     the minimum age, given by ageOffset.  Otherwise,

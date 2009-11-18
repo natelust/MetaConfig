@@ -1,0 +1,11 @@
+#<?cfg paf dictionary ?>  
+target: types
+definitions: {
+    childDefinition: {
+        type: Policy
+    }
+
+    childDefinition: {
+        type: string
+    }
+}

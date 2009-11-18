@@ -1,0 +1,34 @@
+#<?cfg paf dictionary ?>  
+target: types
+definitions: {
+   bool_range_type: {
+     type:         "bool"
+     max: true
+   }
+
+   int_conflicting_occurs_type: {
+     type:         "int"
+     minOccurs:    5
+     maxOccurs:    1
+   }
+
+   int_conflicting_range_type: {
+     type:         "int"
+     min:          10
+     max:          -10
+     allowed: { value: 1 }
+   }
+
+   double_conflicting_range_type: {
+     type:         "double"
+     min:          10.
+     max:          -10.
+     allowed: { value: 1. }
+   }
+
+   string_range_type: {
+     type:         "string"
+     min:          "az"
+     max:          "ma"
+   }
+}

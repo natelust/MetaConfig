@@ -1,0 +1,52 @@
+#<?cfg paf dictionary ?>  
+target: types
+definitions: {
+    foo: {
+        type: string
+    }
+
+    childDefinition: {
+        type: Policy
+        dictionary: {
+            definitions: {
+                bar: {
+                    minOccurs: 2
+                }
+            }
+        }
+        minOccurs: 2
+    }
+
+    nested: {
+        type: "Policy"
+        dictionary: {
+            definitions: {
+                childDefinition: {
+                    type: "Policy"
+                    dictionary: {
+                        definitions: {
+                            qux: {
+                                minOccurs: 1
+                            }
+                            childDefinition: {
+                                maxOccurs: 1
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    disallowed: {
+        type: "Policy"
+        dictionary: {
+            definitions: {
+                childDefinition: {
+                    maxOccurs: 0
+                }
+                allowed: {}
+            }
+        }
+    }
+}

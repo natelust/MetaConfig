@@ -1,0 +1,51 @@
+#<?cfg paf dictionary ?>  
+definitions: {
+    simple: {
+        type: int
+    }
+
+    policy_1: {
+        type: "Policy"
+    }
+
+    policy_2: {
+        type: "Policy"
+        dictionary: {
+            definitions: {
+                foo: {
+                    type: bool
+                    allowed: {
+                        value: false
+                    }
+                }
+                bar: {
+                    minOccurs: 1
+                }
+            }
+        }
+        minOccurs: 1
+    }
+
+    policy_3: {
+        type: "Policy"
+        dictionary.definitions: {
+            baz: {
+                type: "Policy"
+                dictionary: {
+                    definitions: {
+                        qux.type: int
+                        qux.allowed.min: 0
+                        paisley: {
+                            minOccurs: 1
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    policy_load: {
+        type: Policy
+        dictionaryFile: simple_dictionary.paf
+    }
+}

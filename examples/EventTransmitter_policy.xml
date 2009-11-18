@@ -15,7 +15,7 @@
 
    <!--
      -  array values are either space-delimited on a line or given in
-     -  repeated occurance of the parameter name.  Currently, only 1-D
+     -  repeated occurrence of the parameter name.  Currently, only 1-D
      -  arrays are supported.
      -->
    <offsets> 1 14 39 93 21 </offsets>

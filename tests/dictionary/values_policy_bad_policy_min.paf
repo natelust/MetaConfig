@@ -1,0 +1,3 @@
+# this is allowed by values_dictionary.paf, but Dictionary doesn't support
+# validating min/max Policy values.
+policy_min_type: { qux: false }

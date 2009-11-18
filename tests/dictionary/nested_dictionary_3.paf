@@ -1,0 +1,5 @@
+#<?cfg paf dictionary ?>  
+definitions: {
+    foo.type: string
+    foo.default: bar
+}

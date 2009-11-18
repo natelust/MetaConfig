@@ -62,7 +62,7 @@ public:
      * the format supported by this parser.  If it is, return the name of 
      * the this format; 
      */
-    virtual bool recognize(const std::string& leaders) const;
+    virtual bool isRecognized(const std::string& leaders) const;
 
     /**
      * return the name for the format supported by the parser

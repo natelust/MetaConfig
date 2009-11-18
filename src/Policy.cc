@@ -6,18 +6,20 @@
 #include "lsst/pex/policy/PolicySource.h"
 #include "lsst/pex/policy/Dictionary.h"
 #include "lsst/pex/policy/parserexceptions.h"
-/*
-#include "lsst/pex/logging/Trace.h"
-*/
+// #include "lsst/pex/logging/Trace.h"
 
+#include <boost/make_shared.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/filesystem/path.hpp>
 
 #include <stdexcept>
 #include <string>
+#include <cctype>
+#include <algorithm>
 #include <sstream>
-#include <iostream>
 
 using namespace std;
+using namespace boost;
 namespace fs = boost::filesystem;
 namespace pexExcept = lsst::pex::exceptions;
 namespace dafBase = lsst::daf::base;
@@ -77,61 +79,55 @@ Policy::Policy(const char *filePath)
     file.load(*this);
 }
 
-/*
- * Create a default Policy from a Dictionary.  
- *
- * Note:  validation is not implemented yet.
- *
- * @param validate  if true, a (shallow) copy of the Dictionary will be 
- *                    held onto by this Policy and used to validate 
- *                    future updates.  
- * @param dict      the Dictionary file load defaults from
- */
-Policy::Policy(bool validate, const Dictionary& dict, 
-               const fs::path& repository) 
-    : Citizen(typeid(this)), Persistable(), _data(new PropertySet()) 
-{ 
+/* Extract defaults from dict into target.  Note any errors in ve. */
+void extractDefaults(Policy& target, const Dictionary& dict, ValidationError& ve) {
     list<string> names;
     dict.definedNames(names);
 
-    std::auto_ptr<Definition> def;
     for(list<string>::iterator it = names.begin(); it != names.end(); ++it) {
-        def.reset(dict.makeDef(*it));
-        def->setDefaultIn(*this);
-        if (def->getType() == Policy::POLICY && exists(*it)) {
-            Policy::Ptr subp = getPolicy(*it);
-
-            // look for defaults in sub-dictionary
-            if (def->getData()->exists("dictionary")) {
-                Dictionary subd;
-                if (def->getData()->isFile("dictionary")) {
-                    PolicyFile 
-                        file(def->getData()->getFile("dictionary")->getPath(),
-                             repository);
-                    subd = Dictionary(file);
-                }
-                else {
-                    subd=Dictionary(*(def->getData()->getPolicy("dictionary")));
-                }
-                subp->mergeDefaults(subd);
-            }
-            else if (def->getData()->exists("dictionaryFile")) {
-                Dictionary subd;
-                if (def->getData()->isFile("dictionaryFile")) {
-                   PolicyFile 
-                     file(def->getData()->getFile("dictionaryFile")->getPath(),
-                          repository);
-                   subd = Dictionary(file);
-                }
-                else {
-                   PolicyFile file(def->getData()->getString("dictionaryFile"),
-                                   repository);
-                   subd = Dictionary(file);
-                }
-                subp->mergeDefaults(subd);
-            }
+        const string& name = *it;
+        std::auto_ptr<Definition> def(dict.makeDef(name));
+        def->setDefaultIn(target, &ve);
+        // recurse into sub-dictionaries
+        if (def->getType() == Policy::POLICY && dict.hasSubDictionary(name)) {
+            Policy::Ptr subp = make_shared<Policy>();
+            extractDefaults(*subp, *dict.getSubDictionary(name), ve);
+            if (subp->nameCount() > 0)
+                target.add(name, subp);
         }
     }
+}
+
+/**
+ * Create a default Policy from a Dictionary.  If the Dictionary references
+ * files containing dictionaries for sub-Policies, an attempt is made to
+ * open them and extract the default data, and if that attempt fails, an
+ * exception is thrown.
+ *
+ * @param validate    if true, a shallow copy of the Dictionary will be
+ *                    held onto by this Policy and used to validate future
+ *                    updates.
+ * @param dict        the Dictionary to load defaults from
+ * @param repository  the directory to look for dictionary files referenced
+ *                    in \c dict.  The default is the current directory.
+ */
+Policy::Policy(bool validate, const Dictionary& dict, 
+               const fs::path& repository)
+    : Citizen(typeid(this)), Persistable(), _data(new PropertySet()) 
+{ 
+    DictPtr loadedDict; // the dictionary that has all policy files loaded
+    if (validate) { // keep loadedDict around for future validation
+        setDictionary(dict);
+        loadedDict = _dictionary;
+    }
+    else { // discard loadedDict when we finish constructor
+        loadedDict.reset(new Dictionary(dict));
+    }
+    loadedDict->loadPolicyFiles(repository, true);
+
+    ValidationError ve(LSST_EXCEPT_HERE);
+    extractDefaults(*this, *loadedDict, ve);
+    if (ve.getParamCount() > 0) throw ve;
 }
 
 /*
@@ -161,7 +157,7 @@ Policy* Policy::_createPolicy(PolicySource& source, bool doIncludes,
     auto_ptr<Policy> pol(new Policy());
     source.load(*pol);
 
-    if (pol->exists("definitions")) {
+    if (pol->isDictionary()) {
         Dictionary d(*pol);
         pol.reset(new Policy(validate, d, repository));
     }
@@ -188,6 +184,81 @@ Policy* Policy::_createPolicy(const string& input, bool doIncludes,
  */
 Policy::~Policy() { }
 
+/**
+ * Can this policy validate itself -- that is, does it have a dictionary
+ * that it can use to validate itself?  If true, then set() and add()
+ * operations will be checked against it.
+ */
+bool Policy::canValidate() const {
+    return _dictionary;
+}
+
+/**
+ * The dictionary (if any) that this policy uses to validate itself,
+ * including checking set() and add() operations for validity.
+ */
+const Policy::ConstDictPtr Policy::getDictionary() const {
+    return _dictionary;
+}
+
+/**
+ * Update this policy's dictionary that it uses to validate itself.  Note
+ * that this will *not* trigger validation -- you will need to call \code
+ * validate() \endcode afterwards.
+ */
+void Policy::setDictionary(const Dictionary& dict) {
+    _dictionary = make_shared<Dictionary>(dict);
+}
+
+/**
+ * Validate this policy, using its stored dictionary.  If \code
+ * canValidate() \endcode is false, this will throw a LogicErrorException.
+ *
+ * If validation errors are found and \code err \endcode is null, a
+ * ValidationError will be thrown.
+ *
+ * @param errs if non-null, any validation errors will be stored here
+ * instead of being thrown.
+ */
+void Policy::validate(ValidationError *errs) const {
+    if (!_dictionary) throw LSST_EXCEPT(DictionaryError, "No dictionary set.");
+    else _dictionary->validate(*this, errs);
+}
+
+/** 
+ * Given the human-readable name of a type ("bool", "int", "policy", etc),
+ * what is its ValueType (BOOL, STRING, etc.)?  Throws BadNameError if
+ * unknown.
+ */
+Policy::ValueType Policy::getTypeByName(const string& name) {
+    static map<string, Policy::ValueType> nameTypeMap;
+
+    if (nameTypeMap.size() == 0) {
+        map<string, Policy::ValueType> tmp;
+        int n = sizeof(Policy::typeName) / sizeof(char *);
+        for (int i = 0; i < n; ++i) {
+            // remember both capitalized and lowercase versions (eg Policy)
+            tmp[Policy::typeName[i]] = (Policy::ValueType) i;
+            string lowered(Policy::typeName[i]);
+            transform(lowered.begin(), lowered.end(), lowered.begin(), ::tolower);
+            tmp[lowered] = (Policy::ValueType) i;
+        }
+        // a few extras
+        tmp["file"] = Policy::FILE;
+        tmp["boolean"] = Policy::BOOL;
+        tmp["integer"] = Policy::INT;
+        tmp["undef"] = Policy::UNDEF;
+        // assign after initializationto avoid concurrency problems
+        nameTypeMap = tmp;
+
+        if (tmp.count(name) == 1) return tmp[name];
+    }
+    else
+        if (nameTypeMap.count(name) == 1) return nameTypeMap[name];
+    
+    throw LSST_EXCEPT(BadNameError, name);
+}
+
 /*
  * load the names of parameters into a given list.  
  * 
@@ -205,13 +276,13 @@ Policy::~Policy() { }
 int Policy::_names(vector<string>& names, 
                    bool topLevelOnly, bool append, int want) const
 {
-    bool check = true;
-    std::vector<std::string> src;
+    bool shouldCheck = true;
+    vector<string> src;
     int have = 0, count = 0;
     if (want == 1) {
         src = _data->propertySetNames(topLevelOnly);
         have = 1;
-        check = false;
+        shouldCheck = false;
     }
     else if (want == 7) 
         src = _data->names(topLevelOnly);
@@ -222,7 +293,7 @@ int Policy::_names(vector<string>& names,
 
     StringArray::iterator i;
     for(i = src.begin(); i != src.end(); ++i) {
-        if (check) {
+        if (shouldCheck) {
             if (isPolicy(*i)) 
                 have = 1;
             else if (isFile(*i)) 
@@ -256,13 +327,13 @@ int Policy::_names(vector<string>& names,
 int Policy::_names(list<string>& names, 
                    bool topLevelOnly, bool append, int want) const
 {
-    bool check = true;
-    std::vector<std::string> src;
+    bool shouldCheck = true;
+    vector<string> src;
     int have = 0, count = 0;
     if (want == 1) {
         src = _data->propertySetNames(topLevelOnly);
         have = 1;
-        check = false;
+        shouldCheck = false;
     }
     else if (want == 7) 
         src = _data->names(topLevelOnly);
@@ -273,7 +344,7 @@ int Policy::_names(list<string>& names,
 
     StringArray::iterator i;
     for(i = src.begin(); i != src.end(); ++i) {
-        if (check) {
+        if (shouldCheck) {
             if (isPolicy(*i)) 
                 have = 1;
             else if (isFile(*i)) 
@@ -290,6 +361,18 @@ int Policy::_names(list<string>& names,
     return count;
 }
 
+template <class T> void Policy::_validate(const std::string& name, const T& value, int curCount) {
+    if (_dictionary) {
+        try {
+            scoped_ptr<Definition> def(_dictionary->makeDef(name));
+            def->validateBasic(name, value, curCount);
+        } catch(NameNotFound& e) {
+            ValidationError ve(LSST_EXCEPT_HERE);
+            ve.addError(name, ValidationError::UNKNOWN_NAME);
+            throw ve;
+        }
+    }
+}
 
 /*
  * return the type information for the underlying type associated with
@@ -323,38 +406,127 @@ Policy::ValueType Policy::getValueType(const string& name) const {
             return POLICY;
         }
         else {
-            throw LSST_EXCEPT(pexExcept::LogicErrorException, string("Policy: illegal type held by PropertySet: ") + tp.name());
+            throw LSST_EXCEPT
+                (pexExcept::LogicErrorException,
+                 string("Policy: illegal type held by PropertySet: ") + tp.name());
         }
     } catch (pexExcept::NotFoundException&) {
         return UNDEF;
     }
 }
 
-Policy::PolicyPtrArray Policy::getPolicyArray(const std::string& name) const {
+template <> bool Policy::getValue <bool> (const string& name) const {
+    return getBool(name);
+}
+template <> int Policy::getValue <int> (const string& name) const {
+    return getInt(name);
+}
+template <> double Policy::getValue <double> (const string& name) const {
+    return getDouble(name);
+}
+template <> string Policy::getValue <string> (const string& name) const {
+    return getString(name);
+}
+template <>
+Policy::FilePtr Policy::getValue <Policy::FilePtr> (const string& name) const {
+    return getFile(name);
+}
+template <>
+Policy::ConstPtr Policy::getValue <Policy::ConstPtr> (const string& name) const {
+    return getPolicy(name);
+}
+
+template <> vector<bool> Policy::getValueArray(const string& name) const {
+    return getBoolArray(name);
+}
+template <> vector<int> Policy::getValueArray(const string& name) const {
+    return getIntArray(name);
+}
+template <> vector<double> Policy::getValueArray(const string& name) const {
+    return getDoubleArray(name);
+}
+template <> vector<string> Policy::getValueArray(const string& name) const {
+    return getStringArray(name);
+}
+template <> Policy::FilePtrArray Policy::getValueArray(const string& name) const {
+    return getFileArray(name);
+}
+template <> Policy::PolicyPtrArray Policy::getValueArray(const string& name) const {
+    return getPolicyArray(name);
+}
+template <> Policy::ConstPolicyPtrArray Policy::getValueArray(const string& name) const {
+    return getConstPolicyArray(name);
+}
+
+template <> Policy::ValueType Policy::getValueType<bool>() { return BOOL; }
+template <> Policy::ValueType Policy::getValueType<int>() { return INT; }
+template <> Policy::ValueType Policy::getValueType<double>() { return DOUBLE; }
+template <> Policy::ValueType Policy::getValueType<string>() { return STRING; }
+template <> Policy::ValueType Policy::getValueType<Policy>() { return POLICY; }
+template <> Policy::ValueType Policy::getValueType<Policy::FilePtr>() { return FILE; }
+template <> Policy::ValueType Policy::getValueType<Policy::Ptr>() { return POLICY; }
+template <> Policy::ValueType Policy::getValueType<Policy::ConstPtr>() { return POLICY; }
+
+template <> void Policy::set(const string& name, const bool& value) {
+    set(name, value); }
+template <> void Policy::set(const string& name, const int& value) {
+    set(name, value); }
+template <> void Policy::set(const string& name, const double& value) {
+    set(name, value); }
+template <> void Policy::set(const string& name, const string& value) {
+    set(name, value); }
+template <> void Policy::set(const string& name, const Ptr& value) {
+    set(name, value); }
+template <> void Policy::set(const string& name, const FilePtr& value) {
+    set(name, value); }
+
+template <> void Policy::addT(const string& name, const bool& value) {
+    add(name, value); }
+template <> void Policy::addT(const string& name, const int& value) {
+    add(name, value); }
+template <> void Policy::addT(const string& name, const double& value) {
+    add(name, value); }
+template <> void Policy::addT(const string& name, const string& value) {
+    add(name, value); }
+template <> void Policy::addT(const string& name, const Ptr& value) {
+    add(name, value); }
+template <> void Policy::addT(const string& name, const FilePtr& value) {
+    add(name, value); }
+
+Policy::ConstPolicyPtrArray Policy::getConstPolicyArray(const string& name) const {
+    ConstPolicyPtrArray out;
+    vector<PropertySet::Ptr> psa = _getPropSetList(name);
+    vector<PropertySet::Ptr>::const_iterator i;
+    for(i=psa.begin(); i != psa.end(); ++i) 
+        out.push_back(ConstPtr(new Policy(*i)));
+    return out;
+}
+
+Policy::PolicyPtrArray Policy::getPolicyArray(const string& name) const {
     PolicyPtrArray out;
-    std::vector<PropertySet::Ptr> psa = _getPropSetList(name);
-    std::vector<PropertySet::Ptr>::const_iterator i;
+    vector<PropertySet::Ptr> psa = _getPropSetList(name);
+    vector<PropertySet::Ptr>::const_iterator i;
     for(i=psa.begin(); i != psa.end(); ++i) 
         out.push_back(Ptr(new Policy(*i)));
     return out;
 }
 
-Policy::FilePtr Policy::getFile(const std::string& name) const {
+Policy::FilePtr Policy::getFile(const string& name) const {
     FilePtr out = 
-        boost::dynamic_pointer_cast<PolicyFile>(_data->getAsPersistablePtr(name));
+        dynamic_pointer_cast<PolicyFile>(_data->getAsPersistablePtr(name));
     if (! out.get()) 
-        throw LSST_EXCEPT(TypeError, name, std::string(typeName[FILE]));
+        throw LSST_EXCEPT(TypeError, name, string(typeName[FILE]));
     return out;
 }
 
-Policy::FilePtrArray Policy::getFileArray(const std::string& name) const
+Policy::FilePtrArray Policy::getFileArray(const string& name) const
 {
     FilePtrArray out;
     vector<Persistable::Ptr> pfa = _getPersistList(name);
     vector<Persistable::Ptr>::const_iterator i;
     FilePtr fp;
     for(i = pfa.begin(); i != pfa.end(); ++i) {
-        fp = boost::dynamic_pointer_cast<PolicyFile>(*i);
+        fp = dynamic_pointer_cast<PolicyFile>(*i);
         if (! fp.get())
             throw LSST_EXCEPT(TypeError, name, string(typeName[FILE]));
         out.push_back(fp);
@@ -363,35 +535,32 @@ Policy::FilePtrArray Policy::getFileArray(const std::string& name) const
     return out;
 }
 
-void Policy::set(const std::string& name, const FilePtr& value) {
-    _data->set(name, boost::dynamic_pointer_cast<Persistable>(value));
+void Policy::set(const string& name, const FilePtr& value) {
+    _data->set(name, dynamic_pointer_cast<Persistable>(value));
 }
 
-void Policy::add(const std::string& name, const FilePtr& value) {
-    _data->add(name, boost::dynamic_pointer_cast<Persistable>(value));
+void Policy::add(const string& name, const FilePtr& value) {
+    _data->add(name, dynamic_pointer_cast<Persistable>(value));
 }
 
-/*
- * recursively replace all PolicyFile values with the contents of the 
+/**
+ * Recursively replace all PolicyFile values with the contents of the 
  * files they refer to.  The type of a parameter containing a PolicyFile
  * will consequently change to a Policy upon successful completion.  If
  * the value is an array, all PolicyFiles in the array must load without
- * error before the PolicyFile values themselves are erased (unless 
- * strict=true; see arguments below).  
- *
+ * error before the PolicyFile values themselves are erased.
+ * @param strict      If true, throw an exception if an error occurs 
+ *                    while reading and/or parsing the file.  Otherwise,
+ *                    replace the file reference with a partial or empty
+ *                    (that is, "{}") sub-policy.
  * @param repository  a directory to look in for the referenced files.  
- *                      Only when the name of the file to be included is an
- *                      absolute path will this.  If empty, the directory
- *                      will be assumed to be the current one.  
- * @param strict      if true, throw an exception if an error occurs 
- *                      while reading and/or parsing the file.  Otherwise,
- *                      an unrecoverable error will result in the failing
- *                      PolicyFile being replaced with an incomplete
- *                      Policy.  
+ *                    Only when the name of the file to be included is an
+ *                    absolute path will this.  If empty or not provided,
+ *                    the directorywill be assumed to be the current one.
  */
-void Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
-
+int Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
     fs::path repos = repository;
+    int result = 0;
     if (repos.empty()) repos = ".";
 
     // iterate through the top-level names in this Policy
@@ -413,10 +582,12 @@ void Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
                 path = repos / (*pfi)->getPath();
             }
 
-            Ptr policy(new Policy());
+            Ptr policy = make_shared<Policy>();
             PolicyFile pf(path.file_string());
 
             try {
+                // increment even if fail, since we will remove the file record
+                ++result;
                 pf.load(*policy);
             }
             catch (pexExcept::IoErrorException& e) {
@@ -436,13 +607,9 @@ void Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
             pols.push_back(policy);
         }
 
-        if (pols.size() > 0) {   // shouldn't actually be zero
-            PolicyPtrArray::iterator pi = pols.begin();
-            set(*it, *pi);
-            while(++pi != pols.end()) {
-                add(*it, *pi);
-            }
-        }
+        remove(*it);
+        for (PolicyPtrArray::iterator pi = pols.begin(); pi != pols.end(); ++pi)
+            add(*it, *pi);
     }
 
     // Now iterate again to recurse into sub-Policy values
@@ -453,41 +620,53 @@ void Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
 
         // iterate through the Policies in this array
         PolicyPtrArray::iterator pi;
-        for(pi = policies.begin(); pi != policies.end(); pi++) {
-            (*pi)->loadPolicyFiles(repos, strict);
-        }
+        for(pi = policies.begin(); pi != policies.end(); pi++)
+            result += (*pi)->loadPolicyFiles(repos, strict);
     }
+
+    return result;
 }
 
 
-/*
- * use the values found in the given policy as default values for 
- * parameters not specified in this policy.  This function will iterate
- * through the parameter names in the given policy, and if the name is 
- * not found in this policy, the value from the given one will by copied 
- * into this one.  No attempt is made to add match the number of values 
- * available per name.  
- * @param defaultPol   the policy to pull default values from.  This may 
- *                        be a Dictionary; if so, the default values will 
- *                        drawn from the appropriate default keyword.
- * @return int         the number of parameter names copied over
+/**
+ * use the values found in the given policy as default values for parameters not
+ * specified in this policy.  This function will iterate through the parameter
+ * names in the given policy, and if the name is not found in this policy, the
+ * value from the given one will be copied into this one.  No attempt is made to
+ * match the number of values available per name.
+ * @param defaultPol  the policy to pull default values from.  This may be a
+ *                    Dictionary; if so, the default values will drawn from the
+ *                    appropriate default keyword.
+ * @param keepForValidation if true, and if defaultPol is a Dictionary, keep
+ *                    a reference to it for validation future updates to
+ *                    this Policy.
+ * @param errs        an exception to load errors into -- only relevant if
+ *                    defaultPol is a Dictionary or if this Policy already has a
+ *                    dictionary to validate against; if a validation error is
+ *                    encountered, it will be added to errs if errs is non-null,
+ *                    and an exception will not be raised; however, if errs is
+ *                    null, an exception will be thrown if a validation error is
+ *                    encountered.
+ * @return int        the number of parameter names copied over
  */
-int Policy::mergeDefaults(const Policy& defaultPol) {
+int Policy::mergeDefaults(const Policy& defaultPol, bool keepForValidation, 
+                          ValidationError *errs) 
+{
     int added = 0;
 
-    // if this is a dictionary, extract out the default values.  
+    // if defaultPol is a dictionary, extract the default values
     auto_ptr<Policy> pol(0);
     const Policy *def = &defaultPol;
-    if (def->exists("definitions")) {
+    if (def->isDictionary()) {
+        // extract default values from dictionary
         pol.reset(new Policy(false, Dictionary(*def)));
         def = pol.get();
     }
 
-    std::list<std::string> params;
+    list<string> params;
     def->paramNames(params);
-    std::list<std::string>::iterator nm;
+    list<string>::iterator nm;
     for(nm = params.begin(); nm != params.end(); ++nm) {
-
         if (! exists(*nm)) {
             const std::type_info& tp = def->getTypeInfo(*nm);
             if (tp == typeid(bool)) {
@@ -508,7 +687,7 @@ int Policy::mergeDefaults(const Policy& defaultPol) {
                 for(vi=a.begin(); vi != a.end(); ++vi) 
                     add(*nm, *vi);
             }
-            else if (tp == typeid(std::string)) {
+            else if (tp == typeid(string)) {
                 StringArray a = def->getStringArray(*nm);
                 StringArray::iterator vi;
                 for(vi=a.begin(); vi != a.end(); ++vi) 
@@ -522,10 +701,20 @@ int Policy::mergeDefaults(const Policy& defaultPol) {
             }
             else {
                 // should not happen
-                added--;
+                throw LSST_EXCEPT(pexExcept::LogicErrorException,
+                                  string("Unknown type for \"") + *nm 
+                                  + "\": \"" + getTypeName(*nm) + "\"");
+                // added--;
             }
             added++;
         }
+    }
+
+    // if defaultPol is a dictionary, validate after all defaults are added
+    if (defaultPol.isDictionary()) {
+        Dictionary d(defaultPol);
+        if (keepForValidation) setDictionary(d);
+        d.validate(*this, errs);
     }
 
     return added;
@@ -564,8 +753,8 @@ string Policy::str(const string& name, const string& indent) const {
                 if (vi+1 != d.end()) out << ", ";
             }
         }
-        else if (tp == typeid(std::string)) {
-            StringArray s = _data->getArray<std::string>(name);
+        else if (tp == typeid(string)) {
+            StringArray s = _data->getArray<string>(name);
             StringArray::iterator vi;
             for(vi= s.begin(); vi != s.end(); ++vi) {
                 out << '"' << *vi << '"';
@@ -594,7 +783,8 @@ string Policy::str(const string& name, const string& indent) const {
             }
         }
         else {
-            throw LSST_EXCEPT(pexExcept::LogicErrorException, "Policy: unexpected type held by any");
+            throw LSST_EXCEPT(pexExcept::LogicErrorException,
+                              "Policy: unexpected type held by any");
         }
     }
     catch (NameNotFound&) {
@@ -635,4 +825,3 @@ string Policy::toString() const {
 } // namespace policy
 } // namespace pex
 } // namespace lsst
-

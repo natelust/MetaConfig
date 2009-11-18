@@ -43,7 +43,7 @@ SupportedFormats::recognizeType(const std::string& leaders) const {
 
     Lookup::const_iterator f;
     for(f=_formats.begin(); f != _formats.end(); ++f) {
-        if (f->second->recognize(leaders))
+        if (f->second->isRecognized(leaders))
             return f->second->getFormatName();
     }
 

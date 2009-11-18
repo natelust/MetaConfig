@@ -5,7 +5,7 @@ appStages:       lsst.pcons.pex.harness.IOStage.OutputStage
 
 eventTopics:     None None None
 
-stagePolicies:   @EventTranmitter_policy.paf
+stagePolicies:   @EventTransmitter_policy.paf
 stagePolicies:   @DetectionStagePolicy.paf
 stagePolicies:   @output_policy.paf
 

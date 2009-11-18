@@ -30,10 +30,33 @@ definitions: {
 
    reciever: {
      type:         "Policy"
-     dictionaryFile: "reciever_dict.paf"
+     dictionaryFile: "receiver_dict.paf"
      minOccurs:    0
      maxOccurs:    1
      description:  "parameters for configuring the receiver"
+   }
+
+   transmitter: {
+     type:         "Policy"
+     dictionaryFile: "transmitter_dict.paf"
+     minOccurs:    0
+     maxOccurs:    1
+     description:  "parameters for configuring the transmitter"
+   }
+
+   threshold: {
+     type: "double"
+     default: 0.
+   }
+
+   offsets: {
+     type: "int"
+     default: 0
+   }
+
+   polish: {
+     type: "string"
+     default: "fancy"
    }
 }
 

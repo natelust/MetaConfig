@@ -1,0 +1,7 @@
+#<?cfg paf dictionary ?>  
+target: types
+definitions: {
+    childDefinition: {
+        type: string
+    }
+}

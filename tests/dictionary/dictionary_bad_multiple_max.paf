@@ -1,0 +1,22 @@
+#<?cfg paf dictionary ?>  
+target: types
+definitions: {
+
+   int_range_count_type: {
+     type:         "int"
+     allowed: {
+       min: -10
+       max: -3
+     }
+     allowed: {
+       max: -4
+     }
+   }
+
+   bool_set_count_type: { type: "bool" }
+   int_range_set_type: { type: "int" }
+   double_range_count_type: { type: "double" }
+   double_set_type: { type: "double" }
+   string_set_type: { type: "string" }
+   policy_count_type: { type: "Policy" }
+}

@@ -1,6 +1,5 @@
-import pdb                          # we may want to say pdb.set_trace()
+#import pdb                          # we may want to say pdb.set_trace()
 import unittest
-import math
 
 import lsst.utils.tests as tests
 from lsst.pex.policy import Policy
@@ -23,15 +22,15 @@ class PolicyTestCase(unittest.TestCase):
         self.failUnless(not p.exists("foo"),
                         "non-empty non-existence test failed")
         self.assertEqual(p.valueCount("foo.bar"), 0,
-                         "empty valueCount test failed");
+                         "empty valueCount test failed")
         self.failUnless(not p.isInt("foo"),
-                        "non-empty non-existence type test failed");
+                        "non-empty non-existence type test failed")
         self.assertRaises(LsstCppException, p.getTypeInfo, "foo")
 
-        # existance tests
-        self.assert_(p.exists("doall"), "non-empty existance test failed")
+        # existence tests
+        self.assert_(p.exists("doall"), "non-empty existence test failed")
         self.assertEquals(p.valueCount("doall"), 1,
-                          "single valueCount test failed");
+                          "single valueCount test failed")
 
         self.assertRaises(LsstCppException, p.getInt, "doall")
         self.assertRaises(LsstCppException, p.getDoubleArray, "doall")
@@ -50,10 +49,10 @@ class PolicyTestCase(unittest.TestCase):
 
         self.assertEquals(ary[0], "duh", "scalar access via array failed")
 
-        p.add("doall", "never");
+        p.add("doall", "never")
         self.assertEquals(p.valueCount("doall"), 2,
                           "2-elem. valueCount test failed")
-        self.assertEquals(p.get("doall"), "never", "top-level add failed");
+        self.assertEquals(p.get("doall"), "never", "top-level add failed")
         ary = p.getArray("doall")
         self.assertEquals(len(ary), 2,
                           "scalar property has wrong number of values")
@@ -63,7 +62,6 @@ class PolicyTestCase(unittest.TestCase):
                           "scalar access via (2-el) array failed")
 
         # test hierarchical access
-
 
         # list names
 
@@ -87,7 +85,7 @@ class PolicyTestCase(unittest.TestCase):
 
     def testSimpleLoad(self):
 #        n = mwid.Citizen_census(0)
-        p = Policy.createPolicy("examples/EventTranmitter_policy.paf")
+        p = Policy.createPolicy("examples/EventTransmitter_policy.paf")
         self.assertEquals(p.get("transmitter.serializationFormat"), "deluxe")
         p = None
 #        self.assertEquals(mwid.Citizen_census(0), n, "Policy apparently leaked")
@@ -96,7 +94,7 @@ class PolicyTestCase(unittest.TestCase):
         p = Policy()
 
     def testPolicyCopy(self):
-        p = Policy.createPolicy("examples/EventTranmitter_policy.paf")
+        p = Policy.createPolicy("examples/EventTransmitter_policy.paf")
         pp = Policy(p, True)
         self.assertEquals(p.get("transmitter.serializationFormat"), "deluxe")
         self.assertEquals(pp.getString("transmitter.serializationFormat"), "deluxe")
@@ -118,7 +116,3 @@ def suite():
 
 if __name__ == "__main__":
     tests.run(suite())
-
-
-
-

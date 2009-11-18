@@ -1,0 +1,6 @@
+bool_type:   "foo" "bar"
+int_type:    "foo" "bar"
+double_type: "foo" "bar"
+string_type: "foo" "bar"
+policy_type: "foo" "bar"
+file_type:   "foo" "bar"
