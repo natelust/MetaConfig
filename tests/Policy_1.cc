@@ -35,8 +35,19 @@ int main() {
     Assert(p.valueCount("foo.bar") == 0, "empty valueCount test failed");
     Assert(! p.isInt("foo"), "empty existence type test failed");
 
-    try {  p.getTypeInfo("foo"); }
+    try {
+	p.getTypeInfo("foo");
+	Assert(false, "type info available for non-existent value");
+    }
     catch (NameNotFound&) { }
+
+    // disallow null values
+    try {
+	const char *nothing = NULL;
+	p.set("foo", nothing);
+	Assert(false, "no error when setting value to NULL");
+    }
+    catch (lsst::pex::exceptions::InvalidParameterException e) { }
 
     p.set("doall", "true");
 
@@ -45,13 +56,16 @@ int main() {
     Assert(p.valueCount("foo.bar") == 0, "empty valueCount test failed");
     Assert(! p.isInt("foo"), "non-empty non-existence type test failed");
 
-    try {  p.getTypeInfo("foo"); }
+    try {
+	p.getTypeInfo("foo");
+	Assert(false, "type info available for non-existent value");
+    }
     catch (NameNotFound& e) { 
         cout << "foo confirmed not to exist: " << e.what() << endl;
     }
 
-    // existance tests
-    Assert(p.exists("doall"), "non-empty existance test failed");
+    // existence tests
+    Assert(p.exists("doall"), "non-empty existence test failed");
     Assert(p.valueCount("doall") == 1, "single valueCount test failed");
 
     // test out our newly added parameter

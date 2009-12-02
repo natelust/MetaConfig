@@ -101,6 +101,13 @@ class PolicyTestCase(unittest.TestCase):
         p = None
         self.assertEquals(pp.getString("transmitter.serializationFormat"), "deluxe")
 
+    def testSetNothing(self):
+        p = Policy()
+        try:
+            p.set("foo", None)
+            self.assert_(False, "Setting value to None succeeded.")
+        except RuntimeError, e:
+            self.assertFalse(p.exists("foo"))
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 

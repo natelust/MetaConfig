@@ -1005,6 +1005,10 @@ inline void Policy::set(const std::string& name, const std::string& value) {
     _data->set(name, value); 
 }
 inline void Policy::set(const std::string& name, const char *value) { 
+    if (value == NULL)
+	throw LSST_EXCEPT(lsst::pex::exceptions::InvalidParameterException,
+			  std::string("Attempted to assign NULL value to ")
+			  + name + ".");
     _validate(name, std::string(value));
     _data->set(name, std::string(value)); 
 }
