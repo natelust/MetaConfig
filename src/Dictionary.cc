@@ -380,6 +380,7 @@ void Definition::validateBasic(const string& name, const T& value,
                 }
                 try {
                     min = a->getValue<T>(Dictionary::KW_MIN);
+		    minFound = true; // after min assign, in case of exceptions
                 } catch(TypeError& e) {
                     throw LSST_EXCEPT
                         (DictionaryError, 
@@ -389,7 +390,6 @@ void Definition::validateBasic(const string& name, const T& value,
                 } catch(...) {
                     throw;
                 }
-                minFound = true; // after min assign, in case of exceptions
             }
             if (a->exists(Dictionary::KW_MAX)) {
                 if (maxFound)
@@ -400,6 +400,7 @@ void Definition::validateBasic(const string& name, const T& value,
                          + ") already specified; additional value not allowed.");
                 try {
                     max = a->getValue<T>(Dictionary::KW_MAX);
+		    maxFound = true; // after max assign, in case of exceptions
                 } catch(TypeError& e) {
                     throw LSST_EXCEPT
                         (DictionaryError, 
@@ -407,7 +408,6 @@ void Definition::validateBasic(const string& name, const T& value,
                          + " max value: expected " + getTypeName() + ", found \"" 
                          + lexical_cast<string>(max) + "\".");
                 }
-                maxFound = true; // after max assign, in case of exceptions
             }
             if (a->exists(Dictionary::KW_VALUE))
                 allvals.insert(a->getValue<T>(Dictionary::KW_VALUE));
