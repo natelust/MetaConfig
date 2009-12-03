@@ -106,7 +106,7 @@ class PolicyTestCase(unittest.TestCase):
         try:
             p.set("foo", None)
             self.assert_(False, "Setting value to None succeeded.")
-        except RuntimeError, e:
+        except RuntimeError:
             self.assertFalse(p.exists("foo"))
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
