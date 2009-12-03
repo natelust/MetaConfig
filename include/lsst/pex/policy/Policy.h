@@ -168,7 +168,7 @@ public:
      * an enumeration for the supported policy types
      */
     enum ValueType {
-	UNDETERMINED = -1,
+        UNDETERMINED = -1,
         UNDEF,
         BOOL,
         INT,
@@ -219,7 +219,7 @@ public:
      *                    in \c dict.  The default is the current directory.
      */
     Policy(bool validate, const Dictionary& dict,
-	   const fs::path& repository="");
+           const fs::path& repository="");
 
     /**
      * copy a Policy.  
@@ -310,7 +310,7 @@ public:
      * How many names of parameters does this policy file have?
      */
     int nameCount() const {
-	return _data->nameCount();
+        return _data->nameCount();
     }
 
     //@{
@@ -723,7 +723,7 @@ public:
      * @return            the number of files loaded
      */
     int loadPolicyFiles(bool strict=true) {
-	return loadPolicyFiles(fs::path(), strict);
+        return loadPolicyFiles(fs::path(), strict);
     }
 
     /**
@@ -757,7 +757,7 @@ public:
      * @return int        the number of parameter names copied over
      */
     int mergeDefaults(const Policy& defaultPol, bool keepForValidation=true,
-		      ValidationError *errs=0);
+                      ValidationError *errs=0);
 
     /**
      * return a string representation of the value given by a name.  The
@@ -1006,9 +1006,9 @@ inline void Policy::set(const std::string& name, const std::string& value) {
 }
 inline void Policy::set(const std::string& name, const char *value) { 
     if (value == NULL)
-	throw LSST_EXCEPT(lsst::pex::exceptions::InvalidParameterException,
-			  std::string("Attempted to assign NULL value to ")
-			  + name + ".");
+        throw LSST_EXCEPT(lsst::pex::exceptions::InvalidParameterException,
+                          std::string("Attempted to assign NULL value to ")
+                          + name + ".");
     _validate(name, std::string(value));
     _data->set(name, std::string(value)); 
 }
