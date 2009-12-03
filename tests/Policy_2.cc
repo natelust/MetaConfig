@@ -46,8 +46,8 @@ int main(int argc, char** argv) {
     Assert(p2.getString("transmitter.serializationFormat") == "deluxe", 
            dataerror+"transmitter.serializationFormat");
     Assert(p2.getBool("standalone"), dataerror+"standalone");
-    Assert(p2.getDouble("threshold") == 4.5, /* parasoft-suppress LsstDm-5-12-1 */
-	   dataerror+"threshold");
+    Assert(p2.getDouble("threshold") == 4.5, /* parasoft-suppress LsstDm-5-12-1 "unittest" */
+           dataerror+"threshold");
 
 //     list<string> names;
 //     p.paramNames(names);

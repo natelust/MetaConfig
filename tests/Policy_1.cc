@@ -36,16 +36,16 @@ int main() {
     Assert(! p.isInt("foo"), "empty existence type test failed");
 
     try {
-	p.getTypeInfo("foo");
-	Assert(false, "type info available for non-existent value");
+        p.getTypeInfo("foo");
+        Assert(false, "type info available for non-existent value");
     }
     catch (NameNotFound&) { }
 
     // disallow null values
     try {
-	const char *nothing = NULL;
-	p.set("foo", nothing);
-	Assert(false, "no error when setting value to NULL");
+        const char *nothing = NULL;
+        p.set("foo", nothing);
+        Assert(false, "no error when setting value to NULL");
     }
     catch (lsst::pex::exceptions::InvalidParameterException e) { }
 
@@ -57,8 +57,8 @@ int main() {
     Assert(! p.isInt("foo"), "non-empty non-existence type test failed");
 
     try {
-	p.getTypeInfo("foo");
-	Assert(false, "type info available for non-existent value");
+        p.getTypeInfo("foo");
+        Assert(false, "type info available for non-existent value");
     }
     catch (NameNotFound& e) { 
         cout << "foo confirmed not to exist: " << e.what() << endl;
