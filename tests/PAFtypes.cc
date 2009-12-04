@@ -48,8 +48,8 @@ int main(int argc, char** argv) {
 
     Policy::IntArray vi = p.getIntArray("int");
     int i=0;
-    TYPED_VALUE_IS(vi, i, -11); ++i; /* parasoft-suppress LsstDm-6-1-3 "readability" */
-    /* parasoft-suppress line 53-105 LsstDm-6-1-3 "readability" */
+    TYPED_VALUE_IS(vi, i, -11); ++i; /* parasoft-suppress LsstDm-6-1 "readability" */
+    /* parasoft-suppress line 53-105 LsstDm-6-1 "for readability" */
     TYPED_VALUE_IS(vi, i,   0); ++i;
     TYPED_VALUE_IS(vi, i,  +3); ++i;
     TYPED_VALUE_IS(vi, i,  42); ++i;

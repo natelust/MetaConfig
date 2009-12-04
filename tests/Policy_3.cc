@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 
         if (i==0) {
             Assert(p.getBool("standalone"), "wrong value: standalone");
-            Assert(p.getDouble("threshold") == 4.5, /* parasoft-suppress LsstDm-5-12-1 "unittest" */
+            Assert(p.getDouble("threshold") == 4.5, /* parasoft-suppress LsstDm-5-12 "unittest" */
                    "wrong value: threshold");
             Assert(p.getInt("offsets") == 313, "wrong value: offsets");
             Assert(p.valueCount("offsets") == 8,
