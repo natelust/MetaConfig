@@ -10,7 +10,7 @@ policy_type: {
     bar: False
     baz: "Two" "Words"
 }
-file_type: @tests/dictionary/types_policy_appendix.paf
+file_type: @types_policy_appendix.paf
 
 undef_bool:   false
 undef_int:    1 2 3 3 4
@@ -21,4 +21,4 @@ undef_policy: {
     bar: 2.
     baz: "they're wet"
 }
-undef_file:   @tests/dictionary/types_policy_appendix.paf
+undef_file:   @types_policy_appendix.paf

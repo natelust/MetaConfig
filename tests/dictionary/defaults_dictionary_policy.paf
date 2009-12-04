@@ -32,7 +32,7 @@ definitions: {
 
     indirect: {
         type: Policy
-        dictionary: @tests/dictionary/defaults_dictionary_indirect.paf
+        dictionary: @defaults_dictionary_indirect.paf
     }
 
     # this is okay because no default is given -- eventually a value will

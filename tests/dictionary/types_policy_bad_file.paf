@@ -1,6 +1,6 @@
-bool_type:   @tests/dictionary/types_policy_appendix.paf
-int_type:    @tests/dictionary/types_policy_appendix.paf
-double_type: @tests/dictionary/types_policy_appendix.paf
-string_type: @tests/dictionary/types_policy_appendix.paf
-policy_type: @tests/dictionary/types_policy_appendix.paf
-file_type:   @tests/dictionary/types_policy_appendix.paf
+bool_type:   @types_policy_appendix.paf
+int_type:    @types_policy_appendix.paf
+double_type: @types_policy_appendix.paf
+string_type: @types_policy_appendix.paf
+policy_type: @types_policy_appendix.paf
+file_type:   @types_policy_appendix.paf
