@@ -380,7 +380,7 @@ void Definition::validateBasic(const string& name, const T& value,
                 }
                 try {
                     min = a->getValue<T>(Dictionary::KW_MIN);
-		    minFound = true; // after min assign, in case of exceptions
+                    minFound = true; // after min assign, in case of exceptions
                 } catch(TypeError& e) {
                     throw LSST_EXCEPT
                         (DictionaryError, 
@@ -400,7 +400,7 @@ void Definition::validateBasic(const string& name, const T& value,
                          + ") already specified; additional value not allowed.");
                 try {
                     max = a->getValue<T>(Dictionary::KW_MAX);
-		    maxFound = true; // after max assign, in case of exceptions
+                    maxFound = true; // after max assign, in case of exceptions
                 } catch(TypeError& e) {
                     throw LSST_EXCEPT
                         (DictionaryError, 
