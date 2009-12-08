@@ -5,7 +5,7 @@ import eups
 
 import lsst.utils.tests as tests
 
-from lsst.pex.policy import Policy, Dictionary, PolicyFile
+from lsst.pex.policy import Policy, Dictionary, PolicyFile, DefaultPolicyFile
 from lsst.pex.policy import ValidationError #, DictionaryError
 from lsst.pex.exceptions import LsstCppException
 
@@ -50,9 +50,19 @@ class DictionaryTestCase(unittest.TestCase):
         else:
             self.fail(failMsg + ": did not raise " + excClass)
 
+    def assertValidationError(self, errorCode, callableObj, field, value):
+        try:
+            callableObj(field, value)
+        except LsstCppException, e:
+            ve = e.args[0]
+            self.assert_(ve.getErrors(field) == errorCode)
+
+    testDictDir = None
     def getTestDictionary(self, filename=None):
-        directory = os.path.join(eups.productDir("pex_policy"), "tests", "dictionary")
-        return os.path.join(directory, filename) if filename else directory
+        if not self.testDictDir:
+            self.testDictDir = os.path.join(eups.productDir("pex_policy"),
+                                                  "tests", "dictionary")
+        return os.path.join(self.testDictDir, filename) if filename else self.testDictDir
 
     def testDictionaryLoad(self):
         d = Dictionary()
@@ -419,13 +429,6 @@ class DictionaryTestCase(unittest.TestCase):
                          == ValidationError.WRONG_TYPE)
             self.assert_(ve.getParamCount() == 4)
 
-    def assertValidationError(self, errorCode, callableObj, field, value):
-        try:
-            callableObj(field, value)
-        except LsstCppException, e:
-            ve = e.args[0]
-            self.assert_(ve.getErrors(field) == errorCode)
-
     # test setting and adding when created with a dictionary
     def testSetAdd(self):
         p = Policy.createPolicy(self.getTestDictionary("defaults_dictionary_good.paf"),
@@ -552,14 +555,14 @@ class DictionaryTestCase(unittest.TestCase):
             self.assert_(e.args[0].getErrors("required")
                          == ValidationError.MISSING_REQUIRED)
 
-        # test non-throwing validation
+        # non-throwing validation
         p = Policy(self.getTestDictionary("defaults_policy_partial.paf"))
         ve = ValidationError("Dictionary_1.py", 1, "testMergeDefaults")
         p.mergeDefaults(pd, False, ve)
         self.assert_(ve.getErrors("required") == ValidationError.MISSING_REQUIRED)
         self.assert_(ve.getParamCount() == 1)
 
-        # test non-retention
+        # non-retention
         p = Policy(self.getTestDictionary("defaults_policy_partial.paf"))
         p.set("required", "foo")
         p.mergeDefaults(pd, False)
@@ -568,12 +571,42 @@ class DictionaryTestCase(unittest.TestCase):
                             p.validate, "No dictionary assigned")
         p.add("unknown", 0) # would be rejected if dictionary was kept
 
-        # test deep merge from a Policy that's not a Dictionary
+        # deep merge from a Policy that's not a Dictionary
         p = Policy(self.getTestDictionary("defaults_policy_partial.paf"))
         p.mergeDefaults(Policy(self.getTestDictionary("defaults_policy_most.paf")))
         self.assert_(p.nameCount() == 3)
         self.assert_(p.getBool("bool_set_count") == True)
         self.assert_(p.getString("indirect.string_type") == "bar")
+
+        # propagation of a Dictionary from one Policy to another via mergeDefaults
+        d = Dictionary(self.getTestDictionary("defaults_dictionary_complete.paf"))
+        d.loadPolicyFiles(self.getTestDictionary())
+        pEmpty = Policy()
+        pEmpty.mergeDefaults(d)
+        self.assert_(pEmpty.canValidate())
+        pPartial = Policy(self.getTestDictionary("defaults_policy_partial.paf"))
+        pPartial.mergeDefaults(pEmpty)
+        self.assert_(pPartial.canValidate(), "Dictionary handed off via mergeDefaults.")
+
+    # test the sample code at http://dev.lsstcorp.org/trac/wiki/PolicyHowto
+    def testSampleCode(self):
+        policyFile = DefaultPolicyFile("pex_policy", "defaults_dictionary_complete.paf",
+                                       "tests/dictionary")
+        defaults = Policy.createPolicy(policyFile, policyFile.getRepositoryPath(), True)
+        policy = Policy()
+        policy.mergeDefaults(defaults)
+        self.assert_(policy.canValidate())
+
+        policy = Policy()
+        policy.mergeDefaults(defaults, False)
+        self.assert_(not policy.canValidate())
+
+        # even if not keeping it around for future validation, validate the merge now
+        policy = Policy()
+        policy.set("bad", "worse")
+        self.assertValidationError(ValidationError.UNKNOWN_NAME,
+                                   policy.mergeDefaults, defaults, False)
+        self.assert_(not policy.canValidate())
 
 def suite():
     """a suite containing all the test cases in this module"""

@@ -35,8 +35,8 @@ definitions: {
         dictionaryFile: defaults_dictionary_indirect.paf
     }
 
-    # a value will need to be supplied here
     required: {
         minOccurs: 1
+	default: foo
     }
 }

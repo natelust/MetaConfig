@@ -710,12 +710,24 @@ int Policy::mergeDefaults(const Policy& defaultPol, bool keepForValidation,
         }
     }
 
-    // if defaultPol is a dictionary, validate after all defaults are added
-    if (defaultPol.isDictionary()) {
-        Dictionary d(defaultPol);
-        if (keepForValidation) setDictionary(d);
-        d.validate(*this, errs);
+    // if a dictionary is available, validate after all defaults are added
+    // propagate dictionary?  If so, look for one and use it to validate
+    if (keepForValidation) {
+	if (defaultPol.isDictionary())
+	    setDictionary(Dictionary(defaultPol));
+	else if (defaultPol.canValidate())
+	    setDictionary(*defaultPol.getDictionary());
+	// if we couldn't find a dictionary, don't complain -- the API should
+	// work with default values even if defaultPol is a Policy without an
+	// attached Dictionary
+	if (canValidate())
+	    getDictionary()->validate(*this, errs);
     }
+    // don't keep a dictionary around, but validate anyway only if defaultPol is
+    // a Dictionary (if keepForValidation is false, there is a possibility that
+    // we don't want to use the attached Dictionary for validation)
+    else if (defaultPol.isDictionary())
+	Dictionary(defaultPol).validate(*this, errs);
 
     return added;
 }

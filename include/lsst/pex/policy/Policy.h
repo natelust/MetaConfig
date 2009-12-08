@@ -251,9 +251,9 @@ public:
      *                    used to validate future updates to the Policy.
      */
     static Policy *createPolicy(PolicySource& input, bool doIncludes=true, 
-                                bool validate=false);
+                                bool validate=true);
     static Policy *createPolicy(const std::string& input, bool doIncludes=true,
-                                bool validate=false);
+                                bool validate=true);
     //@}
 
     //@{
@@ -272,17 +272,17 @@ public:
      *                    used to validate future updates to the Policy.
      */
     static Policy *createPolicy(PolicySource& input, const fs::path& repos, 
-                                bool validate=false);
+                                bool validate=true);
     static Policy *createPolicy(PolicySource& input, const std::string& repos, 
-                                bool validate=false);
+                                bool validate=true);
     static Policy *createPolicy(PolicySource& input, const char *repos, 
-                                bool validate=false);
+                                bool validate=true);
     static Policy *createPolicy(const std::string& input, 
-                                const fs::path& repos, bool validate=false);
+                                const fs::path& repos, bool validate=true);
     static Policy *createPolicy(const std::string& input, 
-                                const std::string& repos, bool validate=false);
+                                const std::string& repos, bool validate=true);
     static Policy *createPolicy(const std::string& input, const char *repos, 
-                                bool validate=false);
+                                bool validate=true);
     //@}
 
     /**
