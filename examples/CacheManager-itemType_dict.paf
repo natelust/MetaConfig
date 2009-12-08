@@ -9,6 +9,7 @@ definitions: {
       description:  "the name of file type.  'other' refers to all
                      otherwise unconfigured file types"
       minOccurs: 1
+      default: "other"
    }
    lifetimeFactor: {
       type: double

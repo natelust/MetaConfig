@@ -38,9 +38,6 @@ definitions: {
       type:  Policy
       description:  "the parameters that control management of files of the 
                      the given named type"
-      default: { 
-         name: "other"
-      }
       dictionary: {
          definitions: {
             name: {
@@ -48,6 +45,7 @@ definitions: {
                description:  "the name of file type.  'other' refers to all
                               otherwise unconfigured file types"
                minOccurs: 1
+               default: "other"
             }
             lifetimeFactor: {
                type: double
@@ -90,9 +88,6 @@ definitions: {
       type:  Policy
       description:  "the parameters that control management of files of the 
                      the given named type"
-      default: { 
-         name: "other"
-      }
       dictionary: @CacheManager-itemType_dict.paf
    }
 
@@ -100,9 +95,6 @@ definitions: {
       type:  Policy
       description:  "the parameters that control management of files of the 
                      the given named type"
-      default: { 
-         name: "other"
-      }
       dictionaryFile: CacheManager-itemType_dict.paf
    }
 }
