@@ -1,5 +1,6 @@
 import optparse
 import sys
+import os
 
 from lsst.pex.policy import Policy, Dictionary
 from lsst.pex.exceptions import LsstCppException
@@ -26,7 +27,6 @@ class PolicyValidator:
         polLoadDir = self.options.loadPolicy
         polLoadDesc = polLoadDir
         if polLoadDir == None:
-            print " ### verbose?", self.verbose
             if self.verbose:
                 print "No policy load dir specified; using current dir."
             polLoadDir = ""
@@ -137,6 +137,11 @@ class PolicyValidator:
                 self.parser.error("no dictionary specified")
             self.dictFile = args[0]
             del(args[0])
+
+        if not os.path.exists(self.policyFile):
+            self.parser.error("file not found: " + self.policyFile)
+        if not os.path.exists(self.dictFile):
+            self.parser.error("file not found: " + self.dictFile)
 
         if len(args) != 0:
             self.parser.error("too many arguments: " + str(args) + " were not parsed.")
