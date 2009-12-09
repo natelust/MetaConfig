@@ -182,9 +182,11 @@ SWIG_SHARED_PTR_DERIVED(DefaultPolicyFile, lsst::pex::policy::PolicyFile, lsst::
 %pythoncode %{
 Policy.__str__ = Policy.toString
 
-def _Policy_get(p, name, defval=None):
+def _Policy_get(p, name):
     type = p.getValueType(name);
-    if (type == p.UNDEF):  return defval
+    if (type == p.UNDEF):
+        return p.getInt(name) # will raise an exception
+        # raise NameNotFound("Policy parameter name not found: " + name)
 
     if (type == p.INT):
         return p.getInt(name)
@@ -199,7 +201,9 @@ def _Policy_get(p, name, defval=None):
 
 def _Policy_getArray(p, name):
     type = p.getValueType(name);
-    if (type == p.UNDEF):  return None
+    if (type == p.UNDEF):
+        return p.getIntArray(name) # will raise an exception
+        # raise NameNotFound("Policy parameter name not found: " + name)
 
     if (type == p.INT):
         return p.getIntArray(name)
@@ -220,7 +224,7 @@ def _Policy_set(p, name, value):
     if isinstance(value, bool):
         p._setBool(name, value)
     elif (value == None):
-        raise RuntimeError("Attempt to set value of \"" + name + "\" to None.  Values must be non-None.")
+        raise RuntimeError("Attempt to set value of \"" + name + "\" to None.  Values must be non-None.  Use remove() instead.")
 #        raise lsst.pex.exceptions.InvalidParameterException("Value of " + name + " cannot be None.")
     else:
         _Policy_wrap_set(p, name, value)

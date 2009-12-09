@@ -2,7 +2,7 @@
 import unittest
 
 import lsst.utils.tests as tests
-from lsst.pex.policy import Policy
+from lsst.pex.policy import Policy, NameNotFound
 from lsst.pex.exceptions import LsstCppException
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -82,6 +82,23 @@ class PolicyTestCase(unittest.TestCase):
         p.add("pbool", False)
 
         # test shallow & deep copies
+
+        # test raise NameNotFound if not present
+        try:
+            p.get("nonexistent")
+            self.fail() # should never reach here
+        except LsstCppException, e:
+            self.assert_(isinstance(e.args[0], NameNotFound))
+        try:
+            p.getArray("nonexistent")
+            self.fail()
+        except LsstCppException, e:
+            self.assert_(isinstance(e.args[0], NameNotFound))
+        try:
+            p.getDouble("nonexistent")
+            self.fail()
+        except LsstCppException, e:
+            self.assert_(isinstance(e.args[0], NameNotFound))
 
     def testSimpleLoad(self):
 #        n = mwid.Citizen_census(0)
