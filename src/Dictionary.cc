@@ -52,7 +52,7 @@ void ValidationError::_loadMessages() {
 }
 
 vector<string> ValidationError::getParamNames() const {
-    std::vector<std::string> result;
+    vector<string> result;
     ParamLookup::const_iterator i;
     for (i = _errors.begin(); i != _errors.end(); ++i)
         result.push_back(i->first);
@@ -61,9 +61,9 @@ vector<string> ValidationError::getParamNames() const {
 
 string ValidationError::describe(string prefix) const {
     ostringstream os;
-    std::list<std::string> names;
+    list<string> names;
     paramNames(names);
-    for (std::list<string>::const_iterator i = names.begin(); i != names.end(); ++i)
+    for (list<string>::const_iterator i = names.begin(); i != names.end(); ++i)
         os << prefix << *i << ": " 
            << getErrorMessageFor((ErrorType)getErrors(*i)) << endl;
     return os.str();
@@ -72,7 +72,7 @@ string ValidationError::describe(string prefix) const {
 char const* ValidationError::what(void) const throw() {
     // static to avoid memory issue -- but a concurrency problem?
     // copied from pex/exceptions/src/Exception.cc
-    static std::string buffer;
+    static string buffer;
     ostringstream os;
     int n = getParamCount();
     os << "Validation error";
@@ -364,6 +364,7 @@ void Definition::validateBasic(const string& name, const T& value,
         T min, max;
         bool minFound = false, maxFound = false;
         set<T> allvals;
+        // iterate over the keys inside the "allowed" sub-policy
         for (Policy::PolicyPtrArray::const_iterator it = allowed.begin();
              it != allowed.end(); ++it)
         {
@@ -409,8 +410,16 @@ void Definition::validateBasic(const string& name, const T& value,
                          + lexical_cast<string>(max) + "\".");
                 }
             }
-            if (a->exists(Dictionary::KW_VALUE))
-                allvals.insert(a->getValue<T>(Dictionary::KW_VALUE));
+            if (a->exists(Dictionary::KW_VALUE)) {
+                const T& value = a->getValue<T>(Dictionary::KW_VALUE);
+                
+                allvals.insert(value);
+                // allvals.insert(a->getValue<T>(Dictionary::KW_VALUE));
+                vector<T> values = a->getValueArray<T>(Dictionary::KW_VALUE);
+                for (typename vector<T>::const_iterator vi = values.begin();
+                     vi != values.end(); ++vi)
+                    allvals.insert(*vi);
+            }
         }
 
         if ((minFound && value < min) || (maxFound && max < value))

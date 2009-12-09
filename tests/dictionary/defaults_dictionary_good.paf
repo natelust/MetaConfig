@@ -1,4 +1,4 @@
-#<?cfg paf dictionary ?>  
+#<?cfg paf dictionary ?>
 target: types
 definitions: {
     bool_set_count: {

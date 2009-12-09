@@ -20,12 +20,8 @@ definitions: {
 
    int_range_set_type: {
      type:    "int"
-     allowed: { value: 1 }
-     allowed: { value: 11 }
-     allowed: { value: 111 }
-     allowed: { value: 1111 }
-     allowed: { value: 11111 }
      allowed: {
+       value: 1 11 111 1111 11111
        min: 10
        max: 10000
      }
@@ -51,9 +47,7 @@ definitions: {
 
    string_set_type: {
      type:    "string"
-     allowed: { value: "foo" }
-     allowed: { value: "bar" }
-     allowed: { value: "baz" }
+     allowed: { value: "foo" "bar" "baz" }
    }
 
    string_range_type: {

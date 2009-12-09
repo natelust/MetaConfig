@@ -1,3 +1,5 @@
+int_range_count: -4 -8
 bool_set_count: false
 required: foo
+deep.sub_double: 3. 5. 7.
 indirect.string_type: bar
