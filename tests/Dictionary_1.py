@@ -237,11 +237,7 @@ class DictionaryTestCase(unittest.TestCase):
         d.check()
         p = Policy(self.getTestDictionary("values_policy_good_1.paf"))
         ve = ValidationError("Dictionary_1.py", 0, "testValues")
-        print "int_range_set_type legal values =", d.getArray("definitions.int_range_set_type.allowed.value")
-        print "int_range_set_type actual values =", p.getArray("int_range_set_type")
         d.validate(p, ve)
-        print ve.describe()
-        print "ve.getParamCount() =", ve.getParamCount()
         self.assert_(ve.getParamCount() == 0)
 
         # policy: disallow allowed, min, max
