@@ -386,8 +386,8 @@ void Definition::validateBasic(const string& name, const T& value,
                     throw LSST_EXCEPT
                         (DictionaryError, 
                          string("Wrong type for ") + getPrefix() + name 
-                         + " min value: expected " + getTypeName() + ", found \"" 
-                         + lexical_cast<string>(max) + "\".");
+                         + " min value: expected " + getTypeName() + ", found " 
+			 + a->getTypeName(Dictionary::KW_MIN) + ".");
                 } catch(...) {
                     throw;
                 }
@@ -406,8 +406,8 @@ void Definition::validateBasic(const string& name, const T& value,
                     throw LSST_EXCEPT
                         (DictionaryError, 
                          string("Wrong type for ") + getPrefix() + name 
-                         + " max value: expected " + getTypeName() + ", found \"" 
-                         + lexical_cast<string>(max) + "\".");
+                         + " max value: expected " + getTypeName() + ", found " 
+			 + a->getTypeName(Dictionary::KW_MAX) + ".");
                 }
             }
             if (a->exists(Dictionary::KW_VALUE)) {
