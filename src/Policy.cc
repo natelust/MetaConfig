@@ -467,30 +467,30 @@ template <> Policy::ValueType Policy::getValueType<Policy::FilePtr>() { return F
 template <> Policy::ValueType Policy::getValueType<Policy::Ptr>() { return POLICY; }
 template <> Policy::ValueType Policy::getValueType<Policy::ConstPtr>() { return POLICY; }
 
-template <> void Policy::set(const string& name, const bool& value) {
+template <> void Policy::setValue(const string& name, const bool& value) {
     set(name, value); }
-template <> void Policy::set(const string& name, const int& value) {
+template <> void Policy::setValue(const string& name, const int& value) {
     set(name, value); }
-template <> void Policy::set(const string& name, const double& value) {
+template <> void Policy::setValue(const string& name, const double& value) {
     set(name, value); }
-template <> void Policy::set(const string& name, const string& value) {
+template <> void Policy::setValue(const string& name, const string& value) {
     set(name, value); }
-template <> void Policy::set(const string& name, const Ptr& value) {
+template <> void Policy::setValue(const string& name, const Ptr& value) {
     set(name, value); }
-template <> void Policy::set(const string& name, const FilePtr& value) {
+template <> void Policy::setValue(const string& name, const FilePtr& value) {
     set(name, value); }
 
-template <> void Policy::addT(const string& name, const bool& value) {
+template <> void Policy::addValue(const string& name, const bool& value) {
     add(name, value); }
-template <> void Policy::addT(const string& name, const int& value) {
+template <> void Policy::addValue(const string& name, const int& value) {
     add(name, value); }
-template <> void Policy::addT(const string& name, const double& value) {
+template <> void Policy::addValue(const string& name, const double& value) {
     add(name, value); }
-template <> void Policy::addT(const string& name, const string& value) {
+template <> void Policy::addValue(const string& name, const string& value) {
     add(name, value); }
-template <> void Policy::addT(const string& name, const Ptr& value) {
+template <> void Policy::addValue(const string& name, const Ptr& value) {
     add(name, value); }
-template <> void Policy::addT(const string& name, const FilePtr& value) {
+template <> void Policy::addValue(const string& name, const FilePtr& value) {
     add(name, value); }
 
 Policy::ConstPolicyPtrArray Policy::getConstPolicyArray(const string& name) const {

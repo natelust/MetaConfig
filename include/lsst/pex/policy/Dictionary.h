@@ -412,9 +412,9 @@ public:
     /**
      * @copydoc setDefaultIn(Policy&) const
      */
-    template <class T> void setDefaultIn(Policy& policy,
-					 const std::string& withName,
-					 ValidationError* errs=0) const;
+    template <typename T> void setDefaultIn(Policy& policy,
+					    const std::string& withName,
+					    ValidationError* errs=0) const;
 
     /**
      * confirm that a Policy parameter conforms to this definition.  
@@ -535,7 +535,7 @@ public:
      * @exception ValidationError   if the value does not conform.  The message
      *                 should explain why.
      */
-    template <class T> void validateBasic
+    template <typename T> void validateBasic
 	(const std::string& name, const Policy& policy,
 	 ValidationError *errs=0) const;
 
@@ -549,10 +549,10 @@ public:
      * Equivalent to <tt>validate(name, value, errs)</tt> for basic types, but
      * not for Policies.
      */
-    template <class T> void validateBasic
+    template <typename T> void validateBasic
 	(const std::string& name, const T& value, int curcount=-1,
 	 ValidationError *errs=0) const;
-    template <class T> void validateBasic
+    template <typename T> void validateBasic
 	(const std::string& name, const std::vector<T>& value,
 	 ValidationError *errs=0) const;
     //@}
@@ -880,14 +880,14 @@ private:
     std::string _prefix; // for recursive validation, eg "foo.bar."
 };
 
-template <class T>
+template <typename T>
 void Definition::validateBasic(const std::string& name, const Policy& policy,
 			       ValidationError *errs) const
 {
     validateBasic(name, policy.getValueArray<T>(name), errs);
 }
 
-template <class T>
+template <typename T>
 void Definition::validateBasic(const std::string& name, const std::vector<T>& value,
 			       ValidationError *errs) const
 {
@@ -905,7 +905,7 @@ void Definition::validateBasic(const std::string& name, const std::vector<T>& va
     if (errs == 0 && ve.getParamCount() > 0) throw ve;
 }
 
-template <class T>
+template <typename T>
 void Definition::setDefaultIn(Policy& policy, const std::string& withName,
 			      ValidationError *errs) const 
 {
@@ -920,7 +920,7 @@ void Definition::setDefaultIn(Policy& policy, const std::string& withName,
 	    for (typename std::vector<T>::const_iterator i = defs.begin();
 		 i != defs.end();
 		 ++i)
-		policy.addT<T>(withName, *i);
+		policy.addValue<T>(withName, *i);
 	}
     }
 

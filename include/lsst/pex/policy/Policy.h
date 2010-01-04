@@ -291,7 +291,7 @@ public:
      * FilePtr (aka shared_ptr<PolicyFile>), Ptr (aka shared_ptr<Policy>),
      * ConstPtr (aka shared_ptr<const Policy>).
      */
-    template <class T> static ValueType getValueType();
+    template <typename T> static ValueType getValueType();
 
     /** 
      * Given the human-readable name of a type ("bool", "int", "policy", etc),
@@ -492,7 +492,7 @@ public:
      * string, FilePtr (aka shared_ptr<PolicyFile>), ConstPtr (aka
      * shared_ptr<const Policy>).
      */
-    template <class T> T getValue(const std::string& name) const;
+    template <typename T> T getValue(const std::string& name) const;
 
     /**
      * Template-ized version of getIntArray, getPolicyPtrArray, etc.  General
@@ -500,7 +500,7 @@ public:
      * double, string, FilePtr (aka shared_ptr<PolicyFile>, returns
      * FilePtrArray), Ptr (aka shared_ptr<Policy>, returns PolicyPtrArray).
      */
-    template <class T> std::vector<T> getValueArray(const std::string& name) const;
+    template <typename T> std::vector<T> getValueArray(const std::string& name) const;
 
     //@{
     /**
@@ -655,7 +655,7 @@ public:
      *                    the value type does not match the definition 
      *                    associated with the name. 
      */
-    template <class T> void set(const std::string& name, const T& value);
+    template <typename T> void setValue(const std::string& name, const T& value);
     void set(const std::string& name, const Ptr& value);      // inlined below
     void set(const std::string& name, const FilePtr& value);  // inlined below
     void set(const std::string& name, bool value);            // inlined below
@@ -692,7 +692,7 @@ public:
      *                    associated with the name. 
      */
     // avoid name confusion with appended T
-    template <class T> void addT(const std::string& name, const T& value);
+    template <typename T> void addValue(const std::string& name, const T& value);
     void add(const std::string& name, const Ptr& value);      // inlined below
     void add(const std::string& name, const FilePtr& value);  // inlined below
     void add(const std::string& name, bool value);            // inlined below
@@ -814,7 +814,7 @@ private:
      * If _dictionary is non-null, validate value against it, assuming curCount
      * current values for name.
      */
-    template <class T> 
+    template <typename T> 
     void _validate(const std::string& name, const T& value, int curCount=0);
 
     std::vector<dafBase::Persistable::Ptr> 
@@ -1105,21 +1105,21 @@ inline Policy* Policy::createPolicy(const std::string& input,
 inline dafBase::PropertySet::Ptr Policy::asPropertySet() { return _data; }
 
 // general case is disallowed; known types are specialized
-template <class T> T Policy::getValue(const std::string& name) const {
+template <typename T> T Policy::getValue(const std::string& name) const {
     throw LSST_EXCEPT(TypeError, name, "not implemented for this type");
 }
 
-template <class T> std::vector<T> Policy::getValueArray(const std::string& name) const {
+template <typename T> std::vector<T> Policy::getValueArray(const std::string& name) const {
     throw LSST_EXCEPT(TypeError, name, "not implemented for this type");
 }
 
-template <class T> Policy::ValueType Policy::getValueType() {
+template <typename T> Policy::ValueType Policy::getValueType() {
     throw LSST_EXCEPT(TypeError, "unknown", "not implemented for this type");
 }
-template <class T> void Policy::set(const std::string& name, const T& value) {
+template <typename T> void Policy::setValue(const std::string& name, const T& value) {
     throw LSST_EXCEPT(TypeError, name, "not implemented for this type");
 }
-template <class T> void Policy::addT(const std::string& name, const T& value) {
+template <typename T> void Policy::addValue(const std::string& name, const T& value) {
     throw LSST_EXCEPT(TypeError, name, "not implemented for this type");
 }
 
