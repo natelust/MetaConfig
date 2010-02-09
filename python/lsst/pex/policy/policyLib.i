@@ -198,6 +198,8 @@ def _Policy_get(p, name):
         return p.getString(name)
     elif (type == p.POLICY):
         return p.getPolicy(name)
+    elif (type == p.FILE):
+        return p.getFile(name)
 
 def _Policy_getArray(p, name):
     type = p.getValueType(name);
@@ -215,6 +217,8 @@ def _Policy_getArray(p, name):
         return p.getStringArray(name)
     elif (type == p.POLICY):
         return p.getPolicyArray(name)
+    elif (type == p.FILE):
+        return p.getFileArray(name)
 
 Policy.get = _Policy_get
 Policy.getArray = _Policy_getArray
