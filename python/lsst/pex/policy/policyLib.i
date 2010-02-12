@@ -43,44 +43,44 @@ namespace boost { namespace filesystem { } }
 %import "lsst/daf/base/baseLib.i"
 %import "lsst/pex/exceptions/exceptionsLib.i"    // for Exceptions
 
-%typemap(out) std::vector<double,std::allocator<double > >& {
-    int len = (*$1).size();
+%typemap(out) std::vector<double,std::allocator<double > > {
+    int len = ($1).size();
     $result = PyList_New(len);
     for (int i = 0; i < len; i++) {
-        PyList_SetItem($result,i,PyFloat_FromDouble((*$1)[i]));
+        PyList_SetItem($result,i,PyFloat_FromDouble(($1)[i]));
     }
 }
 
-%typemap(out) std::vector<int,std::allocator<int > >& {
-    int len = (*$1).size();
+%typemap(out) std::vector<int,std::allocator<int > > {
+    int len = ($1).size();
     $result = PyList_New(len);
     for (int i = 0; i < len; i++) {
-        PyList_SetItem($result,i,PyInt_FromLong((*$1)[i]));
+        PyList_SetItem($result,i,PyInt_FromLong(($1)[i]));
     }
 }
 
-%typemap(out) std::vector<boost::shared_ptr<std::string > >& {
-    int len = (*$1).size();
+%typemap(out) std::vector<std::string > {
+    int len = ($1).size();
     $result = PyList_New(len);
     for (int i = 0; i < len; i++) {
-        PyList_SetItem($result,i,PyString_FromString((*$1)[i]->c_str()));
+        PyList_SetItem($result,i,PyString_FromString(($1)[i].c_str()));
     }
 }
 
-%typemap(out) std::vector<bool,std::allocator<bool > >& {
-    int len = (*$1).size();
+%typemap(out) std::vector<bool,std::allocator<bool > > {
+    int len = ($1).size();
     $result = PyList_New(len);
     for (int i = 0; i < len; i++) {
-        PyList_SetItem($result,i, ( ((*$1)[i]) ? Py_True : Py_False ) );
+        PyList_SetItem($result,i, ( (($1)[i]) ? Py_True : Py_False ) );
     }
 }
 
-%typemap(out) std::vector<boost::shared_ptr<lsst::pex::policy::Policy > >& {
-    int len = (*$1).size();
+%typemap(out) std::vector<boost::shared_ptr<lsst::pex::policy::Policy > > {
+    int len = ($1).size();
     $result = PyList_New(len);
     for (int i = 0; i < len; i++) {
         boost::shared_ptr<lsst::pex::policy::Policy> * smartresult =
-            new boost::shared_ptr<lsst::pex::policy::Policy>((*$1)[i]);
+            new boost::shared_ptr<lsst::pex::policy::Policy>(($1)[i]);
         PyObject * obj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
             SWIGTYPE_p_boost__shared_ptrT_lsst__pex__policy__Policy_t,
             SWIG_POINTER_OWN);
@@ -88,12 +88,12 @@ namespace boost { namespace filesystem { } }
     }
 }
 
-%typemap(out) std::vector<boost::shared_ptr<lsst::pex::policy::PolicyFile > >& {
-    int len = (*$1).size();
+%typemap(out) std::vector<boost::shared_ptr<lsst::pex::policy::PolicyFile > > {
+    int len = (*(&$1)).size();
     $result = PyList_New(len);
     for (int i = 0; i < len; i++) {
         boost::shared_ptr<lsst::pex::policy::PolicyFile> * smartresult =
-            new boost::shared_ptr<lsst::pex::policy::PolicyFile>((*$1)[i]);
+            new boost::shared_ptr<lsst::pex::policy::PolicyFile>((*(&$1))[i]);
         PyObject * obj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
             SWIGTYPE_p_boost__shared_ptrT_lsst__pex__policy__PolicyFile_t,
             SWIG_POINTER_OWN);

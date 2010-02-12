@@ -39,7 +39,7 @@ class GetTestCase(unittest.TestCase):
     def testGetIntArray(self):
         self.assert_(self.policy.isInt("int"))
         v = self.policy.getArray("int")
-        self.assert_(isinstance(v, tuple), "array value not returned as a list")
+        self.assert_(isinstance(v, list), "array value not returned as a list")
         
         truth = [-11, 0, 3, 42, -11, 0 , 3, 42, 0, 0]
         self.assertEquals(len(v), len(truth),"wrong number of values in array")
@@ -51,7 +51,7 @@ class GetTestCase(unittest.TestCase):
     def testGetBoolArray(self):
         self.assert_(self.policy.isBool("true"))
         v = self.policy.getArray("true")
-        self.assert_(isinstance(v, tuple), "array value not returned as a list")
+        self.assert_(isinstance(v, list), "array value not returned as a list")
         
         truth = [ True ]
         self.assertEquals(len(v), len(truth),"wrong number of values in array")
@@ -62,7 +62,7 @@ class GetTestCase(unittest.TestCase):
 
         self.assert_(self.policy.isBool("false"))
         v = self.policy.getArray("false")
-        self.assert_(isinstance(v, tuple), "array value not returned as a list")
+        self.assert_(isinstance(v, list), "array value not returned as a list")
         
         truth = [ False ]
         self.assertEquals(len(v), len(truth),"wrong number of values in array")
@@ -74,7 +74,7 @@ class GetTestCase(unittest.TestCase):
     def testGetDoublArray(self):
         self.assert_(self.policy.isDouble("dbl"))
         v = self.policy.getArray("dbl")
-        self.assert_(isinstance(v, tuple), "array value not returned as a list")
+        self.assert_(isinstance(v, list), "array value not returned as a list")
         
         truth = [-1.0, -65.78, -14.0, -0.12, -0.12, 1.0, 65.78, 14.0, 0.12, 
                  0.12, 1.0, 65.78, 14.0, 0.12, 0.12, -1.0e10, -65780000.0, 
@@ -89,9 +89,10 @@ class GetTestCase(unittest.TestCase):
                               (i, v[i], truth[i]))
 
     def testGetStringArray(self):
+        #pdb.set_trace()
         self.assert_(self.policy.isString("str"))
         v = self.policy.getArray("str")
-        self.assert_(isinstance(v, tuple), "array value not returned as a list")
+        self.assert_(isinstance(v, list), "array value not returned as a list")
         
         truth = ["word", "two words", "quoted ' words", 'quoted " words',
                  "a very long, multi-line description", "happy", "birthday" ]
@@ -105,30 +106,28 @@ class GetTestCase(unittest.TestCase):
         self.assert_(self.policy.isFile("file"))
         v = self.policy.getArray("file")
         self.assert_(v is not None, "file array returned as None")
-        if False:
-            # this is be fixed in another ticket
-            self.assert_(isinstance(v, list), "array value not returned as a list")
+
+        # this is be fixed in another ticket
+        self.assert_(isinstance(v, list), "array value not returned as a list")
         
-            truth = ["EventTransmitter_policy.paf", "CacheManager_dict.paf"]
-            self.assertEquals(len(v), len(truth),"wrong number of values in array")
-            self.assertEquals(v.size(), len(truth),"wrong number of values in array")
-            for i in xrange(len(truth)):
-                self.assertEquals(v[i].getPath, truth[i],
-                              "wrong array element at index %d: %s != %s" %
-                              (i, v[i], truth[i]))
+        truth = ["EventTransmitter_policy.paf", "CacheManager_dict.paf"]
+        self.assertEquals(len(v), len(truth),"wrong number of values in array")
+        for i in xrange(len(truth)):
+            self.assertEquals(v[i].getPath(), truth[i],
+                          "wrong array element at index %d: %s != %s" %
+                          (i, v[i], truth[i]))
 
     def testGetPolicyArray(self):
         self.assert_(self.policy.isPolicy("pol"))
         v = self.policy.getArray("pol")
-        if False:
-            # this is be fixed in another ticket
-            self.assert_(isinstance(v, list), "array value not returned as a list")
+        # this is be fixed in another ticket
+        self.assert_(isinstance(v, list), "array value not returned as a list")
         
-            self.assertEquals(len(v), 2,"wrong number of values in array")
-            self.assertEquals(v[0].get("int"), 1)
-            self.assertEquals(v[1].get("int"), 2)
-            self.assertAlmostEquals(v[0].get("dbl"), 0.0003, 8)
-            self.assertAlmostEquals(v[1].get("dbl"), -5.2, 8)
+        self.assertEquals(len(v), 2,"wrong number of values in array")
+        self.assertEquals(v[0].get("int"), 1)
+        self.assertEquals(v[1].get("int"), 2)
+        self.assertAlmostEquals(v[0].get("dbl"), 0.0003, 8)
+        self.assertAlmostEquals(v[1].get("dbl"), -5.2, 8)
     
 
 
