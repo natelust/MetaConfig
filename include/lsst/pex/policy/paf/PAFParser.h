@@ -89,6 +89,8 @@ private:
     static const boost::regex QSTRING_VALUE;
     static const boost::regex QQSTRING_START;
     static const boost::regex QSTRING_START;
+    static const boost::regex QQSTRING_EMPTYSTART;
+    static const boost::regex QSTRING_EMPTYSTART;
     static const boost::regex QQSTRING_END;
     static const boost::regex QSTRING_END;
     static const boost::regex BARE_STRING_LINE;

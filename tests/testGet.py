@@ -35,7 +35,7 @@ class GetTestCase(unittest.TestCase):
         self.assert_(p.isPolicy("pol"), "Unexpected: 'pol' is not a Policy")
         sp = p.get("pol")
         self.assertEquals(sp.get("int"), 2)
-        
+
     def testGetIntArray(self):
         self.assert_(self.policy.isInt("int"))
         v = self.policy.getArray("int")
@@ -102,6 +102,17 @@ class GetTestCase(unittest.TestCase):
                               "wrong array element at index %d: %s != %s" %
                               (i, v[i], truth[i]))
 
+    def testGetEmptyString(self):
+        p = self.policy
+        self.assertEquals(p.get("empty"), '')
+        s = p.getArray("empty")
+        self.assertEquals(len(s), 5)
+        self.assertEquals(s[0], ' description ')
+        self.assertEquals(s[1], '  ')
+        self.assertEquals(s[2], '  ')
+        self.assertEquals(s[3], ' ')
+        self.assertEquals(s[4], '')
+        
     def testGetFileArray(self):
         self.assert_(self.policy.isFile("file"))
         v = self.policy.getArray("file")

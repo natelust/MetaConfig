@@ -38,12 +38,14 @@ const regex PAFParser::DOUBLE_VALUE
 const regex PAFParser::INT_VALUE("^([+-]?\\d+)\\s*");
 const regex PAFParser::ATRUE_VALUE("^(true)\\s*");
 const regex PAFParser::AFALSE_VALUE("^(false)\\s*");
-const regex PAFParser::QQSTRING_VALUE("^\"([^\"]+)\"\\s*");
-const regex PAFParser::QSTRING_VALUE("^'([^']+)'\\s*");
+const regex PAFParser::QQSTRING_VALUE("^\"([^\"]*)\"\\s*");
+const regex PAFParser::QSTRING_VALUE("^'([^']*)'\\s*");
 const regex PAFParser::QQSTRING_START("^\"([^\"]*\\S)\\s*");
 const regex PAFParser::QSTRING_START("^'([^']*\\S)\\s*");
-const regex PAFParser::QQSTRING_END("^\\s*(\\S[^\"]*)\"\\s*");
-const regex PAFParser::QSTRING_END("^\\s*(\\S[^']*)'\\s*");
+const regex PAFParser::QQSTRING_EMPTYSTART("^\"\\s*$");
+const regex PAFParser::QSTRING_EMPTYSTART("^'\\s*$");
+const regex PAFParser::QQSTRING_END("^\\s*([^\"]*)\"\\s*");
+const regex PAFParser::QSTRING_END("^\\s*([^']*)'\\s*");
 const regex PAFParser::BARE_STRING_LINE("^\\s*(\\S(.*\\S)?)\\s*");
 const regex PAFParser::BARE_STRING("^\\s*([^#\\}\\s]([^#\\}]*[^#\\}\\s])?)\\s*[#}]?");
 const regex PAFParser::FILE_VALUE("^@");
@@ -289,9 +291,8 @@ int PAFParser::_addValue(const string& propname, string& value,
             // log message
         }
     }
-    else if (regex_search(value, QQSTRING_START) ||
-             regex_search(value, QSTRING_START)) 
-    {
+    else if (value.at(0) == '\'' || value.at(0) == '"') {
+        // we are starting a string
         do {
             if (regex_search(value, matched, QQSTRING_VALUE) ||
                 regex_search(value, matched, QSTRING_VALUE))   
@@ -305,9 +306,10 @@ int PAFParser::_addValue(const string& propname, string& value,
                 if (value.size() > 0 && regex_search(value, COMMENT_LINE)) 
                     value.erase();
             }
-            else if (regex_search(value, matched, QQSTRING_START)) {
+            else if (regex_search(value, matched, QQSTRING_EMPTYSTART) ||
+                     regex_search(value, matched, QQSTRING_START)        ) {
                 // start of multi-line string
-                element = matched.str(1);
+                element = (matched.size() > 1) ? matched.str(1) : "";
                 while (!_nextLine(is, value)) {
                     element.append(" ");
                     if (regex_search(value, matched, QQSTRING_END)) {
@@ -321,16 +323,17 @@ int PAFParser::_addValue(const string& propname, string& value,
                         element.append(matched.str(1));
                     }
                 }
-                if (is.fail()) 
-                    throw LSST_EXCEPT(ParserError, "read error", _lineno);
                 if (is.eof()) {
                     if (_strict) throw LSST_EXCEPT(EOFError, _lineno);
                     // log message
                 }
+                if (is.fail()) 
+                    throw LSST_EXCEPT(ParserError, "read error", _lineno);
             }
-            else if (regex_match(value, matched, QSTRING_START)) {
+            else if (regex_search(value, matched, QSTRING_EMPTYSTART) ||
+                     regex_match(value, matched, QSTRING_START)) {
                 // start of multi-line string
-                element = matched.str(1);
+                element = (matched.size() > 1) ? matched.str(1) : "";
                 while (!_nextLine(is, value)) {
                     element.append(" ");
                     if (regex_search(value, matched, QSTRING_END)) {
@@ -344,12 +347,12 @@ int PAFParser::_addValue(const string& propname, string& value,
                         element.append(matched.str(1));
                     }
                 }
-                if (is.fail()) 
-                    throw LSST_EXCEPT(ParserError, "read error", _lineno);
                 if (is.eof()) {
                     if (_strict) throw LSST_EXCEPT(EOFError, _lineno);
                     // log message
                 }
+                if (is.fail()) 
+                    throw LSST_EXCEPT(ParserError, "read error", _lineno);
             }
 
             if (value.size() > 0) {
@@ -364,8 +367,8 @@ int PAFParser::_addValue(const string& propname, string& value,
             }
             else 
                 break;
-        } while (regex_search(value, QQSTRING_START) ||
-                 regex_search(value, QSTRING_START));
+        } while (value.size() > 0 &&
+                 (value.at(0) == '\'' || value.at(0) == '"'));
 
         if (value.size() > 0) {
             msg = "Expecting quoted string value, found: ";
