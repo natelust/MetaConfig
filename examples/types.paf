@@ -47,6 +47,18 @@ str : "a very long, multi-line
         description"
 str : "happy" "birthday"
 
+empty: "
+       description
+       "
+empty: " 
+       
+       "
+empty: '
+
+       '
+empty: ' '
+empty: ""
+
 file : @EventTransmitter_policy.paf
 file : @CacheManager_dict.paf
 # file : @EventTransmitter_policy.paf @CacheManager_dict.paf
