@@ -87,9 +87,16 @@ class DictionaryTestCase(unittest.TestCase):
                             d.makeDef("something").getType,
                             "Expected string \"type\" type")
 
-        d = Dictionary(self.getTestDictionary("dictionary_bad_multiple_definitions.paf"))
-        self.assertRaiseLCE("DictionaryError", "expected a single", d.check, 
-                            "Dictionary has two 'definitions' sections")
+        self.assertRaiseLCE("DictionaryError", "property found at bad: min_occurs",
+                            Dictionary,
+                            "Dictionary has mispelled keyword \"min_occurs\".",
+                            self.getTestDictionary("dictionary_bad_keyword.paf"))
+
+        dbmd = self.getTestDictionary("dictionary_bad_multiple_definitions.paf")
+        self.assertRaiseLCE("DictionaryError", "expected a single",
+                            Dictionary,
+                            "Dictionary has two 'definitions' sections",
+                            dbmd)
 
         p = Policy(self.getTestDictionary("values_policy_good_1.paf"))
         d = Dictionary(self.getTestDictionary("dictionary_bad_multiple_min.paf"))
@@ -317,16 +324,16 @@ class DictionaryTestCase(unittest.TestCase):
         d.validate(p, ve)
 
     def testNested(self):
-        d = Dictionary(self.getTestDictionary("nested_dictionary_bad_1.paf"))
-        p = Policy(self.getTestDictionary("nested_policy_good.paf"))
         self.assertRaiseLCE("DictionaryError",
                             "policy_bad_subdef.dictionary is a string",
-                            d.check, "Malformed subdictionary")
-        d = Dictionary(self.getTestDictionary("nested_dictionary_bad_2.paf"))
-        self.assertRaiseLCE("DictionaryError",
-                            "Unknown Dictionary property",
-                            d.validate, "Malformed subdictionary", p)
-        
+                            Dictionary, "Malformed subdictionary",
+                            self.getTestDictionary("nested_dictionary_bad_1.paf"))
+
+        p = Policy(self.getTestDictionary("nested_policy_good.paf"))
+        self.assertRaiseLCE("DictionaryError", "Unknown Dictionary property",
+                            Dictionary, "Malformed subdictionary",
+                            self.getTestDictionary("nested_dictionary_bad_2.paf"))
+
         d = Dictionary(self.getTestDictionary("nested_dictionary_good.paf"))
         d.check()
         self.assertRaiseLCE("LogicErrorException", "dictionaryFile needs to be loaded",
@@ -369,6 +376,14 @@ class DictionaryTestCase(unittest.TestCase):
         p = Policy(True, d) # load from defaults
         self.assert_(p.getString("1.2a.foo") == "bar")
         self.assert_(p.getString("1.2b.foo") == "bar")
+
+        # error in child
+        d = Dictionary(self.getTestDictionary("nested_dictionary_bad_child.paf"))
+        d.loadPolicyFiles(self.getTestDictionary())
+        # this should really be caught during loadPolicyFiles(), above
+        self.assertRaiseLCE("DictionaryError", "Unknown type: \"NotAType\"",
+                            d.makeDef("sub.something").getType,
+                            "Loaded sub-dictionary specified a bogus type")
 
     def testChildDef(self):
         # simple
@@ -607,6 +622,30 @@ class DictionaryTestCase(unittest.TestCase):
         self.assertValidationError(ValidationError.UNKNOWN_NAME,
                                    policy.mergeDefaults, defaults, False)
         self.assert_(not policy.canValidate())
+
+    # test operations on an empty sub-dictionary (ticket 1210)
+    def testEmptySubdict(self):
+        d = Dictionary(self.getTestDictionary("empty_subdictionary.paf"))
+        p = Policy()
+        p.set("empty_required", Policy(self.getTestDictionary("simple_policy.paf")))
+        p.mergeDefaults(d)
+        self.assert_(p.get("empty_sub_with_default.foo") == "bar")
+        p.setDictionary(d)
+        # this works because there is a definition for "empty_sub_with_default.foo"
+        p.set("empty_sub_with_default.foo", "baz")
+
+        p2 = Policy()
+        p2.set("foo", "baz")
+        p.set("empty_sub_no_default", p2)
+        # this fails because Policy tries to makeDef("empty_sub_no_default.foo")
+        # which fails because there's only a definition for "empty_sub_no_default",
+        # but it doesn't contain any sub-definitions
+        # p.set("empty_sub_no_default.foo", "baz")
+        self.assertRaiseLCE("DictionaryError",
+                            "empty_sub_no_default.dictionary not found",
+                            p.set, "Empty policy definition -- if this fails, "
+                            "it means a known bug has been fixed.  That's good.",
+                            "empty_sub_no_default.foo", "baz")
 
 def suite():
     """a suite containing all the test cases in this module"""

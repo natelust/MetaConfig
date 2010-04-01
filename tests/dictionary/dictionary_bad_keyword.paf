@@ -1,0 +1,6 @@
+#<?cfg paf dictionary ?>  
+definitions: {
+    bad: {
+        min_occurs: 1 # should be minOccurs
+    }
+}

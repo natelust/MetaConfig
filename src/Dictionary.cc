@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 #include <set>
+#include <iostream> // TODO: remove after testing
 
 namespace lsst {
 namespace pex {
@@ -309,36 +310,19 @@ void Definition::validateRecurse(const string& name, const Policy& value,
             subdict.validate(value, errs);
         }
     }
+    // is there an unresolved link here?
     else if (_policy->exists(Dictionary::KW_DICT_FILE)) {
         throw LSST_EXCEPT
             (pexExcept::LogicErrorException, _prefix + name
              + "." + Dictionary::KW_DICT_FILE + " needs to be loaded with "
              "Dictionary.loadPolicyFiles() before validating.");
     }
-    // Otherwise, make sure no unknown fields are there -- did somebody try to
-    // specify some constraints and get it wrong?
-    else {
-        static set<string> okayNames;
-        if (okayNames.size() == 0) {
-            okayNames.insert(Dictionary::KW_TYPE);
-            okayNames.insert(Dictionary::KW_DICT);
-            okayNames.insert(Dictionary::KW_DICT_FILE);
-            okayNames.insert(Dictionary::KW_MIN_OCCUR);
-            okayNames.insert(Dictionary::KW_MAX_OCCUR);
-            okayNames.insert(Dictionary::KW_ALLOWED);
-        }
-        Policy::StringArray names = _policy->names(true);
-        for (Policy::StringArray::const_iterator i = names.begin();
-             i != names.end(); ++i) 
-        {
-            if (okayNames.count(*i) == 1) continue;
-            else throw LSST_EXCEPT
-                (DictionaryError, string("Unknown Dictionary property found at ")
-                 + _prefix + name + ": " + *i);
-        }
-    }
+    // there's a policy type defined here, but no sub-definition (that is, no
+    // constraints -- it could be any policy), so anything is okay.
+    else { }
 }
 
+// TODO: integrate all checks into check() rather than having them in validate()
 template <class T>
 void Definition::validateBasic(const string& name, const T& value,
                                int curcount, ValidationError *errs) const
@@ -509,6 +493,35 @@ void Definition::validate(const string& name, const Policy::ConstPolicyPtrArray&
     validateRecurse(name, value, errs);
 }
 
+void Definition::check() const {
+    static set<string> okayKeywords;
+    if (okayKeywords.size() == 0) {
+        okayKeywords.insert(Dictionary::KW_TYPE);
+        okayKeywords.insert(Dictionary::KW_DICT);
+        okayKeywords.insert(Dictionary::KW_DICT_FILE);
+        okayKeywords.insert(Policy::typeName[Policy::FILE]);
+        okayKeywords.insert(Dictionary::KW_MIN_OCCUR);
+        okayKeywords.insert(Dictionary::KW_MAX_OCCUR);
+        okayKeywords.insert(Dictionary::KW_MIN);
+        okayKeywords.insert(Dictionary::KW_MAX);
+        okayKeywords.insert(Dictionary::KW_ALLOWED);
+        okayKeywords.insert(Dictionary::KW_DESCRIPTION);
+        okayKeywords.insert(Dictionary::KW_DEFAULT);
+    }
+//    cout << " --";
+    Policy::StringArray terms = _policy->names(true);
+    for (Policy::StringArray::const_iterator i = terms.begin();
+         i != terms.end(); ++i) 
+    {
+//	cout << " " << *i;
+        if (okayKeywords.count(*i) == 1) continue;
+        else throw LSST_EXCEPT
+            (DictionaryError, string("Unknown Dictionary property found at ")
+             + _prefix + _name + ": " + *i);
+    }
+//    cout << " -- okay" << endl;
+}
+
 ///////////////////////////////////////////////////////////
 //  Dictionary
 ///////////////////////////////////////////////////////////
@@ -517,7 +530,8 @@ const char* Dictionary::KW_DICT = "dictionary";
 const char* Dictionary::KW_DICT_FILE = "dictionaryFile";
 const char* Dictionary::KW_TYPE = "type";
 const char* Dictionary::KW_DESCRIPTION = "description";
-const char* Dictionary::KW_DEFS = "definitions";
+const char* Dictionary::KW_DEFAULT = "default";
+const char* Dictionary::KW_DEFINITIONS = "definitions";
 const char* Dictionary::KW_CHILD_DEF = "childDefinition";
 const char* Dictionary::KW_ALLOWED = "allowed";
 const char* Dictionary::KW_MIN_OCCUR = "minOccurs";
@@ -532,19 +546,22 @@ const regex Dictionary::FIELDSEP_RE("\\.");
  * load a dictionary from a file
  */
 Dictionary::Dictionary(const char *filePath) : Policy(filePath) { 
-    if (!exists(KW_DEFS))
+    if (!exists(KW_DEFINITIONS))
         throw LSST_EXCEPT(pexExcept::RuntimeErrorException, string(filePath) 
                           + ": does not contain a Dictionary");
+    check();
 }
 Dictionary::Dictionary(const string& filePath) : Policy(filePath) { 
-    if (!exists(KW_DEFS))
+    if (!exists(KW_DEFINITIONS))
         throw LSST_EXCEPT(pexExcept::RuntimeErrorException, string(filePath) 
                           + ": does not contain a Dictionary");
+    check();
 }
 Dictionary::Dictionary(const PolicyFile& filePath) : Policy(filePath) { 
-    if (!exists(KW_DEFS))
+    if (!exists(KW_DEFINITIONS))
         throw LSST_EXCEPT(pexExcept::RuntimeErrorException, filePath.getPath() 
                           + ": does not contain a Dictionary");
+    check();
 }
 
 /*
@@ -564,10 +581,10 @@ Definition* Dictionary::makeDef(const string& name) const {
     bool isWildcard = false; // was the immediate parent a wildcard childDefinition?
     while (it != end) {
         find = *it;
-        if (! p->isPolicy(KW_DEFS))
+        if (! p->isPolicy(KW_DEFINITIONS))
             throw LSST_EXCEPT(DictionaryError, "Definition for " + find 
                               + " not found.");
-        sp = p->getPolicy(KW_DEFS);
+        sp = p->getPolicy(KW_DEFINITIONS);
         if (sp->isPolicy(find)) {
             sp = sp->getPolicy(find);
             isWildcard = false; // update each time, to get only immediate parent
@@ -602,7 +619,7 @@ Definition* Dictionary::makeDef(const string& name) const {
  * sub-policies.
  */
 Policy::DictPtr Dictionary::getSubDictionary(const string& name) const {
-    string subname = string(KW_DEFS) + "." + name + ".dictionary";
+    string subname = string(KW_DEFINITIONS) + "." + name + ".dictionary";
     if (!exists(subname)) throw LSST_EXCEPT
         (pexExcept::LogicErrorException,
          string("sub-policy \"") + subname + "\" not found.");
@@ -624,13 +641,13 @@ int Dictionary::loadPolicyFiles(const fs::path& repository, bool strict) {
         list<string> params;
         paramNames(params, false);
         list<string> toRemove;
-        for (list<string>::const_iterator ni=params.begin(); ni != params.end(); ++ni) { 
+        for (list<string>::const_iterator ni=params.begin(); ni != params.end(); ++ni) {
+	    // loop over the keys that end with ".dictionaryFile"
             static string endswith = string(".") + KW_DICT_FILE;
             size_t p = ni->rfind(endswith);
             if (p == ni->length()-endswith.length()) {
                 string parent = ni->substr(0, p);
                 Policy::Ptr defin = getPolicy(parent);
-                PolicyFile subd;
                 
                 // these will get dereferenced with the call to super method
                 if (isFile(*ni)) 
@@ -647,11 +664,13 @@ int Dictionary::loadPolicyFiles(const fs::path& repository, bool strict) {
         int newLoads = Policy::loadPolicyFiles(repository, strict);
         
         // remove obsolete dictionaryFile references, to prevent re-loading
-        // TODO: note reference to loaded filename?
         for (list<string>::iterator i = toRemove.begin(); i != toRemove.end(); ++i)
             remove(*i);
 
-        if (newLoads == 0) return result;
+        if (newLoads == 0) {
+	    check(); // validate self after everything is loaded
+	    return result;
+	}
         else result += newLoads;
     }
     throw LSST_EXCEPT
@@ -666,21 +685,30 @@ int Dictionary::loadPolicyFiles(const fs::path& repository, bool strict) {
  * sanity-check them.
  */
 void Dictionary::check() const {
-    PolicyPtrArray defs = getValueArray<Policy::Ptr>(KW_DEFS);
+    PolicyPtrArray defs = getValueArray<Policy::Ptr>(KW_DEFINITIONS);
     if (defs.size() == 0)
         throw LSST_EXCEPT(DictionaryError, 
-                          string("no \"") + KW_DEFS + "\" section found");
+                          string("no \"") + KW_DEFINITIONS + "\" section found");
     if (defs.size() > 1)
         throw LSST_EXCEPT
-            (DictionaryError, string("expected a single \"") + KW_DEFS 
+            (DictionaryError, string("expected a single \"") + KW_DEFINITIONS 
              + "\" section; found " + lexical_cast<string>(defs.size()));
+
     Policy::StringArray names = defs[0]->names(false);
     for (Policy::StringArray::const_iterator i = names.begin();
          i != names.end(); ++i)
     {
         scoped_ptr<Definition> def(makeDef(*i));
-        if (hasSubDictionary(*i))
-            getSubDictionary(*i)->check();
+        def->check();
+
+        if (hasSubDictionary(*i)) {
+	    // if the subdict is a policy file, skip it -- it will have to be
+	    // checked later, when it is loaded
+	    ConstPtr subPol = defs[0]->getPolicy(*i);
+	    if (subPol->getValueType(KW_DICT) != Policy::FILE)
+		getSubDictionary(*i)->check();
+	    // TODO: test that loading a subdict from a reference gets re-checked
+	}
     }
 }
 

@@ -1,0 +1,6 @@
+#<?cfg paf policy ?>
+# explode!
+1: { file: @policy_bomb.paf }
+2: { file: @policy_bomb.paf }
+3: { file: @policy_bomb.paf }
+# this file represents a known issue with Policy -- see Trac issue #1212
