@@ -24,7 +24,7 @@ definitions: {
      default:      0.
      minOccurs:    1
      maxOccurs:    10
-     minValue:     0.
-     maxValue:     5.
+     min:          0.
+     max:          5.
    }
 }

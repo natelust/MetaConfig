@@ -572,6 +572,12 @@ public:
 			 ValidationError *errs) const;
     //@}
 
+    /**
+     * Check this definition's internal integrity.  Does not recursively check
+     * sub-dictionaries.
+     */
+    void check() const;
+
 protected:
     Policy::ValueType _determineType() const;
 
@@ -698,7 +704,8 @@ public:
     static const char *KW_DICT_FILE;
     static const char *KW_TYPE;
     static const char *KW_DESCRIPTION;
-    static const char *KW_DEFS;
+    static const char *KW_DEFAULT;
+    static const char *KW_DEFINITIONS;
     static const char *KW_CHILD_DEF;
     static const char *KW_ALLOWED;
     static const char *KW_MIN_OCCUR;
@@ -714,20 +721,24 @@ public:
     Dictionary() : Policy() { }
 
     /**
-     * return a dictionary that is a copy of the given Policy.  It is assumed
-     * that the Policy object follows the Dictionary schema.  If the 
-     * policy has a top-level Policy parameter called "dictionary", its 
-     * contents will be copied into this dictionary.
+     * Check that the given Policy follows the Dictionary schema and return a
+     * dictionary that is a copy of the given Policy.  If the policy has a
+     * top-level Policy parameter called "dictionary", its contents will be
+     * copied into this dictionary.
      */
     Dictionary(const Policy& pol) 
         : Policy( (pol.isPolicy("dictionary")) ? *(pol.getPolicy("dictionary"))
                                                : pol )
-    { }
+    {
+	check();
+    }
 
     /**
      * return a dictionary that is a copy of another dictionary
      */
-    Dictionary(const Dictionary& dict) : Policy(dict) { }
+    Dictionary(const Dictionary& dict) : Policy(dict) {
+	check();
+    }
 
     //@{
     /**
@@ -798,7 +809,7 @@ public:
      * @see getSubDictionary
      */
     bool hasSubDictionary(const std::string& name) const {
-	std::string key = std::string("definitions.") + name + ".dictionary";
+	std::string key = std::string("definitions.") + name + "." + KW_DICT;
 	// could also check isPolicy(key), but we would rather have
 	// getSubDictionary(name) fail with a DictionaryError if the
 	// sub-dictionary is the wrong type

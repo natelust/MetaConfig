@@ -1,0 +1,18 @@
+definitions: {
+    empty_sub_no_default: {
+        type: policy
+        description: "a sub-policy with only a description"
+    }
+    empty_sub_with_default: {
+        type: policy
+        minOccurs: 1
+        description: "a sub-policy with only a description"
+        dictionary: {
+            definitions: { foo: { default: bar } }
+        }
+    }
+    empty_required: {
+        type: policy
+        minOccurs: 1
+    }
+}
