@@ -9,6 +9,7 @@ env.Program(["PAFtypes.cc"], LIBS=env.libs["pex_policy"])
 env.Program(["PAFBadSyntax.cc"], LIBS=env.libs["pex_policy"])
 env.Program(["testDefaults.cc"], LIBS=env.libs["pex_policy"])
 env.Program(["DefaultPolicyFile_1.cc"], LIBS=env.libs["pex_policy"])
+env.Program(["PolicyString_1.cc"], LIBS=env.libs["pex_policy"])
 
 env.CheckSwig("python", ilang="c++")
 env.Append(SWIGFLAGS=" -Ipython")

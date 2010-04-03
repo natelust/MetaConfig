@@ -23,6 +23,9 @@ Access to the policy classes from the pex module
 #include "lsst/pex/policy/Dictionary.h"
 #include "lsst/pex/policy/PolicyFile.h"
 #include "lsst/pex/policy/DefaultPolicyFile.h"
+#include "lsst/pex/policy/PolicyString.h"
+#include "lsst/pex/policy/PolicyStreamDestination.h"
+#include "lsst/pex/policy/PolicyStringDestination.h"
 #include "lsst/pex/policy/paf/PAFWriter.h"
 #include <sstream>
 
@@ -154,6 +157,10 @@ SWIG_SHARED_PTR(Definition, lsst::pex::policy::Definition)
 SWIG_SHARED_PTR(PolicySource, lsst::pex::policy::PolicySource)
 SWIG_SHARED_PTR_DERIVED(PolicyFile, lsst::pex::policy::PolicySource, lsst::pex::policy::PolicyFile)
 SWIG_SHARED_PTR_DERIVED(DefaultPolicyFile, lsst::pex::policy::PolicyFile, lsst::pex::policy::DefaultPolicyFile)
+SWIG_SHARED_PTR_DERIVED(PolicyString, lsst::pex::policy::PolicySource, lsst::pex::policy::PolicyString)
+SWIG_SHARED_PTR(PolicyDestination, lsst::pex::policy::PolicyDestination)
+SWIG_SHARED_PTR_DERIVED(PolicyStreamDestination, lsst::pex::policy::PolicyDestination, lsst::pex::policy::PolicyStreamDestination)
+SWIG_SHARED_PTR_DERIVED(PolicyStringDestination, lsst::pex::policy::PolicyStreamDestination, lsst::pex::policy::PolicyStringDestination)
 
 %newobject lsst::pex::policy::Policy::createPolicy;
 %feature("notabstract") lsst::pex::policy::paf::PAFWriter;
@@ -244,7 +251,16 @@ Policy.add = _Policy_add
 %}
 
 %ignore lsst::pex::policy::PolicySource::defaultFormats;
+%ignore lsst::pex::policy::PolicyFile::SPACE_RE;
+%ignore lsst::pex::policy::PolicyFile::COMMENT;
+%ignore lsst::pex::policy::PolicyFile::CONTENTID;
+%ignore lsst::pex::policy::PolicyString::SPACE_RE;
+%ignore lsst::pex::policy::PolicyString::COMMENT;
+%ignore lsst::pex::policy::PolicyString::CONTENTID;
 %include "lsst/pex/policy/PolicySource.h"
 %include "lsst/pex/policy/PolicyFile.h"
 %include "lsst/pex/policy/DefaultPolicyFile.h"
+%include "lsst/pex/policy/PolicyString.h"
+%include "lsst/pex/policy/PolicyStreamDestination.h"
+%include "lsst/pex/policy/PolicyStringDestination.h"
 

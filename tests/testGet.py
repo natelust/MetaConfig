@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Tests of the ProvenanceRecorder
+Comprehensive tests reading and retrieving data of all types
 """
 import pdb                              # we may want to say pdb.set_trace()
 import os
