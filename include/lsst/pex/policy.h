@@ -6,6 +6,7 @@
 #include "lsst/pex/policy/Policy.h"
 #include "lsst/pex/policy/Dictionary.h"
 #include "lsst/pex/policy/PolicyWriter.h"
+#include "lsst/pex/policy/PolicyString.h"
 #include "lsst/pex/policy/DefaultPolicyFile.h"
 #include "lsst/pex/policy/paf/PAFWriter.h"
 
