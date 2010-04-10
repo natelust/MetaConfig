@@ -163,6 +163,7 @@ SWIG_SHARED_PTR_DERIVED(PolicyStreamDestination, lsst::pex::policy::PolicyDestin
 SWIG_SHARED_PTR_DERIVED(PolicyStringDestination, lsst::pex::policy::PolicyStreamDestination, lsst::pex::policy::PolicyStringDestination)
 
 %newobject lsst::pex::policy::Policy::createPolicy;
+%newobject lsst::pex::policy::Dictionary::makeDef;
 %feature("notabstract") lsst::pex::policy::paf::PAFWriter;
 
 %ignore lsst::pex::policy::Policy::Policy(const Policy& pol);
