@@ -95,6 +95,7 @@ private:
     static const boost::regex QSTRING_END;
     static const boost::regex BARE_STRING_LINE;
     static const boost::regex BARE_STRING;
+    static const boost::regex URN_VALUE;
     static const boost::regex FILE_VALUE;
 
     // the policy reference, Policy& _pol, is a member of the parent class

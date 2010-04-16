@@ -1,0 +1,2 @@
+# repository should be "tests"
+local: @../examples/EventTransmitter_policy.paf

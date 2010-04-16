@@ -6,6 +6,7 @@
 
 #include "lsst/pex/policy/paf/PAFParser.h"
 #include "lsst/pex/policy/PolicyFile.h"
+#include "lsst/pex/policy/UrnPolicyFile.h"
 #include "lsst/pex/policy/parserexceptions.h"
 #include <stdexcept>
 
@@ -48,6 +49,7 @@ const regex PAFParser::QQSTRING_END("^\\s*([^\"]*)\"\\s*");
 const regex PAFParser::QSTRING_END("^\\s*([^']*)'\\s*");
 const regex PAFParser::BARE_STRING_LINE("^\\s*(\\S(.*\\S)?)\\s*");
 const regex PAFParser::BARE_STRING("^\\s*([^#\\}\\s]([^#\\}]*[^#\\}\\s])?)\\s*[#}]?");
+const regex PAFParser::URN_VALUE("^@(urn\\:|@)");
 const regex PAFParser::FILE_VALUE("^@");
 
 /*
@@ -379,10 +381,16 @@ int PAFParser::_addValue(const string& propname, string& value,
     }
     else if (regex_search(value, matched, BARE_STRING)) {
         string trimmed = matched.str(1);
+	string lowered(trimmed);
+	transform(lowered.begin(), lowered.end(), lowered.begin(), ::tolower);
         int resume = matched.position(1) + matched.length(1);
-        if (regex_search(trimmed, matched, FILE_VALUE)) {
+	if (regex_search(lowered, matched, URN_VALUE)) {
+	    policy.add(propname,
+		       Policy::FilePtr(new UrnPolicyFile(trimmed)));
+	}
+        else if (regex_search(trimmed, matched, FILE_VALUE)) {
             policy.add(propname, 
-                     Policy::FilePtr(new PolicyFile(matched.suffix().str())));
+		       Policy::FilePtr(new PolicyFile(matched.suffix().str())));
         }
         else {
             policy.add(propname, trimmed);

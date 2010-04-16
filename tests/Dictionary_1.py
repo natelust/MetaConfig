@@ -428,6 +428,7 @@ class DictionaryTestCase(unittest.TestCase):
         self.assert_(p.getBool("bool_set_count") == True)
         self.assert_(p.valueCount("int_range_count") == 3)
         self.assert_(p.getDouble("deep.sub_double") == 1.)
+        self.assert_(p.get("indirect4.string_type") == "foo")
 
         try:
             p = Policy.createPolicy(self.getTestDictionary("defaults_dictionary_bad_1.paf"),
@@ -538,7 +539,7 @@ class DictionaryTestCase(unittest.TestCase):
         self.assert_(p.nameCount() == 2)
         p.mergeDefaults(d)
         self.assert_(p.valueCount("int_range_count") == 3)
-        self.assert_(p.nameCount() == 5)
+        self.assert_(p.nameCount() == 7)
 
         # from a policy that's really a dictionary
         p = Policy()

@@ -52,7 +52,8 @@ fs::path DefaultPolicyFile::installPathFor(const char* const productName) {
     // get installation directory from environment
     const char *ipath = getenv(productName_DIR.c_str());
     if (ipath == 0) 
-        throw LSST_EXCEPT(pexExcept::NotFoundException, productName_DIR + ": environment variable not set");
+        throw LSST_EXCEPT(pexExcept::NotFoundException, 
+			  productName_DIR + ": environment variable not set");
 
     return fs::path(ipath);
 }
@@ -72,4 +73,3 @@ void DefaultPolicyFile::load(Policy& policy) const {
 }
 
 }}}  // end namespace lsst::pex::policy
-

@@ -554,9 +554,10 @@ void Policy::add(const string& name, const FilePtr& value) {
  *                    replace the file reference with a partial or empty
  *                    (that is, "{}") sub-policy.
  * @param repository  a directory to look in for the referenced files.  
- *                    Only when the name of the file to be included is an
- *                    absolute path will this.  If empty or not provided,
- *                    the directorywill be assumed to be the current one.
+ *                    If the name of the file to be included is an absolute
+ *                    path, the repository will be ignored.  If empty or not
+ *                    provided, the directory will be assumed to be the current
+ *                    one.
  */
 int Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
     fs::path repos = repository;
@@ -575,20 +576,20 @@ int Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
 
         FilePtrArray::const_iterator pfi;
         for(pfi=pfiles.begin(); pfi != pfiles.end(); pfi++) {
-
-            fs::path path = (*pfi)->getPath();
-            if (! path.is_complete()) {
-                // if this is a relative path
-                path = repos / (*pfi)->getPath();
-            }
+	    // increment even if fail, since we will remove the file record
+	    ++result;
 
             Ptr policy = make_shared<Policy>();
-            PolicyFile pf(path.file_string());
-
             try {
-                // increment even if fail, since we will remove the file record
-                ++result;
-                pf.load(*policy);
+		fs::path path = (*pfi)->getPath();
+		// if possible, use the policy file's own loading mechanism
+		if (path.is_complete()) {
+		    (*pfi)->load(*policy);
+		}
+		else {
+		    fs::path localPath = repos / (*pfi)->getPath();
+		    PolicyFile(localPath.file_string()).load(*policy);
+		}
             }
             catch (pexExcept::IoErrorException& e) {
                 if (strict) {
@@ -613,7 +614,6 @@ int Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
     }
 
     // Now iterate again to recurse into sub-Policy values
-    // TODO: alter repos?; record name of source file? 
     policyNames(names, true);
     for(list<string>::iterator it=names.begin(); it != names.end(); it++) {
         PolicyPtrArray policies = getPolicyArray(*it);

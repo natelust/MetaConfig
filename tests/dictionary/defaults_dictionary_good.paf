@@ -36,7 +36,22 @@ definitions: {
 
     indirect: {
         type: Policy
+        dictionaryFile: @defaults_dictionary_indirect.paf
+    }
+
+    indirect2: {
+        type: Policy
         dictionaryFile: defaults_dictionary_indirect.paf
+    }
+
+    indirect3: {
+        type: Policy
+        dictionary: @defaults_dictionary_indirect.paf
+    }
+
+    indirect4: {
+        type: Policy
+        dictionary: @@pex_policy:tests/dictionary:defaults_dictionary_indirect.paf
     }
 
     # a value will need to be supplied here

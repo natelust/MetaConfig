@@ -178,9 +178,9 @@ public:
      * @exception IOError   if an I/O error occurs while reading from the 
      *                       source stream.
      */
-    virtual void load(Policy& policy);
-    void load(Policy& policy) const { 
-        const_cast<PolicyFile*>(this)->load(policy);
+    virtual void load(Policy& policy) const;
+    virtual void load(Policy& policy) {
+	((const PolicyFile*) this)->load(policy); // delegate to const version
     }
     //@}
 

@@ -23,6 +23,7 @@ Access to the policy classes from the pex module
 #include "lsst/pex/policy/Dictionary.h"
 #include "lsst/pex/policy/PolicyFile.h"
 #include "lsst/pex/policy/DefaultPolicyFile.h"
+#include "lsst/pex/policy/UrnPolicyFile.h"
 #include "lsst/pex/policy/PolicyString.h"
 #include "lsst/pex/policy/PolicyStreamDestination.h"
 #include "lsst/pex/policy/PolicyStringDestination.h"
@@ -157,6 +158,7 @@ SWIG_SHARED_PTR(Definition, lsst::pex::policy::Definition)
 SWIG_SHARED_PTR(PolicySource, lsst::pex::policy::PolicySource)
 SWIG_SHARED_PTR_DERIVED(PolicyFile, lsst::pex::policy::PolicySource, lsst::pex::policy::PolicyFile)
 SWIG_SHARED_PTR_DERIVED(DefaultPolicyFile, lsst::pex::policy::PolicyFile, lsst::pex::policy::DefaultPolicyFile)
+SWIG_SHARED_PTR_DERIVED(UrnPolicyFile, lsst::pex::policy::PolicyFile, lsst::pex::policy::UrnPolicyFile)
 SWIG_SHARED_PTR_DERIVED(PolicyString, lsst::pex::policy::PolicySource, lsst::pex::policy::PolicyString)
 SWIG_SHARED_PTR(PolicyDestination, lsst::pex::policy::PolicyDestination)
 SWIG_SHARED_PTR_DERIVED(PolicyStreamDestination, lsst::pex::policy::PolicyDestination, lsst::pex::policy::PolicyStreamDestination)
@@ -171,6 +173,10 @@ SWIG_SHARED_PTR_DERIVED(PolicyStringDestination, lsst::pex::policy::PolicyStream
 %include "lsst/pex/policy/Policy.h"
 %include "lsst/pex/policy/Dictionary.h"
 %include "lsst/pex/policy/PolicyWriter.h"
+%include "lsst/pex/policy/PolicySource.h"
+%include "lsst/pex/policy/PolicyFile.h"
+%include "lsst/pex/policy/DefaultPolicyFile.h"
+%include "lsst/pex/policy/UrnPolicyFile.h"
 %include "lsst/pex/policy/paf/PAFWriter.h"
 %include "lsst/pex/policy/exceptions.h"
 %include "lsst/pex/policy/parserexceptions.h"
@@ -261,7 +267,7 @@ Policy.add = _Policy_add
 %include "lsst/pex/policy/PolicySource.h"
 %include "lsst/pex/policy/PolicyFile.h"
 %include "lsst/pex/policy/DefaultPolicyFile.h"
+%include "lsst/pex/policy/UrnPolicyFile.h"
 %include "lsst/pex/policy/PolicyString.h"
 %include "lsst/pex/policy/PolicyStreamDestination.h"
 %include "lsst/pex/policy/PolicyStringDestination.h"
-

@@ -181,7 +181,7 @@ const string& PolicyFile::getFormatName() {
  * @exception IOError   if an I/O error occurs while reading from the 
  *                       source stream.
  */
-void PolicyFile::load(Policy& policy) { 
+void PolicyFile::load(Policy& policy) const {
 
     PolicyParserFactory::Ptr pfactory = _pfact;
     if (! pfactory.get()) {

@@ -13,7 +13,6 @@
 #include <memory>
 #include <string>
 #include <set>
-#include <iostream> // TODO: remove after testing
 
 namespace lsst {
 namespace pex {
@@ -508,18 +507,15 @@ void Definition::check() const {
         okayKeywords.insert(Dictionary::KW_DESCRIPTION);
         okayKeywords.insert(Dictionary::KW_DEFAULT);
     }
-//    cout << " --";
     Policy::StringArray terms = _policy->names(true);
     for (Policy::StringArray::const_iterator i = terms.begin();
          i != terms.end(); ++i) 
     {
-//	cout << " " << *i;
         if (okayKeywords.count(*i) == 1) continue;
         else throw LSST_EXCEPT
             (DictionaryError, string("Unknown Dictionary property found at ")
              + _prefix + _name + ": " + *i);
     }
-//    cout << " -- okay" << endl;
 }
 
 ///////////////////////////////////////////////////////////
