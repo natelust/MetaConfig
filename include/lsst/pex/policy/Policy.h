@@ -192,18 +192,20 @@ public:
 
     //@{
     /**
-     * Create a Policy from a named file
-     * @param filePath   the file name, which can be a file path
+     * Create a Policy from a named file or URN of the form
+     * "urn:eupspkg:<package>[:<repos>]:<path>".  For more details on the format
+     * of the URN, see UrnPolicyFile.
+     * @param pathOrUrn can be a local file name, file path, or URN.
      */
-    explicit Policy(const std::string& filePath);
-    explicit Policy(const char *filePath);
+    explicit Policy(const std::string& pathOrUrn);
+    explicit Policy(const char *pathOrUrn);
     //@}
 
     /**
-     * Create a Policy from a named file
-     * @param file       the file name, represented as a PolicyFile
+     * Create a Policy from a PolicySource (usually, a PolicyFile)
+     * @param source
      */
-    explicit Policy(const PolicyFile& file);
+    explicit Policy(const PolicySource& source);
 
     /**
      * Create a default Policy from a Dictionary.  If the Dictionary references
@@ -236,11 +238,11 @@ public:
 
     //@{
     /**
-     * create a Policy from a file.  The caller is responsible for deleteing
+     * create a Policy from a file.  The caller is responsible for deleting
      * the returned value.  This is the preferred way to obtain a Policy file 
      * if you don't care to know if the input file is an actual policy 
      * file or a policy dictionary.  If it turns out to be a dictionary 
-     * file, the defined defaults will be loaded into the return policy.  
+     * file, the defined defaults will be loaded into the return policy.
      * @param input       the input file or stream to load data from.
      * @param doIncludes  if true, any references found to external Policy 
      *                    files will be resolved into sub-policy values.  
@@ -256,9 +258,26 @@ public:
                                 bool validate=true);
     //@}
 
+    /**
+     * Create a Policy from a file specified by a URN.  The caller is
+     * responsible for deleting the returned value.  This is the preferred way
+     * to obtain a Policy file if you don't care to know if the input file is an
+     * actual policy file or a policy dictionary.  If it turns out to be a
+     * dictionary file, the defined defaults will be loaded into the return
+     * policy.
+     * @param urn         A URN of the form
+     *                    "urn:eupspkg:\<package\>[:\<repository\>]:\<path\> to
+     *                    load data from, as described in UrnPolicyFile.
+     * @param validate    if true and the input file is a policy dictionary,
+     *                    it will be given to the returned policy and 
+     *                    used to validate future updates to the Policy.
+     */
+    static Policy *createPolicyFromUrn(const std::string& urn,
+				       bool validate=true);
+
     //@{
     /**
-     * create a Policy from a file.  The caller is responsible for deleteing
+     * create a Policy from a file.  The caller is responsible for deleting
      * the returned value.  This is the preferred way to obtain a Policy file 
      * if you don't care to know if the input file is an actual policy 
      * file or a policy dictionary.  If it turns out to be a dictionary 
@@ -284,6 +303,16 @@ public:
     static Policy *createPolicy(const std::string& input, const char *repos, 
                                 bool validate=true);
     //@}
+
+    /**
+     * Create a PolicyFile or UrnPolicyFile from `pathOrUrn`.
+     * @param pathOrUrn if this looks like a Policy URN, create a UrnPolicyFile;
+     *                  otherwise, create a plain PolicyFile.
+     * @param strict if false, "@" will be accepted as a substitute for
+     *               "urn:eupspkg:"; if true, urn:eupspkg must be present in a
+     *               URN.
+     */
+    static FilePtr createPolicyFile(const std::string& pathOrUrn, bool strict=false);
 
     /**
      * A template-ized way to get the ValueType. General case is disallowed, but

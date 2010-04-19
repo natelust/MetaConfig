@@ -37,6 +37,9 @@ namespace policy {
  *  - \@some_product:some/repos:local/path/to/file.paf
  *  - \@some_product:local/path/to/file.paf
  *  - some_product:local/path/to/file.paf
+ *
+ * Caveat: Only supports Dictionary's "DictionaryFile" directive if the value is
+ * prefixed like a normal URN reference with "@urn:eupspkg:" or "@@".
  */
 class UrnPolicyFile : public DefaultPolicyFile {
 public:
@@ -47,19 +50,21 @@ public:
      * directory from the local path.
      * @param urn The URN of the policy file.
      *            A prefix such as "urn:eupspkg:" or "@" is optional.
-     * @param strict if true (default), load() will throw an exception if it
-     *               encounters recoverable parsing errors in the underlying
-     *               file (or any of the files it references).  Otherwise, the
-     *               loaded Policy will be incomplete.  This is identical to the
-     *               strict argument to Policy's loadPolicyFiles().
+     * @param strictUrn if true, the URN must strictly begin with
+     *            "@urn:eupspkg:" or "urn:eupspkg:".
+     * @param strictLoads if true (default), load() will throw an exception if it
+     *            encounters recoverable parsing errors in the underlying file
+     *            (or any of the files it references).  Otherwise, the loaded
+     *            Policy will be incomplete.  This is identical to the strict
+     *            argument to Policy's loadPolicyFiles().
      */
     explicit UrnPolicyFile(const std::string& urn,
-			   bool strict=true)
+			   bool strictUrn=false, bool strictLoads=true)
 	// TODO: oops, this is a segfault waiting to happen -- pass a string instead?
-	: DefaultPolicyFile(productNameFromUrn(urn).c_str(),
-			    filePathFromUrn(urn),
-			    reposFromUrn(urn),
-			    strict),
+	: DefaultPolicyFile(productNameFromUrn(urn, strictUrn).c_str(),
+			    filePathFromUrn(urn, strictUrn),
+			    reposFromUrn(urn, strictUrn),
+			    strictLoads),
 	_urn(urn) {}
 
     /**
@@ -68,7 +73,8 @@ public:
      *  - \@\@PRODUCT:repos:path/to/file.paf
      *  - \@PRODUCT:path/to/file.paf
      */
-    static std::string productNameFromUrn(const std::string& urn);
+    static std::string productNameFromUrn(const std::string& urn,
+					  bool strictUrn=false);
 
     /**
      * Extract the local file path from a URN.  For example,
@@ -76,7 +82,8 @@ public:
      *  - "@@product:repos:PATH/TO/FILE.PAF"
      *  - "@product:PATH/TO/FILE.PAF"
      */
-    static std::string filePathFromUrn(const std::string& urn);
+    static std::string filePathFromUrn(const std::string& urn,
+				       bool strictUrn=false);
 
     /**
      * Extract the repository name from a URN, or "" if none.  For example,
@@ -84,7 +91,26 @@ public:
      *  - "@@product:REPOS:path/to/file.paf"
      *  - "@product:path/to/file.paf" -- no repository, returns ""
      */
-    static std::string reposFromUrn(const std::string& urn);
+    static std::string reposFromUrn(const std::string& urn, 
+				    bool strictUrn=false);
+
+    //@{
+    /**
+     * The prefix that a Policy URN starts with.  May be abbreviated as "@".
+     */
+    static const std::string URN_PREFIX; // "urn:eupspkg:";
+    static const std::string URN_PREFIX_ABBREV; // "@";
+    //@}
+
+
+    /**
+     * Does `s` look like a URN?  That is, does it start with URN_PREFIX or
+     * URN_PREFIX_ABBREV?
+     * @param s the string to be tested
+     * @param strict if false, "@" will be accepted as a substitute for
+     *               "urn:eupspkg:"; if true, urn:eupspkg must be present.
+     */
+    static bool looksLikeUrn(const std::string& s, bool strict=false);
 
 private:
     const std::string _urn;

@@ -15,24 +15,36 @@ namespace policy {
 
 using namespace std;
 
+const string UrnPolicyFile::URN_PREFIX("urn:eupspkg:");
+const string UrnPolicyFile::URN_PREFIX_ABBREV("@");
+
 /**
- * Remove @urn:eupspkg:, @, @@.  That is,
- * @urn:eupspkg:product:repos:path/to/file.paf,
- * @@product:repos:path/to/file.paf, and @product:repos:path/to/file.paf all
- * become product:repos:path/to/file.paf.
+ * Remove [@+][urn:eupspkg:].  That is,
+ * "@urn:eupspkg:product:repos:file.paf", "urn:eupspkg:product:repos:file.paf",
+ * "@@product:repos:file.paf", and "@product:repos:file.paf" all return the same
+ * thing, "product:repos:file.paf".
  *
  * Note: pass urn by value because we're going to modify it anyway.
  */
-string stripPrefixes(string urn) {
-    static string URN_START("urn:eupspkg:");
+string stripPrefixes(string urn, bool strict) {
     // strip @'s
-    while (urn.length() > 0 && urn[0] == '@')
-	urn = urn.substr(1);
+    int numAts = 0;
+    while (urn.length() > 0 && urn.find(UrnPolicyFile::URN_PREFIX_ABBREV) == 0) {
+	urn = urn.substr(UrnPolicyFile::URN_PREFIX_ABBREV.length());
+	++numAts;
+    }
+
     // strip urn:eupspkg:
     string lowered(urn);
     transform(lowered.begin(), lowered.end(), lowered.begin(), ::tolower);
-    if (lowered.find(URN_START) == 0)
-	urn = urn.substr(URN_START.length());
+    bool hasPrefix = (lowered.find(UrnPolicyFile::URN_PREFIX) == 0);
+    if (hasPrefix)
+	urn = urn.substr(UrnPolicyFile::URN_PREFIX.length());
+
+    // validate, if requested
+    if (strict && (numAts > 1 || !hasPrefix))
+	throw LSST_EXCEPT(BadNameError, ("URN must start with \"urn:eupspkg:\" or \"@urn:eupspkg:\""));
+
     return urn;
 }
 
@@ -41,10 +53,14 @@ string stripPrefixes(string urn) {
  * address is valid.  For example, "@urn:eupspkg:product:repos:file",
  * "@@product:repos:file" and "product:repos:file" all become [product, repos,
  * file].
+ * @param urn    the URN to parse and split
+ * @param a      components of the URN are push_back()'ed onto this vector
+ * @param strict if true, require a urn that starts with "urn:eupspkg:" or
+ *               "@urn:eupspkg:".
  */
-void splitAndValidate(const string& urn, vector<string>& a) {
+void splitAndValidate(const string& urn, vector<string>& a, bool strict) {
     // strip prefixes
-    string stripped = stripPrefixes(urn);
+    string stripped = stripPrefixes(urn, strict);
 
     // split
     while (true) {
@@ -78,9 +94,9 @@ void splitAndValidate(const string& urn, vector<string>& a) {
  *  - @@PRODUCT:repos:path/to/file.paf
  *  - @PRODUCT:path/to/file.paf
  */
-string UrnPolicyFile::productNameFromUrn(const string& urn) {
+string UrnPolicyFile::productNameFromUrn(const string& urn, bool strictUrn) {
     vector<string> split;
-    splitAndValidate(urn, split);
+    splitAndValidate(urn, split, strictUrn);
     return split[0];
 }
 
@@ -90,9 +106,9 @@ string UrnPolicyFile::productNameFromUrn(const string& urn) {
  *  - @@product:repos:PATH/TO/FILE.PAF
  *  - @product:PATH/TO/FILE.PAF
  */
-string UrnPolicyFile::filePathFromUrn(const string& urn) {
+string UrnPolicyFile::filePathFromUrn(const string& urn, bool strictUrn) {
     vector<string> split;
-    splitAndValidate(urn, split);
+    splitAndValidate(urn, split, strictUrn);
     return split.back();
 }
 
@@ -102,11 +118,29 @@ string UrnPolicyFile::filePathFromUrn(const string& urn) {
  *  - @@product:REPOS:path/to/file.paf
  *  - @product:path/to/file.paf -- no repository, so ""
  */
-string UrnPolicyFile::reposFromUrn(const string& urn) {
+string UrnPolicyFile::reposFromUrn(const string& urn, bool strictUrn) {
     vector<string> split;
-    splitAndValidate(urn, split);
+    splitAndValidate(urn, split, strictUrn);
     if (split.size() == 3) return split[1];
     else return "";
+}
+
+/**
+ * Does `s` look like a URN?  That is, does it start with URN_PREFIX or
+ * URN_PREFIX_ABBREV?
+ * @param s the string to be tested
+ * @param strict if false, "@" will be accepted as a substitute for
+ *               "urn:eupspkg:"; if true, urn:eupspkg must be present.
+ */
+bool UrnPolicyFile::looksLikeUrn(const string& s, bool strict) {
+    if (strict) {
+	string lc(s);
+	transform(lc.begin(), lc.end(), lc.begin(), ::tolower);
+	while (lc[0] == '@') lc = lc.substr(1);
+	if (lc.find(UrnPolicyFile::URN_PREFIX) != 0) return false;
+    }
+    const string& stripped = stripPrefixes(s, strict);
+    return s.length() != stripped.length() && s.find(":") >= 0;
 }
 
 //@endcond

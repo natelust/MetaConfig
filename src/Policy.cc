@@ -3,6 +3,7 @@
  */
 #include "lsst/pex/policy/Policy.h"
 #include "lsst/pex/policy/PolicyFile.h"
+#include "lsst/pex/policy/UrnPolicyFile.h"
 #include "lsst/pex/policy/PolicySource.h"
 #include "lsst/pex/policy/Dictionary.h"
 #include "lsst/pex/policy/parserexceptions.h"
@@ -53,30 +54,44 @@ Policy::Policy()
 /*
  * Create policy
  */
-Policy::Policy(const PolicyFile& file) 
+Policy::Policy(const PolicySource& source) 
     : Citizen(typeid(this)), Persistable(), _data(new PropertySet()) 
 { 
-    file.load(*this);
+    source.load(*this);
 }
 
 /*
- * Create a Policy from a named file
+ * Create a Policy from a named file or URN.
  */
-Policy::Policy(const string& filePath) 
+Policy::Policy(const string& pathOrUrn) 
     : Citizen(typeid(this)), Persistable(), _data(new PropertySet()) 
 {
-    PolicyFile file(filePath);
-    file.load(*this);
+    createPolicyFile(pathOrUrn, true)->load(*this);
 }
 
 /*
- * Create a Policy from a named file
+ * Create a Policy from a named file or URN.
  */
-Policy::Policy(const char *filePath) 
+Policy::Policy(const char *pathOrUrn)
     : Citizen(typeid(this)), Persistable(), _data(new PropertySet()) 
 {
-    PolicyFile file(filePath);
-    file.load(*this);
+    createPolicyFile(pathOrUrn, true)->load(*this);
+}
+
+/**
+ * Create a PolicyFile or UrnPolicyFile from `pathOrUrn`.
+ * @param pathOrUrn if this looks like a Policy URN, create a UrnPolicyFile;
+ *                  otherwise, create a plain PolicyFile.
+ * @param strict if false, "@" will be accepted as a substitute for
+ *               "urn:eupspkg:"; if true, urn:eupspkg must be present in a URN.
+ */
+Policy::FilePtr Policy::createPolicyFile(const string& pathOrUrn, bool strict) {
+    if (UrnPolicyFile::looksLikeUrn(pathOrUrn, strict))
+	// return make_shared<PolicyFile>(new UrnPolicyFile(pathOrUrn));
+	return Policy::FilePtr(new UrnPolicyFile(pathOrUrn));
+    else
+	// return make_shared<PolicyFile>(new PolicyFile(pathOrUrn));
+	return Policy::FilePtr(new PolicyFile(pathOrUrn));
 }
 
 /* Extract defaults from dict into target.  Note any errors in ve. */
@@ -177,6 +192,14 @@ Policy* Policy::_createPolicy(const string& input, bool doIncludes,
     }
     PolicyFile file(input);
     return _createPolicy(file, doIncludes, repos, validate);
+}
+
+Policy* Policy::createPolicyFromUrn(const std::string& urn, bool validate)
+{
+    // Note: Don't request doIncludes because UrnPolicyFile will load the whole
+    // thing anyway.
+    UrnPolicyFile upf(urn, true, true);
+    return _createPolicy(upf, true, fs::path(), false);
 }
 
 /*
