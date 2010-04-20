@@ -276,7 +276,7 @@ filter: @urn:eupspkg:some_package:local/repository:path/to/filter.paf
 
 This URN line consists of:
  - "@" - indication that this line is a link
- - "urn:eupspkg" - a prefix indicating that this is a \url http://en.wikipedia.org/wiki/Uniform_Resource_Name "Uniform Resource Name (URN)" that refers to a file in an \url http://dev.lsstcorp.org/trac/wiki/Eups "EUPS" package
+ - "urn:eupspkg" - a prefix indicating that this is a Uniform Resource Name (URN - http://en.wikipedia.org/wiki/Uniform_Resource_Name) that refers to a file in an EUPS (http://dev.lsstcorp.org/trac/wiki/Eups) package
  - "some_package" - the EUPS package, whose directory will be looked up in the environment variable SOME_PACKAGE_DIR
  - "local/repository" - <strong>optional</strong> - local directory within the EUPS package, to which internal references will be relative
  - "path/to/filter.paf" - path within the repository where the included PAF file can be found
