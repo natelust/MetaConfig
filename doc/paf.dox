@@ -229,13 +229,12 @@ filter: {     threshold:  35.0
 
 \section secPAFinclude Including Other Policy Files 
 
-If a parameters value starts with an at sign (@), the value type is
-assumed to be a Policy and the string following the @ is interpreted
-to be a file path. When parsed via (createParser()), an attempt will
-be made to open that file and read the contents as Policy. Each of the
-parameters given there will be assumed to be sub-parameters under the
-name given in the first policy file. For example, suppose a policy
-file contains: 
+If a parameters value starts with an at sign (@), the value type is assumed to be
+a Policy and the string following the @ is interpreted to be either a file path
+or URN. When parsed via (createParser()), an attempt will be made to open that
+file and read the contents as Policy. Each of the parameters given there will be
+assumed to be sub-parameters under the name given in the first policy file. For
+example, suppose a policy file contains:
 
 \verbatim
 filter:  @filter_policy.paf
@@ -264,5 +263,29 @@ included, e.g.:
 \verbatim
    p = Policy.createPolicy("policy.paf", "examples/policies")
 \endverbatim
+
+\section secURNinclude Including non-local Policy Files
+
+If a parameters value starts with "@urn:eupspkg:", the value type is assumed to
+be a Policy in a directory that is determined by environment variables.  For
+example:
+
+\verbatim
+filter: @urn:eupspkg:some_package:local/repository:path/to/filter.paf
+\endverbatim
+
+This URN line consists of:
+ - "@" - indication that this line is a link
+ - "urn:eupspkg" - a prefix indicating that this is a \url http://en.wikipedia.org/wiki/Uniform_Resource_Name "Uniform Resource Name (URN)" that refers to a file in an \url http://dev.lsstcorp.org/trac/wiki/Eups "EUPS" package
+ - "some_package" - the EUPS package, whose directory will be looked up in the environment variable SOME_PACKAGE_DIR
+ - "local/repository" - <strong>optional</strong> - local directory within the EUPS package, to which internal references will be relative
+ - "path/to/filter.paf" - path within the repository where the included PAF file can be found
+
+Further, "urn:eupspkg:" can be abbreviated as a second "@":
+
+\verbatim
+filter: @@some_package:local/repository:path/to/filter.paf
+\endverbatim
+
 */
 }}}

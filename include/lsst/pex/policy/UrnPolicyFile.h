@@ -24,12 +24,15 @@ namespace policy {
  * @brief A Policy file in the installation directory of an LSST product,
  * referred to using a URN.
  *
+ * For use of URN references in PAF-formatted policy files, see \ref pagePAF
+ * "Policy Authoring Format".
+ *
  * The syntax is urn:eupspkg:[PRODUCT_NAME][:REPOSITORY]:PATH, although
- * "urn:eupspkg:" may be abbreviated with "@".  PRODUCT_NAME is the name of an
- * LSST product (see DefaultPolicyFile for more details on LSST product
- * installation dirs), and REPOSITORY is a subdirectory, which other references
- * within the Policy will be relative to (see Policy for more details on
- * repositories).
+ * "urn:eupspkg:" may optionally be abbreviated with "@".  PRODUCT_NAME is the
+ * name of an LSST product (see DefaultPolicyFile for more details on LSST
+ * product installation dirs), and REPOSITORY is a subdirectory, which other
+ * references within the Policy will be relative to (see Policy for more details
+ * on repositories).
  *
  * For example:
  *  - \@urn:eupspkg:some_product:some/repos:local/path/to/file.paf
