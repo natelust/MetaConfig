@@ -9,5 +9,6 @@
 #include "lsst/pex/policy/PolicyString.h"
 #include "lsst/pex/policy/DefaultPolicyFile.h"
 #include "lsst/pex/policy/paf/PAFWriter.h"
+#include "lsst/pex/policy/UrnPolicyFile.h"
 
 #endif
