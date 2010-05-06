@@ -414,6 +414,11 @@ void Definition::validateBasic(const string& name, const T& value,
     if (errs == 0 && ve.getParamCount() > 0) throw ve;
 }
 
+// instantiate to keep gcc 4.4 happy when compiling with opt=2
+// (why? -- see LSST Trac ticket #1253)
+template void Definition::validateBasic<Policy::Ptr>
+(std::string const &, Policy::Ptr const &, int, ValidationError*) const;
+
 /*
  * confirm that a Policy parameter name-value combination is consistent 
  * with this dictionary.  This does not check occurrence compliance
