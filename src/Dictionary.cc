@@ -135,8 +135,9 @@ const string Definition::getDescription() const {
  * or -1 if there is no limit.
  */
 const int Definition::getMaxOccurs() const {
-    try {  return _policy->getInt(Dictionary::KW_MAX_OCCUR);  }
-    catch (NameNotFound& ex) {  return -1;  }
+    if (_policy->exists(Dictionary::KW_MAX_OCCUR))
+	return _policy->getInt(Dictionary::KW_MAX_OCCUR);
+    else return -1;
 }
 
 /**
@@ -144,8 +145,9 @@ const int Definition::getMaxOccurs() const {
  * Zero is returned if a minimum is not specified.
  */
 const int Definition::getMinOccurs() const {
-    try {  return _policy->getInt(Dictionary::KW_MIN_OCCUR);  }
-    catch (NameNotFound& ex) {  return 0;  }
+    if (_policy->exists(Dictionary::KW_MIN_OCCUR))
+	return _policy->getInt(Dictionary::KW_MIN_OCCUR);
+    else return 0;
 }
 
 
@@ -199,11 +201,8 @@ void Definition::validate(const Policy& policy, const string& name,
     if (errs != 0) use = errs;
 
     if (! policy.exists(name)) {
-        try {
-            if (_policy->getInt(Dictionary::KW_MIN_OCCUR) > 0)
-                use->addError(getPrefix() + name, ValidationError::MISSING_REQUIRED);
-        }
-        catch (NameNotFound&) { }
+	if (getMinOccurs() > 0)
+	    use->addError(getPrefix() + name, ValidationError::MISSING_REQUIRED);
         return;
     }
 
