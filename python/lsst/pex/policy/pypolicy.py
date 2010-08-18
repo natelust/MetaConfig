@@ -1,10 +1,11 @@
 import lsst.pex.policy as pp
 
-def create_policy(d):
+def add_to_policy(p, d):
     '''
-    lsst.pex.policy.Policy = create_policy(d)
+    add_to_policy(pexPolicy, dictionary)
 
-    Creates an LSST Policy object, given a Python dictionary.
+    Adds the contents of the given dictionary to the given
+    lsst.pex.policy.Policy object.
 
     The dictionary must map strings to:
     * int
@@ -15,8 +16,8 @@ def create_policy(d):
     * pexPolicy.PolicyFile
     * pexPolicy.Policy
     * list or tuple of the above.
+
     '''
-    p = pp.Policy()
     for k,v in d.items():
         if type(v) is dict:
             # recurse.
@@ -39,15 +40,44 @@ def create_policy(d):
         # probably complain violently when it tries to find the
         # right Policy::set() template.
         p.set(k,v)
+
+def create_policy(*args, **kwargs):
+    '''
+    lsst.pex.policy.Policy = create_policy(d)
+
+    Creates an LSST Policy object, given a Python dictionary,
+    or several dictionaries, or keyword arguments.
+
+    The given dictionaries are added to the Policy in turn, followed
+    by the keyword arguments.
+
+    Eg,
+
+    p1 = create_policy({'key':52})
+
+    p2 = create_policy(dict(key=52), dict(anotherkey=75),
+                       {'thirdkey':89}, yetanother=4)
+
+    The dictionaries must map strings to:
+    * int
+    * float
+    * string
+    * bool,
+    * dict (recursively)
+    * pexPolicy.PolicyFile
+    * pexPolicy.Policy
+    * list or tuple of the above.
+    '''
+    p = pp.Policy()
+    for d in args:
+        add_to_policy(p, d)
+    add_to_policy(p, kwargs)
     return p
 
 
 
-
-
-
 if __name__ == '__main__':
-    p = create_policy(dict(
+    d = dict(
         matchThreshold = 30,
         numBrightStars = 50,
         blindSolve = True,
@@ -66,10 +96,15 @@ if __name__ == '__main__':
 
         pol2 = pp.PolicyFile('dne.paf'),
         subpol3 = pp.Policy(),
-
-        ))
-
+        )
+    d.update({'subpol4.x':42})
+    p = create_policy(d, {'extra.stuff':7}, morestuff=4)
     print p.toString()
+
+    pb = create_policy(dict(key=52), dict(anotherkey=75),
+                       {'thirdkey':89}, yetanother=4)
+    print pb.toString()
+    
     
     try:
         p2 = create_policy("this won't work!")
