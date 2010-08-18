@@ -1,4 +1,4 @@
-import lsst.pex.policy as pp
+#import lsst.pex.policy as pp
 
 def add_to_policy(p, d):
     '''
@@ -68,6 +68,7 @@ def create_policy(*args, **kwargs):
     * pexPolicy.Policy
     * list or tuple of the above.
     '''
+    import lsst.pex.policy as pp
     p = pp.Policy()
     for d in args:
         add_to_policy(p, d)
@@ -77,6 +78,7 @@ def create_policy(*args, **kwargs):
 
 
 if __name__ == '__main__':
+    import lsst.pex.policy as pp
     d = dict(
         matchThreshold = 30,
         numBrightStars = 50,
@@ -108,7 +110,11 @@ if __name__ == '__main__':
     pc = create_policy(dict(key1=4, keyB='indeed', key9=[4,5,7]),
                        {'subpolicy.key': 17}, another_key=True)
     print pc.toString()
-    
+
+    pd = pp.Policy.frompython(d, test='yuh-huh')
+    print pd.toString()
+    pd.addpython({'more':'stuff'}, testing='')
+    print pd.toString()
     
     try:
         p2 = create_policy("this won't work!")
