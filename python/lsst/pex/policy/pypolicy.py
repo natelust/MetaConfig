@@ -104,13 +104,17 @@ if __name__ == '__main__':
     pb = create_policy(dict(key=52), dict(anotherkey=75),
                        {'thirdkey':89}, yetanother=4)
     print pb.toString()
+
+    pc = create_policy(dict(key1=4, keyB='indeed', key9=[4,5,7]),
+                       {'subpolicy.key': 17}, another_key=True)
+    print pc.toString()
     
     
     try:
         p2 = create_policy("this won't work!")
         print p2.toString()
     except:
-        print 'p2 failed'
+        print 'p2 failed (as expected)'
 
 
     try:
