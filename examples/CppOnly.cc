@@ -65,6 +65,13 @@ int main(int argc, char** args) {
 
   cout << pp->toString() << endl;
 
+  Py_DECREF(pPtr2);
+  Py_DECREF(pPtr);
+  Py_DECREF(pPolicy);
+  Py_DECREF(confString);
+  Py_DECREF(pFunc);
+  Py_DECREF(pModule);
+
   // Shut this party down.
   Py_Finalize();
   return 0;
