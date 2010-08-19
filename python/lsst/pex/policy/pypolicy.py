@@ -1,4 +1,3 @@
-#import lsst.pex.policy as pp
 
 def add_to_policy(p, d):
     '''
@@ -75,6 +74,9 @@ def create_policy(*args, **kwargs):
     add_to_policy(p, kwargs)
     return p
 
+def create_policy_from_string(s):
+    # evil eval.
+    return create_policy(eval(s))
 
 
 if __name__ == '__main__':
