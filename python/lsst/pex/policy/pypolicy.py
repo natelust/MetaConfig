@@ -115,6 +115,18 @@ if __name__ == '__main__':
     print pd.toString()
     pd.addpython({'more':'stuff'}, testing='')
     print pd.toString()
+
+    pe = pp.Policy.frompython({'a':'b', 'c':'d', 'e':8}, nine=10)
+    print pe.toString()
+    pe.addpython(dict(more='better'), extra=6)
+    print pe.toString()
+
+    f=open('deprecated.paf', 'w')
+    f.write('a:4')
+    f.close()
+    p = pp.Policy.frompython(ref=pp.PolicyFile('dne'),
+                             ref2=pp.Policy.createPolicy('deprecated.paf'))
+    print p.toString()
     
     try:
         p2 = create_policy("this won't work!")
