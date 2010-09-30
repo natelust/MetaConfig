@@ -220,15 +220,6 @@ SWIG_SHARED_PTR_DERIVED(PolicyStringDestination, lsst::pex::policy::PolicyStream
 %pythoncode %{
 Policy.__str__ = Policy.toString
 
-#import lsst.pex.policy.pypolicy
-import pypolicy
-Policy.frompython = staticmethod(pypolicy.create_policy)
-def _Policy_addpython(p, *args, **kwargs):
-    for d in args:
-        pypolicy.add_to_policy(p, d)
-    pypolicy.add_to_policy(p, kwargs)
-Policy.addpython = _Policy_addpython
-
 def _Policy_get(p, name):
     type = p.getValueType(name);
     if (type == p.UNDEF):
