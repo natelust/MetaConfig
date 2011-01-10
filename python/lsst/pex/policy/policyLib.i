@@ -98,7 +98,13 @@ namespace boost { namespace filesystem { } }
     int len = ($1).size();
     $result = PyList_New(len);
     for (int i = 0; i < len; i++) {
-        PyList_SetItem($result,i, ( (($1)[i]) ? Py_True : Py_False ) );
+       if (($1)[i]) {
+           Py_INCREF(Py_True);
+           PyList_SetItem($result, i, Py_True);
+       } else {
+           Py_INCREF(Py_False);
+           PyList_SetItem($result, i, Py_False);
+       }
     }
 }
 
