@@ -419,6 +419,12 @@ template <class T> void Policy::_validate(const std::string& name, const T& valu
     }
 }
 
+template void Policy::_validate<Policy::Ptr>(std::string const&, Policy::Ptr const&, int);    
+template void Policy::_validate<std::string >(std::string const&, std::string const&, int);
+template void Policy::_validate<bool>(std::string const&, bool const&, int);
+template void Policy::_validate<double>(std::string const&, double const&, int);
+template void Policy::_validate<int>(std::string const&, int const&, int);
+
 /*
  * return the type information for the underlying type associated with
  * a given name.  
