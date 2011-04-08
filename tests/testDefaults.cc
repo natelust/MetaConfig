@@ -72,3 +72,16 @@ int main() {
            "Wrong value for 'status': " + p2.getString("status"));
 
 }
+
+/*
+ * The presence of this function definition can demonstrate a (now-fixed)
+ * error stemming from declarartions of template specializations for 
+ * Policy::getValueArray<T>().
+ *
+ */
+void foo(lsst::pex::policy::Definition *defn, const Policy& policy, const string& name)
+{ 
+    policy.getValueArray<double>("bar");
+//    defn->validateBasic<double>(name, policy);
+}
+

@@ -1160,20 +1160,59 @@ inline dafBase::PropertySet::Ptr Policy::asPropertySet() { return _data; }
 template <typename T> T Policy::getValue(const std::string& name) const {
     throw LSST_EXCEPT(TypeError, name, "not implemented for this type");
 }
+template <> bool Policy::getValue<bool>(const std::string& name) const;
+template <> int Policy::getValue<int>(const std::string& name) const;
+template <> double Policy::getValue<double>(const std::string& name) const;
+template <> std::string Policy::getValue<std::string>(const std::string& name) const;
+template <> Policy::FilePtr Policy::getValue<Policy::FilePtr>(const std::string& name) const;
+template <> Policy::ConstPtr Policy::getValue<Policy::ConstPtr>(const std::string& name) const;
 
+// general case is disallowed; known types are specialized
 template <typename T> std::vector<T> Policy::getValueArray(const std::string& name) const {
     throw LSST_EXCEPT(TypeError, name, "not implemented for this type");
 }
+template <> std::vector<bool> Policy::getValueArray<bool>(const std::string& name) const;
+template <> std::vector<int> Policy::getValueArray<int>(const std::string& name) const;
+template <> std::vector<double> Policy::getValueArray<double>(const std::string& name) const;
+template <> std::vector<std::string> Policy::getValueArray<std::string>(const std::string& name) const;
+template <> Policy::FilePtrArray Policy::getValueArray<Policy::FilePtr>(const std::string& name) const;
+template <> Policy::PolicyPtrArray Policy::getValueArray<Policy::Ptr>(const std::string& name) const;
+template <> Policy::ConstPolicyPtrArray Policy::getValueArray<Policy::ConstPtr>(const std::string& name) const;
 
+// general case is disallowed; known types are specialized
 template <typename T> Policy::ValueType Policy::getValueType() {
     throw LSST_EXCEPT(TypeError, "unknown", "not implemented for this type");
 }
+template <> Policy::ValueType Policy::getValueType<bool>();
+template <> Policy::ValueType Policy::getValueType<int>();
+template <> Policy::ValueType Policy::getValueType<double>();
+template <> Policy::ValueType Policy::getValueType<std::string>();
+template <> Policy::ValueType Policy::getValueType<Policy>();
+template <> Policy::ValueType Policy::getValueType<Policy::FilePtr>();
+template <> Policy::ValueType Policy::getValueType<Policy::Ptr>();
+template <> Policy::ValueType Policy::getValueType<Policy::ConstPtr>();
+
+// general case is disallowed; known types are specialized
 template <typename T> void Policy::setValue(const std::string& name, const T& value) {
     throw LSST_EXCEPT(TypeError, name, "not implemented for this type");
 }
+template <> void Policy::setValue<bool>(const std::string& name, const bool& value);
+template <> void Policy::setValue<int>(const std::string& name, const int& value);
+template <> void Policy::setValue<double>(const std::string& name, const double& value);
+template <> void Policy::setValue<std::string>(const std::string& name, const std::string& value);
+template <> void Policy::setValue<Policy::Ptr>(const std::string& name, const Policy::Ptr& value);
+template <> void Policy::setValue<Policy::FilePtr>(const std::string& name, const Policy::FilePtr& value);
+
+// general case is disallowed; known types are specialized
 template <typename T> void Policy::addValue(const std::string& name, const T& value) {
     throw LSST_EXCEPT(TypeError, name, "not implemented for this type");
 }
+template <> void Policy::addValue<bool>(const std::string& name, const bool& value);
+template <> void Policy::addValue<int>(const std::string& name, const int& value);
+template <> void Policy::addValue<double>(const std::string& name, const double& value);
+template <> void Policy::addValue<std::string>(const std::string& name, const std::string& value);
+template <> void Policy::addValue<Policy::Ptr>(const std::string& name, const Policy::Ptr& value);
+template <> void Policy::addValue<Policy::FilePtr>(const std::string& name, const Policy::FilePtr& value);
 
 }}}  // end namespace lsst::pex::policy
 
