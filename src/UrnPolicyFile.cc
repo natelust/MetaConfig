@@ -162,7 +162,7 @@ bool UrnPolicyFile::looksLikeUrn(const string& s, bool strict) {
 	if (lc.find(UrnPolicyFile::URN_PREFIX) != 0) return false;
     }
     const string& stripped = stripPrefixes(s, strict);
-    return s.length() != stripped.length() && s.find(":") >= 0;
+    return s.length() != stripped.length() && s.find(":") != s.npos;
 }
 
 //@endcond
