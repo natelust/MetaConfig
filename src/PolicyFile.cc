@@ -38,6 +38,20 @@
 #include "lsst/pex/policy/exceptions.h"
 #include "lsst/pex/policy/parserexceptions.h"
 #include "lsst/pex/policy/paf/PAFParserFactory.h"
+/*
+ * Workaround for boost::filesystem v2 (not needed in boost >= 1.46)
+ */
+#include "boost/version.hpp"
+#include "boost/filesystem/config.hpp"
+#if BOOST_VERSION <= 104600 || BOOST_FILESYSTEM_VERSION < 3
+namespace boost { namespace filesystem {
+    path absolute(const path& p)
+    {
+        return complete(p);
+    }
+}}
+#endif
+namespace fs = boost::filesystem;
 
 namespace lsst {
 namespace pex {
@@ -168,7 +182,7 @@ const string& PolicyFile::getFormatName() {
         if (is.fail()) 
             throw LSST_EXCEPT(pexExcept::IoErrorException,
                               "failure opening Policy file: " 
-                              + fs::complete(_file).string());
+                              + fs::absolute(_file).string());
 
         // skip over comments
         string line;
@@ -181,7 +195,7 @@ const string& PolicyFile::getFormatName() {
         if (is.fail()) 
             throw LSST_EXCEPT(pexExcept::IoErrorException,
                               "failure reading Policy file: " 
-                              + fs::complete(_file).string());
+                              + fs::absolute(_file).string());
         if (is.eof() && 
             (regex_match(line, SPACE_RE) || 
              (regex_search(line, COMMENT) && !regex_search(line, COMMENT))))
@@ -220,7 +234,7 @@ void PolicyFile::load(Policy& policy) const {
     if (fs.fail()) 
         throw LSST_EXCEPT(pexExcept::IoErrorException,
                           "failure opening Policy file: " 
-                          + fs::complete(_file).string());
+                          + fs::absolute(_file).string());
 
     parser->parse(fs);
     fs.close();

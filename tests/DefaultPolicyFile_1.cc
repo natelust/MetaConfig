@@ -60,11 +60,11 @@ int main() {
                          "examples", true);
     ipath = df.getInstallPath("pex_policy");
     Assert(fs::exists(ipath), "DefaultPolicyFile failed to find product dir: "+
-                              ipath.file_string());
+                              ipath.string());
 
     ipath = df.getPath();
     Assert(fs::exists(ipath), "DefaultPolicyFile failed to find file path: " +
-                              ipath.file_string());
+                              ipath.string());
 
     Policy p(df);
     Assert(p.exists("standalone"), "Failed to load default data");
@@ -82,5 +82,5 @@ int main() {
                            "goober", true);
     ipath = df.getPath();
     Assert(! fs::exists(ipath), "Failed to detect missing file: "+
-                                ipath.file_string());
+                                ipath.string());
 }

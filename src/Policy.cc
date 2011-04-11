@@ -639,7 +639,7 @@ int Policy::loadPolicyFiles(const fs::path& repository, bool strict) {
 		}
 		else {
 		    fs::path localPath = repos / (*pfi)->getPath();
-		    PolicyFile(localPath.file_string()).load(*policy);
+		    PolicyFile(localPath.string()).load(*policy);
 		}
             }
             catch (pexExcept::IoErrorException& e) {

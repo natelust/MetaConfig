@@ -152,11 +152,11 @@ namespace boost { namespace filesystem { } }
 %typemap(typecheck) const lsst::pex::policy::fs::path & = char *;
 
 %typemap(out) const boost::filesystem::path& {
-   $result = PyString_FromString($1->file_string().c_str());
+   $result = PyString_FromString($1->string().c_str());
 } 
 
 %typemap(out) const lsst::pex::policy::fs::path& {
-   $result = PyString_FromString($1->file_string().c_str());
+   $result = PyString_FromString($1->string().c_str());
 } 
 
 // Convert Python strings to boost::filesystem::path objects
@@ -299,5 +299,6 @@ Policy.add = _Policy_add
 %include "lsst/pex/policy/DefaultPolicyFile.h"
 %include "lsst/pex/policy/UrnPolicyFile.h"
 %include "lsst/pex/policy/PolicyString.h"
+%include "lsst/pex/policy/PolicyDestination.h"
 %include "lsst/pex/policy/PolicyStreamDestination.h"
 %include "lsst/pex/policy/PolicyStringDestination.h"
