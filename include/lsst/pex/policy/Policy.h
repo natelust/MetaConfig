@@ -141,7 +141,7 @@ namespace dafBase = lsst::daf::base;
  * can be plugged in using the PolicyFile and SupportFormats classes.  
  *
  * For more information about about Policy files, file formats, and 
- * dictionaries, see the \ref main "package overview" as well as the 
+ * dictionaries, see the \ref pexPolicyMain "package overview" as well as the 
  * PolicyFile and Dictionary class descriptions.
  *
  * \section secPolicyDefaults Default Policy Data

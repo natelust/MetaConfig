@@ -2,6 +2,7 @@ namespace lsst { namespace pex { namespace policy {
 
 /**
 \mainpage lsst::pex::policy: configuration data management
+\page pexPolicyMain
 
 \section secIntro Introduction
 
