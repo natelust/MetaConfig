@@ -299,6 +299,8 @@ Policy.add = _Policy_add
 %include "lsst/pex/policy/DefaultPolicyFile.h"
 %include "lsst/pex/policy/UrnPolicyFile.h"
 %include "lsst/pex/policy/PolicyString.h"
+#if 0                                   // needed, but needs to propagate up to e.g. afw
 %include "lsst/pex/policy/PolicyDestination.h"
+#endif
 %include "lsst/pex/policy/PolicyStreamDestination.h"
 %include "lsst/pex/policy/PolicyStringDestination.h"
