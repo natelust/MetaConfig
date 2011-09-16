@@ -59,6 +59,7 @@ PolicyWriter::PolicyWriter(const std::string& file, bool append)
                                                    : std::ios_base::trunc)),
       _os(0)
 {
+    _myos->exceptions(std::ofstream::failbit | std::ofstream::badbit);
     _os = _myos;
 }
 
