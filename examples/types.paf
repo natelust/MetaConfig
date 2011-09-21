@@ -12,8 +12,8 @@ int  : +0             # 9
 
 true  : true
 false : false
-# True  : True
-# False : False
+True  : True
+False : False
 
 dbl : -1.0
 dbl : -65.78

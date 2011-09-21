@@ -84,6 +84,8 @@ int main(int argc, char** argv) {
 
     Assert(p.getBool("true"), "'true' != true");
     Assert(! p.getBool("false"), "'false' != false");
+    Assert(p.getBool("True"), "'True' != true");
+    Assert(! p.getBool("False"), "'False' != false");
 
     Policy::DoubleArray vd = p.getDoubleArray("dbl");
     i=0;

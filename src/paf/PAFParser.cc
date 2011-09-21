@@ -59,8 +59,8 @@ const regex PAFParser::DOUBLE_VALUE
     ("^([\\+\\-]?((((\\d+\\.\\d*)|(\\d*\\.\\d+))([eE][\\-\\+]?\\d{1,3})?)"
      "|(\\d+[eE][\\-\\+]?\\d{1,3})))\\s*");
 const regex PAFParser::INT_VALUE("^([+-]?\\d+)\\s*");
-const regex PAFParser::ATRUE_VALUE("^(true)\\s*");
-const regex PAFParser::AFALSE_VALUE("^(false)\\s*");
+const regex PAFParser::ATRUE_VALUE("^([tT]rue)\\s*");
+const regex PAFParser::AFALSE_VALUE("^([fF]alse)\\s*");
 const regex PAFParser::QQSTRING_VALUE("^\"([^\"]*)\"\\s*");
 const regex PAFParser::QSTRING_VALUE("^'([^']*)'\\s*");
 const regex PAFParser::QQSTRING_START("^\"([^\"]*\\S)\\s*");
@@ -286,7 +286,7 @@ int PAFParser::_addValue(const string& propname, string& value,
         do {
             element = matched.str(1);
             value = matched.suffix();
-            if (element[0] == 't')
+            if (element[0] == 't' || element[0] == 'T')
                 policy.add(propname, true);
             else
                 policy.add(propname, false);
