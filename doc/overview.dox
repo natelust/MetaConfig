@@ -4,7 +4,7 @@ namespace lsst { namespace pex { namespace policy {
 \mainpage lsst::pex::policy: configuration data management
 \page pexPolicyMain
 
-\section secIntro Introduction
+\section secPolicyIntro Introduction
 
 A policy is a set of named parameters that can be used to configure
 the internal data and behavior of an object within an application.  An
