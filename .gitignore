@@ -1,0 +1,43 @@
+
+# /
+/.*
+/config.log
+/attic
+
+# /doc/
+/doc/htmlDir
+
+# /examples/
+/examples/.tests
+
+# /lib/
+/lib/*.dylib
+/lib/*.so
+
+# /python/lsst/pex/
+/python/lsst/pex/*.pyc
+
+# /python/lsst/pex/policy/
+/python/lsst/pex/policy/*.so
+/python/lsst/pex/policy/*.pyc
+/python/lsst/pex/policy/policyLib.py
+/python/lsst/pex/policy/policyLib_wrap.*
+
+# /src/
+/src/*.os
+
+# /src/paf/
+/src/paf/*.os
+
+# /tests/
+/tests/.tests
+/tests/*.pyc
+/tests/Policy_1
+/tests/Policy_2
+/tests/Policy_3
+/tests/Policy_4
+/tests/PolicyString_1
+/tests/PAFBadSyntax
+/tests/DefaultPolicyFile_1
+/tests/PAFtypes
+/tests/testDefaults
