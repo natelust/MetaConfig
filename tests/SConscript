@@ -1,29 +1,3 @@
 # -*- python -*-
-Import("env")
-
-env.Program(["Policy_1.cc"], LIBS=env.libs["pex_policy"])
-env.Program(["Policy_2.cc"], LIBS=env.libs["pex_policy"])
-env.Program(["Policy_3.cc"], LIBS=env.libs["pex_policy"])
-env.Program(["Policy_4.cc"], LIBS=env.libs["pex_policy"])
-env.Program(["PAFtypes.cc"], LIBS=env.libs["pex_policy"])
-env.Program(["PAFBadSyntax.cc"], LIBS=env.libs["pex_policy"])
-env.Program(["testDefaults.cc"], LIBS=env.libs["pex_policy"])
-env.Program(["DefaultPolicyFile_1.cc"], LIBS=env.libs["pex_policy"])
-env.Program(["PolicyString_1.cc"], LIBS=env.libs["pex_policy"])
-env.Program(["testBadPAFWrite.cc"], LIBS=env.libs["pex_policy"])
-
-env.CheckSwig("python", ilang="c++")
-env.Append(SWIGFLAGS=" -Ipython")
-
-#
-# Tests
-#
-import lsst.tests
-import os
-
-tests = lsst.tests.Control(env, ignoreList=[], verbose=True)
-
-tests.run("*.cc")
-
-for target in tests.run("*.py"):
-    env.Depends(target, "../python/lsst/pex/policy/_policyLib%s" % env['LDMODULESUFFIX'])
+from lsst.sconsUtils import scripts
+scripts.BasicSConscript.tests()
