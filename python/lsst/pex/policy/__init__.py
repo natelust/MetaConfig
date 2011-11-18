@@ -21,3 +21,4 @@
 #
 
 from policyLib import *
+from .version import *
