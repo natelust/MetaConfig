@@ -1,7 +1,0 @@
-int_range_count_type: -11 -12
-int_range_set_type: 1
-double_range_count_type: 1.99
-string_range_type: "canary"
-
-string_count_type: "one" "two" "three" "four"
-policy_count_type: {}

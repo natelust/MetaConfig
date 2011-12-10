@@ -1,7 +1,0 @@
-#<?cfg paf dictionary ?>  
-definitions: {
-    sub: {
-        type: Policy
-        dictionaryFile: dictionary_bad_unknown_type.paf
-    }
-}

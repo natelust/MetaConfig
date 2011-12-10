@@ -1,7 +1,0 @@
-#<?cfg paf dictionary ?>  
-target: types
-definitions: {
-   something: {
-      type:         1. # not allowed -- should be a string
-   }
-}

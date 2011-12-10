@@ -1,5 +1,0 @@
-#<?cfg paf dictionary ?>  
-definitions: {
-    1.type: Policy
-    1.dictionaryFile: nested_dictionary_2.paf
-}

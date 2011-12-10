@@ -1,7 +1,0 @@
-int_range_count_type: -2 -1
-int_range_set_type: 11111
-double_range_count_type: 5.9901
-string_range_type: "tuck"
-
-string_count_type: "one" "two" "three" "four"
-policy_count_type: {}

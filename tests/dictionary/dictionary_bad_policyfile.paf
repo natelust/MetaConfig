@@ -1,7 +1,0 @@
-#<?cfg paf dictionary ?>  
-target: types
-definitions: {
-   file_type: {
-     type:         "PolicyFile" # not allowed -- should be Policy
-   }
-}

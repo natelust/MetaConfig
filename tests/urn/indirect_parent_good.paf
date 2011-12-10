@@ -1,7 +1,0 @@
-urn_full: @urn:eupspkg:pex_policy:tests/dictionary:simple_policy.paf
-
-urn_brief: @@pex_policy:tests/dictionary:simple_policy.paf
-
-urn_mixed_case: @uRn:eupSpkg:pex_policy:tests/dictionary/simple_policy.paf
-
-local: @simple.paf

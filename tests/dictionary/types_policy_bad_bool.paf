@@ -1,6 +1,0 @@
-bool_type:   true false
-int_type:    true false
-double_type: true false
-string_type: true false
-policy_type: true false
-file_type:   true false

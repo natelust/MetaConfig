@@ -1,7 +1,0 @@
-#<?cfg paf dictionary ?>  
-target: types
-definitions: {
-   something: {
-     type:         "NotAType" # not allowed -- unknown type
-   }
-}
