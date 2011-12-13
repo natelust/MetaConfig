@@ -57,8 +57,10 @@ class ListConfig(Config):
 def chooseAlg(name, config):
     if name == "A":
         config.alg = InnerConfig()
+    elif name =="B":
+        config.alg = outerInitFunc()
     else:
-        config.alg = OuterConfig()
+        config.alg = None
 
 class CallbackConfig(Config):
     name = ChoiceField(str, "name of alg", default="A", allowed={"A":"A doc", "B":"B doc"}, callback=chooseAlg)
@@ -139,6 +141,14 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(p.algB.i.f, roundTrip.algB.i.f)
         self.assertEqual(p.algA, roundTrip.algA)
         self.assertEqual(p.algChoice, roundTrip.algChoice)
+
+    def testCallback(self):
+        b = CallbackConfig()
+        b.name = "A"
+        self.assertEqual(b.alg.f, 0)
+        b.name = "B"
+        self.assertEqual(b.alg.f, 5)
+
 
 def  suite():
     utilsTests.init()

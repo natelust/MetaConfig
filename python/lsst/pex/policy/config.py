@@ -100,7 +100,7 @@ class Config(object):
         """
         if name is None or len(name)==0:
             name = "root"
-        self.name=name
+        self._name=name
 
 
         self.history = {}
@@ -111,7 +111,13 @@ class Config(object):
         #load up defaults
         for field in self.fields.itervalues():
             if isinstance(field, ConfigField) and not field.optional:
-                value = field.initFunc(name=self.name+"." + field.name)
+                fullname = self._name + field.name
+                value = field.initFunc(name=fullname)
+                if value is not None and not isinstance(value, field.dtype):
+                    raise ValueError(
+                        "The initFunc in ConfigField '%s' returns a value which is not a subclass of %s"%(fullname, field.dtype))
+                elif value is not None and value._name != fullname:
+                    raise ValueError("The initFunc in ConfigField '%s' must pass argument 'name' to the Config constructor"%fullname)
             else:
                 value = field.default
             field.__set__(self, value)
@@ -156,7 +162,7 @@ class Config(object):
         """
         for field in self.fields.itervalues():
             value = self._storage[field.name]
-            fullname = self.name + "." + field.name
+            fullname = self._name + "." + field.name
             if not field.optional and value is None:
                 raise ValueError("Field '%s' cannot be None"%fullname)
 
@@ -197,7 +203,7 @@ class Config(object):
             except SyntaxError:
                 ValueError("Malformed field name '%s'"%path)
             except AttributeError:
-                ValueError("Could not find target '%s' in Config %s"%(path, self.name))
+                ValueError("Could not find target '%s' in Config %s"%(path, self._name))
         
         name = fieldname[dot+1:]
         if not name in target.fields:
@@ -254,10 +260,10 @@ class ConfigField(Field):
         self.initFunc=initFunc if initFunc is not None else configType
 
     def __set__(self, instance, value):
-        fullname = instance.name + "." + self.name
+        fullname = instance._name + "." + self.name
             
         if isinstance(value, self.dtype):            
-            value = value.__class__(name=fullname, storage=value)
+            value = value.__class__(name=fullname, storage=value)            
         elif value is not None:
             value = self.dtype(name=fullname, storage=value)
         Field.__set__(self, instance, value)
@@ -386,7 +392,7 @@ class ConfigListExpr(ListExpr):
     def __setitem__(self, k, x):  
         if isinstance(k, slice):
             start, stop, step = k.indices(len(self))
-            fullname = self.owner.name + "." + self.name        
+            fullname = self.owner._name + "." + self.name        
             for i, xi in zip(range(start, stop, step), x):
                 itemname = "%s[%d]"%(fullname, i)
                 if isinstance(xi, self.dtype):            
@@ -406,7 +412,7 @@ class ConfigListField(ListField, ConfigField):
 
         
     def __set__(self, instance, value):
-        fullname = instance.name + "." + self.name
+        fullname = instance._name + "." + self.name
         if value is not None:
             for i, x in enumerate(value):
                 itemname = "%s[%d]"%(fullname, i)
