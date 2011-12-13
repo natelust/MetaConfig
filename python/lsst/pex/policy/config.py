@@ -7,20 +7,20 @@ class ConfigMeta(type):
     """A metaclass for Config
 
     Right now, this simply adds a dictionary containing all Field class attributes
-    as a class attribute called 'fields', and adds the name of each field as an instance
+    as a class attribute called '_fields', and adds the name of each field as an instance
     variable of the field itself (so you don't have to pass the name of the field to the
     field constructor).
     """
 
     def __init__(self, name, bases, dict_):
         type.__init__(self, name, bases, dict_)
-        self.fields = {}
+        self._fields = {}
         for b in bases:
             dict_ = dict(dict_.items() + b.__dict__.items())
         for k, v in dict_.iteritems():
             if isinstance(v, Field):
                 v.name = k
-                self.fields[k] = v
+                self._fields[k] = v
        
 class Field(object):
     """A field in a a Config.
@@ -75,7 +75,7 @@ class Config(object):
     __metaclass__ = ConfigMeta
     def __getitem__(self, key):
         target, name = self._getTargetConfig(key, create=False)
-        return target.fields[name]
+        return target._fields[name]
 
     def __contains__(self, key):
         try:
@@ -104,12 +104,12 @@ class Config(object):
 
 
         self.history = {}
-        for field in self.fields.itervalues():
+        for field in self._fields.itervalues():
             self.history[field.name] = []
 
         self._storage = {}
         #load up defaults
-        for field in self.fields.itervalues():
+        for field in self._fields.itervalues():
             if isinstance(field, ConfigField) and not field.optional:
                 fullname = self._name + field.name
                 value = field.initFunc(name=fullname)
@@ -126,7 +126,7 @@ class Config(object):
         if storage is not None:
             for k,v in storage.iteritems():
                 target, name = self._getTargetConfig(k)
-                target.fields[name].__set__(target, v)
+                target._fields[name].__set__(target, v)
 
     def load(self, filename):
         f = open(filename, 'r')
@@ -136,7 +136,7 @@ class Config(object):
 
     def save(self, filename):
         f = open(filename, 'w')
-        for field in self.fields:
+        for field in self._fields:
             f.write("config.%s=%s;\n"%(field, repr(self._storage[field])))
         f.close()
         
@@ -149,7 +149,7 @@ class Config(object):
         """
         for k, v in dict_.iteritems():
             target, name = self._getTargetConfig(k)
-            target.fields[name].__set__(target, v)
+            target._fields[name].__set__(target, v)
 
     def validate(self):
         """
@@ -160,7 +160,7 @@ class Config(object):
         "check" callables to the field constructors.
         This should be called by derived classes even if they do more complex validation.
         """
-        for field in self.fields.itervalues():
+        for field in self._fields.itervalues():
             value = self._storage[field.name]
             fullname = self._name + "." + field.name
             if not field.optional and value is None:
@@ -206,7 +206,7 @@ class Config(object):
                 ValueError("Could not find target '%s' in Config %s"%(path, self._name))
         
         name = fieldname[dot+1:]
-        if not name in target.fields:
+        if not name in target._fields:
             raise ValueError("Config does not include field '%s'"%fieldname)
 
         return target, name
