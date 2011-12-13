@@ -15,10 +15,13 @@ class ConfigMeta(type):
     def __init__(self, name, bases, dict_):
         type.__init__(self, name, bases, dict_)
         self.fields = {}
+        for b in bases:
+            dict_ = dict(dict_.items() + b.__dict__.items())
         for k, v in dict_.iteritems():
             if isinstance(v, Field):
                 v.name = k
                 self.fields[k] = v
+       
 class Field(object):
     """A field in a a Config.
 
@@ -49,6 +52,7 @@ class Field(object):
         self.default = default
         self.check = check
         self.optional = optional
+        self.callback = callback
 
     def __get__(self, instance, dtype=None):        
         return instance._storage[self.name]
@@ -56,6 +60,8 @@ class Field(object):
     def __set__(self, instance, value):
         instance._storage[self.name]=value
         instance.setHistory(self.name)
+        if self.callback is not None:
+            self.callback(value, instance)
 
 
 class Config(object):
@@ -119,7 +125,7 @@ class Config(object):
     def load(self, filename):
         f = open(filename, 'r')
         config = self
-        exec(f.read())
+        exec(f.read(), {}, {"config":self})
         f.close()
 
     def save(self, filename):
@@ -249,12 +255,12 @@ class ConfigField(Field):
 
     def __set__(self, instance, value):
         fullname = instance.name + "." + self.name
+            
         if isinstance(value, self.dtype):            
             value = value.__class__(name=fullname, storage=value)
-        else:
+        elif value is not None:
             value = self.dtype(name=fullname, storage=value)
-        instance._storage[self.name]=value
-        instance.setHistory(self.name)
+        Field.__set__(self, instance, value)
 
 class ListCheck(object):
     def __init__(self, itemType, optional=True, listCheck=None, itemCheck=None, length=None, minLength=None, maxLength=None):
@@ -309,6 +315,7 @@ class ListExpr(object):
         self.name = listfield.name
         self.value = config._storage[self.name]        
         self.itemType = listfield.itemType 
+        self.callback = listfield.callback
         self.owner = config
 
     def __len__(self):
@@ -319,11 +326,15 @@ class ListExpr(object):
 
     def __delitem__(self, i):
         del self.value[i]
+        if self.callback is not None:
+            self.callback(self, self.config)
         self.owner.setHistory(self.name)
 
     def __setitem__(self, i, x):   
         self.value[i] =x
         self.owner.setHistory(self.name)
+        if self.callback is not None:
+            self.callback(self, self.config)
 
     def __iter__(self):
         return self.value.__iter__()
@@ -343,13 +354,14 @@ class ListExpr(object):
     def insert(self, i, x):
         self[i:i] = [x]
 
-    def pop(i=None):
-        x = self.value.pop(i)
+    def pop(i=None):        
+        x = self[i]
+        del self[i]
         self.owner.setHistory(self.name)
         return x
 
     def remove(x):
-        self.value.remove(x)
+        del self[self.index(x)]
         self.owner.setHistory(self.name)
     
     def __repr__(self):
@@ -379,10 +391,9 @@ class ConfigListExpr(ListExpr):
                 itemname = "%s[%d]"%(fullname, i)
                 if isinstance(xi, self.dtype):            
                     x[i] = xi.__class__(name=itemname, storage=xi)
-                else:
+                elif xi is not None:
                     x[i] = self.dtype(name=itemname, storage=xi)
         ListExpr.__setitem__(self, k, x)
-        self.owner.setHistory(self.name)
 
 class ConfigListField(ListField, ConfigField):
     def __init__(self, configType, doc, default=None, optional=True, callback=None,
@@ -401,9 +412,10 @@ class ConfigListField(ListField, ConfigField):
                 itemname = "%s[%d]"%(fullname, i)
                 if isinstance(x, self.itemtype):            
                     value[i] = x.__class__(name=itemname, storage=x)
-                else:
-                    value[i] = self.itemtype(name=itemname, storage=x)
+                elif x is not None:
+                    value[i] = self.itemtype(name=itemname, storage=x)        
         instance._storage[self.name]= value
+
         instance.setHistory(self.name)
         
     def __get__(self, instance, dtype=None):

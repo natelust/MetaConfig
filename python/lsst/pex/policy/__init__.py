@@ -19,6 +19,5 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-
-from policyLib import *
+from config import *
 from .version import *
