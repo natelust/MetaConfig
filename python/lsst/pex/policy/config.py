@@ -1,7 +1,14 @@
 import traceback
+import copy
 import sys
 
-__all__ = ["Config", "Field", "ChoiceField", "ConfigField", "ListField", "ConfigListField"]
+__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigListField", "ConfigField", "RegistryField"]
+
+def joinNamePath(prefix, name, index=None):
+    if index is not None:
+        return "%s.%s[%s]"%(prefix, name, index)
+    else:
+        return "%s.%s"%(prefix, name)
 
 class ConfigMeta(type):
     """A metaclass for Config
@@ -21,7 +28,12 @@ class ConfigMeta(type):
             if isinstance(v, Field):
                 v.name = k
                 self._fields[k] = v
-       
+
+class FieldValidationError(ValueError):
+    def __init__(self, fieldtype, fullname, msg):
+        error="%s '%s' failed validation: %s" % (fieldtype, fullname, msg)
+        ValueError.__init__(self, error)
+
 class Field(object):
     """A field in a a Config.
 
@@ -30,39 +42,56 @@ class Field(object):
     class Example(Config):
         myInt = Field(int, "an integer field!", default=0)
     """
-
-    def __init__(self, dtype, doc, default=None, check=None, optional=True, callback=None):
+    def __init__(self, dtype, doc, default=None, check=None, optional=True):
         """Initialize a Field.
         
         dtype ------ Data type for the field.  
         doc -------- Documentation for the field.
-        default ---- A simple default for the field.  If the default must be computed, just
-                     leave this as None and set the default as part of validate().
-        check ------ A simple callable to be called with the field value that returns False if the value
-                     is invalid.  More complex multi-field validation can be written as part of the
-                     validate() method; this will be ignore if set to None.
+        default ---- A default value for the field.
+        check ------ A callable to be called with the field value that returns False if the value
+                     is invalid.  More complex multi-field validation can be written as part of Config
+                     validate() method; this will be ignored if set to None.
+        optional --- When False, Config validate() will fail if value is None
         """
-        if issubclass(dtype, Config) and not \
-                (isinstance(self, ConfigField) or isinstance(self, ConfigListField)):
-            raise ValueError("Fields cannot have dtypes which are subclasses of config. " \
-                             "Use ConfigField or ListConfigField instead")
         self.dtype = dtype
         self.doc = doc
         self.__doc__ = doc
         self.default = default
         self.check = check
         self.optional = optional
-        self.callback = callback
 
-    def __get__(self, instance, dtype=None):        
-        return instance._storage[self.name]
+    def _rename(self, instance, name):
+        self.name = name
 
-    def __set__(self, instance, value):
+    def validate(self, instance):
+        value = self.__get__(instance)
+        fullname = joinNamePath(instance._name, self.name)
+        fieldType = type(self).__name__
+        if not self.optional and value is None:
+            msg = "Required value cannot be None"
+            raise FieldValidationError(fieldType, fullname, msg)
+        if self.check is not None and not self.check(value):
+            msg = "%s is not a valid value"%str(value)
+            raise FieldValidationError(fieldType, fullname, msg)
+
+
+    def save(self, outfile, instance):
+        value = self.__get__(instance)
+        fullname = joinNamePath(instance._name, self.name)
+        outfile.write("%s=%s\n"%(fullname, repr(value)))
+
+    def __get__(self, instance, owner=None):
+        if instance is None or not isinstance(instance, Config):
+            return self
+        else:
+            return instance._storage[self.name]
+
+    def __set__(self, instance, value):        
+        if value is not None:
+            value = self.dtype(value)
         instance._storage[self.name]=value
         instance.setHistory(self.name)
-        if self.callback is not None:
-            self.callback(value, instance)
-
+    
 
 class Config(object):
     """Base class for control objects.
@@ -73,21 +102,8 @@ class Config(object):
     """
 
     __metaclass__ = ConfigMeta
-    def __getitem__(self, key):
-        target, name = self._getTargetConfig(key, create=False)
-        return target._fields[name]
 
-    def __contains__(self, key):
-        try:
-            self._getTargetConfig(key)
-        except:
-            return False
-        return True
-
-    def iteritems(self):
-        return self._storage.iteritems()
-
-    def __init__(self, name=None, storage=None):
+    def __init__(self, storage=None):
         """Initialize the Config.
 
         Pure-Python control objects will just use the default constructor, which
@@ -98,10 +114,7 @@ class Config(object):
         passed to the constructor.  This is used to support C++ control objects,
         which will implement a storage interface to C++ data members in SWIG.
         """
-        if name is None or len(name)==0:
-            name = "root"
-        self._name=name
-
+        self._name="root"
 
         self.history = {}
         for field in self._fields.itervalues():
@@ -110,79 +123,56 @@ class Config(object):
         self._storage = {}
         #load up defaults
         for field in self._fields.itervalues():
-            if isinstance(field, ConfigField) and not field.optional:
-                fullname = self._name + field.name
-                value = field.initFunc(name=fullname)
-                if value is not None and not isinstance(value, field.dtype):
-                    raise ValueError(
-                        "The initFunc in ConfigField '%s' returns a value which is not a subclass of %s"%(fullname, field.dtype))
-                elif value is not None and value._name != fullname:
-                    raise ValueError("The initFunc in ConfigField '%s' must pass argument 'name' to the Config constructor"%fullname)
-            else:
-                value = field.default
-            field.__set__(self, value)
+            field.__set__(self, field.default)
 
         #apply first batch of overides from the provided storage
         if storage is not None:
             for k,v in storage.iteritems():
                 target, name = self._getTargetConfig(k)
                 target._fields[name].__set__(target, v)
-
-    def load(self, filename):
+    @staticmethod
+    def load(filename):
         f = open(filename, 'r')
-        config = self
-        exec(f.read(), {}, {"config":self})
+        exec(f.read())
         f.close()
+        return root
 
     def save(self, filename):
-        f = open(filename, 'w')
-        for field in self._fields:
-            f.write("config.%s=%s;\n"%(field, repr(self._storage[field])))
-        f.close()
+        tmp = self._name
+        self._rename("root")
+        try:
+            outfile = open(filename, 'w')
+            self._save(outfile)
+            outfile.close()
+        finally:
+            self._rename(tmp)
+
+    def _save(self, outfile):
+        outfile.write("from %s import %s\n"%(type(self).__module__, type(self).__name__))
+        outfile.write("%s=%s()\n"%(self._name, type(self).__name__))
+        for field in self._fields.itervalues():
+            field.save(outfile, self)
         
 
-    def override(self, dict_):
-        """
-        Update fields with overrides given as a dictionary.
-
-        Dictionary keys of the form 'foo.bar' may be used to override nested entries.
-        """
-        for k, v in dict_.iteritems():
-            target, name = self._getTargetConfig(k)
-            target._fields[name].__set__(target, v)
+    def _rename(self, name):
+        self._name = name
+        for field in self._fields.itervalues():
+            field._rename(self, field.name)
 
     def validate(self):
         """
-        Validate the Config and fill any non-trivial defaults.
+        Validate the Config.
 
         The base class implementation performs type checks on all fields, recurses into
         nested Config instances, and does any simple validation defined by passing
-        "check" callables to the field constructors.
-        This should be called by derived classes even if they do more complex validation.
+        "check" callables to the field constructors. More complex validation field behaviors
+        can be attained by deriving new Field classes which implement the validate() method.
+        As syntactic sugar, some derived Field types are defined in this module.
+        This should be called by derived Config classes even if they do more complex validation.
         """
         for field in self._fields.itervalues():
-            value = self._storage[field.name]
-            fullname = self._name + "." + field.name
-            if not field.optional and value is None:
-                raise ValueError("Field '%s' cannot be None"%fullname)
-
-            if isinstance(value, Config):                
-                try:
-                    value.validate()
-                except Exception, e:
-                    raise ValueError("Config %s failed comlex validation: %s"%(fullname, str(e)))
-            elif value is not None:
-                try:
-                    self._storage[field.name]=field.dtype(value)
-                except Exception, e:
-                    msg = "Incorrect type for field '%s' ('%s' is not a subclass of '%s')"%\
-                          (fullname, str(value), field.dtype)
-                    raise ValueError(msg)
-
-            if field.check is not None:
-                if not field.check(value):
-                    raise ValueError("%s '%s' failed simple validation: '%s'" % (field.__class__.__name__, fullname, str(value)))
-
+            field.validate(self)
+    
     def setHistory(self, fieldname):
         target, name = self._getTargetConfig(fieldname)
         value = target._storage[name]
@@ -192,7 +182,6 @@ class Config(object):
         target, name = self._getTargetConfig(fieldname)
         return target.history[name][-limit:]
 
-    
     def _getTargetConfig(self, fieldname):
         dot = fieldname.rfind(".")
         target = self
@@ -214,114 +203,69 @@ class Config(object):
     def __str__(self):
         return str(self.__class__) + ":" + str(self._storage)
 
-    def __repr__(self):
-        return str(self._storage)
+class RangeField(Field):
+    def __init__(self, dtype, doc, default=None, optional=True, 
+            min=None, max=None, inclusiveMin=True, inclusiveMax=False):
 
+        if min is not None and max is not None and min > max:
+            swap(min, max)
+        self.min = min
+        self.max = max
 
-class ChoiceCheck(object):
-    def __init__(self, choices, check=None):
-        self.choices=choices
-        self.check = check
+        self.rangeString =  "%s%s,%s%s" % \
+                (("[" if inclusiveMin else "(")
+                ("-inf" if self.min is None else self.min),
+                ("inf" if self.max is None else self.max),
+                ("]" if inclusiveMax else ")"))
+        doc += "\n\tValid Range = " + self.rangeString
+        if inclusiveMax:
+            self.maxCheck = lambda x, y: True if y is None else x <= y
+        else:
+            self.maxCheck = lambda x, y: True if y is None else x < y
+        if inclusiveMin:
+            self.minCheck = lambda x, y: True if y is None else x >= y
+        else:
+            self.minCheck = lambda x, y: True if y is None else x > y
+        Field.__init__(self, dtype, doc, default, optional) 
 
-    def __call__(self, x):
-        if x not in self.choices:
-            return False
-
-        if self.check is not None:
-            return self.check(x)
-
-        return True
-
+    def validate(self, instance):
+        Field.validate(self, instance)
+        value = instance._storage[field.name]
+        if not self.checkMin(value, self.min) or not self.checkMax(value, self.max):
+            fullname = joinNamePath(instance._name, self.name)
+            fieldType = type(self).__name__
+            msg = "%s is outside of valid range %s"%(value, self.rangeString)
+            raise FieldValidationException(fieldType, fullname, msg)
+            
 class ChoiceField(Field):
-    def __init__(self, dtype, doc, allowed, default=None, check=None, optional=True, callback=None):
-        if optional: 
-            allowed[None]="Field is optional"
+    def __init__(self, dtype, doc, allowed, default=None, optional=True):
+        self.allowed = dict(allowed)
+        if optional and None not in self.allowed: 
+            self.allowed[None]="Field is optional"
 
-        if len(allowed)==0:
+        if len(self.allowed)==0:
             raise ValueError("ChoiceFields must have at least one allowed value")
         
-        doc += "Allowed values:\n"
-        for choice in allowed:
-            doc += "\t%s\t%s\n"%(str(choice), allowed[choice])
-            if choice is not None and not isinstance(choice, dtype):
-                raise ValueError("Allowed value %s is not a subclass of type %s"%(str(choice), dtype))
+        doc += "\nAllowed values:\n"
+        for choice, choiceDoc in self.allowed.iteritems():
+            doc += "\t%s\t%s\n"%(str(choice), choiceDoc)
 
-        choiceCheck = ChoiceCheck(allowed,check) 
-        Field.__init__(self, dtype, doc, default=default, check=choiceCheck, optional=optional, callback=callback)
+        Field.__init__(self, dtype, doc, default=default, check=None, optional=optional)
 
-
-class ConfigField(Field):
-    def __init__(self, configType, doc, initFunc=None, check=None, optional=True, callback=None):
-        if not issubclass(configType, Config):
-            raise TypeError("configType='%s' is not a subclass of Config)"%str(configType))
-
-        Field.__init__(self, dtype=configType, doc=doc, default=None, check=check, 
-                optional=optional, callback=callback)
-        self.initFunc=initFunc if initFunc is not None else configType
-
-    def __set__(self, instance, value):
-        fullname = instance._name + "." + self.name
-            
-        if isinstance(value, self.dtype):            
-            value = value.__class__(name=fullname, storage=value)            
-        elif value is not None:
-            value = self.dtype(name=fullname, storage=value)
-        Field.__set__(self, instance, value)
-
-class ListCheck(object):
-    def __init__(self, itemType, optional=True, listCheck=None, itemCheck=None, length=None, minLength=None, maxLength=None):
-        self.itemType=itemType
-        self.optional=optional
-        self.listCheck=listCheck
-        self.itemCheck=itemCheck
-        self.length = length
-        self.minLength=minLength
-        self.maxLength=maxLength
-
-    def _checkLength(self, value):
-        if value is None:
-            return self.optional
-
-        lenValue =len(value)
-        if (self.length is not None and not lenValue == self.length) or \
-               (self.minLength is not None and lenValue < self.minLength) or \
-               (self.maxLength is not None and lenValue > self.maxLength):
-            return False
-
-        return True
-
-    def __call__(self, value):
-        if not self._checkLength(value):
-            print "here length"
-            return False
-
-        if self.listCheck is not None:
-            if not self.listCheck(value):
-                print "here listcheck"
-                return false
-
-        if value is not None:
-            for i, v in enumerate(value):
-                if isinstance(v, Config):
-                    v.validate()
-                else:
-                    try:
-                        value[i] = self.itemType(v)
-                    except:
-                        print "here itemtype"
-                        return False
-
-                if self.itemCheck is not None and not self.itemCheck(value[i]):
-                    print "here itemcheck"
-                    return False
-        return True
+    def validate(self, instance):
+        Field.validate(self, instance)
+        value = self.__get__(instance)
+        if value not in self.allowed:
+            fullname = joinNamePath(instance._name, self.name)
+            fieldType = type(self).__name__
+            msg = "Value ('%s') is not allowed"%str(value)
+            raise FieldValidationError(fieldtype, fullname, msg) 
 
 class ListExpr(object):
     def __init__(self, listfield, config):
         self.name = listfield.name
         self.value = config._storage[self.name]        
         self.itemType = listfield.itemType 
-        self.callback = listfield.callback
         self.owner = config
 
     def __len__(self):
@@ -332,15 +276,11 @@ class ListExpr(object):
 
     def __delitem__(self, i):
         del self.value[i]
-        if self.callback is not None:
-            self.callback(self, self.config)
         self.owner.setHistory(self.name)
 
     def __setitem__(self, i, x):   
-        self.value[i] =x
+        self.value[i] = self.itemType(x)
         self.owner.setHistory(self.name)
-        if self.callback is not None:
-            self.callback(self, self.config)
 
     def __iter__(self):
         return self.value.__iter__()
@@ -377,52 +317,275 @@ class ListExpr(object):
         return str(self.value)
 
 class ListField(Field):
-    def __init__(self, itemType, doc, default=None, optional=True, callback=None,
-            listCheck=None, itemCheck=None, length=None, minLength=None, maxLength=None):        
-        check = ListCheck(itemType, optional=optional, listCheck=listCheck, itemCheck=itemCheck, 
-                length=length, minLength=minLength, maxLength=maxLength)
-        Field.__init__(self, list, doc, default=default, optional=optional, check=check, callback=callback)
+    def __init__(self, itemType, doc, default=None, optional=True,
+            listCheck=None, itemCheck=None, length=None, minLength=None, maxLength=None):
+        Field.__init__(self, list, doc, default=default, optional=optional, check=None)
+        self.listCheck = listCheck
+        self.itemCheck = itemCheck
+        self.length=length
+        self.minLength=minLength
+        self.maxLength=maxLength
         self.itemType=itemType
     
-    def __get__(self, instance, dtype=None):
+    def __get__(self, instance, owner=None):
         return ListExpr(self, instance)
 
+    def __set__(self, instance, value):
+        if value is not None:
+            value = [self.itemType(x) if x is not None else None for x in value]
+        Field.__set__(self, instance, value)
+
+    def validate(self, instance):
+        Field.validate(self, instance)
+        value = self.__get__(instance) 
+        if value is not None:
+            fullname = joinNamePath(instance._name, self.name)
+            fieldType = type(self).__name__
+            lenValue =len(value)
+            if self.length is not None and not lenValue == self.length:
+                msg = "Required list length=%d, got length=%d"%(self.length, lenValue)                
+                raise FieldValidationError(fieldtype, fullname, msg)
+            elif self.minLength is not None and lenValue < self.minLength:
+                msg = "Minimum allowed list length=%d, got length=%d"%(self.minLength, lenValue)                
+                raise FieldValidationError(fieldtype, fullname, msg)
+            elif self.maxLength is not None and lenValue > self.maxLength:
+                msg = "Maximum allowed list length=%d, got length=%d"%(self.maxLength, lenValue)                
+                raise FieldValidationError(fieldtype, fullname, msg)
+            elif self.listCheck is not None and not self.listCheck(value):
+                msg = "%s is not a valid value"%str(value)
+                raise FieldValidationError(fieldtype, fullname, msg)
+            elif self.itemCheck is not None:
+                for i, v in enumerate(value):
+                    if not self.itemCheck(value[i]):
+                        msg="Invalid value %s at position %d"%(str(v), i)
+                        raise FieldValidationError(fieldtype, fullname, msg)
 
 class ConfigListExpr(ListExpr):
-    def __setitem__(self, k, x):  
-        if isinstance(k, slice):
+    def __setitem__(self, k, x):
+        if not isinstance(k, slice):
+            start, stop, step = k, k+1, 1
+        else:
             start, stop, step = k.indices(len(self))
-            fullname = self.owner._name + "." + self.name        
-            for i, xi in zip(range(start, stop, step), x):
-                itemname = "%s[%d]"%(fullname, i)
-                if isinstance(xi, self.dtype):            
-                    x[i] = xi.__class__(name=itemname, storage=xi)
-                elif xi is not None:
-                    x[i] = self.dtype(name=itemname, storage=xi)
-        ListExpr.__setitem__(self, k, x)
+        
+        for i, xi in zip(range(start, stop, step), x):
+            itemname = joinNamePath(self.owner.name, self.name, i)
+            if isinstance(xi, self.itemType):
+                xi = copy.deepcopy(xi)
+                xi._rename(itemname)
+            elif issubclass(xi, self.itemType):
+                xi = xi()
+                xi._rename(itemname)
+            elif xi is not None:
+                raise TypeError("%s is not an instance of %s"%(x, self.itemType))
+                
+            self.value[i]= xi
+        self.owner.setHistory(self.name)
 
-class ConfigListField(ListField, ConfigField):
-    def __init__(self, configType, doc, default=None, optional=True, callback=None,
-            listCheck=None, itemCheck=None, length=None, minLength=None, maxLength=None):
+class ConfigListField(ListField):
+    @staticmethod
+    def itemCheck(config):
+        if config is not None:
+            config.validate()
+        return True
+
+    def __init__(self, configType, doc, default=None, optional=True,
+            listCheck=None, length=None, minLength=None, maxLength=None):
         if not issubclass(configType, Config):
             raise TypeError("configType='%s' is not a subclass of Config)"%str(configType))
-
-        ListField.__init__(self, configType, doc, default=default, optional=optional, callback=callback,
-                listCheck=listCheck, itemCheck=itemCheck, length=length, minLength=minLength, maxLength=maxLength)
-
+        
+        ListField.__init__(self, configType, doc, default=default, optional=optional,
+                listCheck=listCheck, itemCheck=ConfigListField.itemCheck, 
+                length=length, minLength=minLength, maxLength=maxLength)
         
     def __set__(self, instance, value):
-        fullname = instance._name + "." + self.name
         if value is not None:
-            for i, x in enumerate(value):
-                itemname = "%s[%d]"%(fullname, i)
-                if isinstance(x, self.itemtype):            
-                    value[i] = x.__class__(name=itemname, storage=x)
-                elif x is not None:
-                    value[i] = self.itemtype(name=itemname, storage=x)        
+            for i, xi in enumerate(value):
+                itemname = joinNamePath(instance._name, self.name, i)
+                if isinstance(xi, self.itemType):
+                    xi = copy.deepcopy(xi)
+                    xi._rename(itemname)
+                elif isinstance(xi, type) and issubclass(xi, self.itemType):
+                    xi = xi()
+                    xi._rename(itemname)
+                elif xi is not None:
+                    raise TypeError("%s is not an instance of %s"%(xi, self.itemType))
+                value[i] = xi
+        
         instance._storage[self.name]= value
-
         instance.setHistory(self.name)
         
     def __get__(self, instance, dtype=None):
-        return ConfigListExpr(self, instance)
+        if instance is None:
+            return self
+        else:
+            return ConfigListExpr(self, instance)
+
+    def save(self, outfile, instance):
+        types = [type(x) if x is not None else None for x in self.values]
+        for t in types:
+            outfile.write("from %s import %s\n"%(t.__module__, t.__name__))
+        fullname = joinNamePath(instance._name, self.name)
+        outfile.write("%s=%s\n"%(fullname, types))
+        for x in self.values:
+            if x is not None:
+                x._save(outfile)
+
+class ConfigRegistry(object):
+    def __init__(self, configname, field):
+        self.configname = configname
+        self.fieldname = field.name
+        self.basetype = field.basetype
+        self.restricted = field.restricted
+        self.active = None 
+        self.types = copy.deepcopy(field.typemap) if field.typemap is not None else {}
+        self.values = {}
+
+    def __getitem__(self, k):
+        if k not in self.types:
+            raise KeyError("Unknown key '%s' in ConfigRegistry '%s'"%\
+                    (k, joinNamePath(self.configname, self.fieldname)))
+        elif k not in self.values or self.values[k] is None:
+            value = self.types[k]()
+            value._rename(joinNamePath(self.configname, self.fieldname, k))
+        
+        return self.values[k]
+
+    def __setitem__(self, k, val):
+        dtype = self.types.get(k)
+        if dtype is None:
+            if self.restricted:            
+                raise ValueError("Cannot register '%s' in restricted ConfigRegistry %s"%\
+                        (str(k), joinNamePath(self.configname, self.fieldname)))
+            if isinstance(val, type) and issubclass(val, self.basetype):
+                dtype = val
+            elif isinstance(val, self.basetype):
+                dtype = type(val)
+            elif val is None:
+                dtype = self.basetype
+            else:
+                raise ValueError("Invalid type %s. All values in ConfigRegistry '%s' must be of type %s"%\
+                        (dtype, joinNamePath(self.configname, self.fieldnam), self.basetype))
+            self.types[k] = dtype
+        
+        if val == dtype:
+            val = dtype()
+            val._rename(self.fullname)
+        elif isinstance(val, dtype):
+            val = copy.deepcopy(val)
+            val._rename(self.fullname)
+        elif val is not None:
+            raise ValueError("Invalid type %s. ConfigRegistry entry '%s' must be of type %s"%\
+                    (type(val), joinNamePath(self.configname, self.fieldname, k), dtype))
+        
+        self.values[k] = val
+        if self.active is None and val is not None:
+            self.active = k 
+        #TODO: save history
+
+    def __repr__(self):
+        return repr(self.active)
+    def __str__(self):
+        return self.fullname +"="+str(self.active)
+
+
+class RegistryField(Field):
+    def __init__(self, doc, basetype=Config, default=None, typemap={}, restricted=False, optional=False):
+        if len(typemap)==0 and restricted:
+            raise ValueError("Cannot instantiate a restricted RegistryField with an empty typemap")
+        if not issubclass(basetype, Config):
+            raise ValueError("basetype='%s' is not allowed in RegistryField. basetype must be a subclass of Config."%(basetype))
+        if default is None and not optional:
+            if len(typemap)==0:
+                default = basetype
+            else:
+                default = typemap[0]
+
+        Field.__init__(self, ConfigRegistry, doc, default=default, check=None, optional=optional)
+        self.typemap = typemap
+        self.restricted=restricted
+        self.basetype = basetype if basetype is not None else Config
+    
+    def _getOrMake(self, instance):
+        registry = instance._storage.get(self.name)
+        if registry is None:
+            fullname = joinNamePath(instance._name, self.name)
+            registry = ConfigRegistry(instance._name, self)
+            instance._storage[self.name] = registry
+        return registry
+
+
+    def __get__(self, instance, owner=None):
+        if instance is None:
+            return self
+        else:
+            return self._getOrMake(instance)
+
+    def __set__(self, instance, value):
+        registry = self._getOrMake(instance)
+        if value in registry.types or value is None:
+            registry.active = value
+        else:
+            raise KeyError("Unknown key '%s' in RegistryField '%s'"%\
+                    (value, joinNamePath(instance._name, self.name)))
+                
+
+    def _rename(self, instance, name):
+        Field._rename(self, instance, name)
+        registry = RegistryField.__get__(self, instance)
+        for k, v in registry.values.iteritems():
+            fullname = joinNamePath(instance._name, name, k)
+            v._rename(fullname)
+
+    def validate(self, instance):
+        Field.validate(self, instance)
+        registry = RegistryField.__get__(self, instance)
+        if registry.active is None and not self.optional:
+            fullname = joinNamePath(instance._name, name)
+            fieldType = type(self).__name__
+            msg = "Required field cannot be None"
+            raise FieldValidationError(fieldType, fullname, msg)
+        elif registry.active is not None:
+            value = registry[registry.active]
+            value.validate()
+        
+    def save(self, outfile, instance):
+        registry = RegistryField.__get__(self, instance)
+        fullname = joinNamePath(instance._name, self.name)
+        for t in registry.types.itervalues():
+            outfile.write("from %s import %s\n"%(t.__module__, t.__name__))
+        outfile.write("%s.types=%s\n"%(fullname, registry.types))
+        for v in registry.values.itervalues():
+            v._save(outfile)
+        outfile.write("%s=%s\n"%(fullname, str(registry.active)))
+
+class ConfigField(Field):
+    def __init__(self, configType, doc, default=None, optional=False):
+        if not issubclass(configType, Config):
+            raise TypeError("configType='%s' is not a subclass of Config)"%configType)
+        if default is None and not optional:
+            default = configType
+        Field.__init__(self, dtype=configType, doc=doc, default=default, optional=optional)
+        
+    def __set__(self, instance, value):
+        fullname=joinNamePath(instance._name, self.name)
+        if isinstance(value, self.dtype):
+            value = copy.deepcopy(value)
+            value._rename(fullname)
+        elif isinstance(value, type) and issubclass(value, self.dtype):
+            value = value()
+            value._rename(fullname)
+        elif value is not None:
+            raise ValueError("Cannot set ConfigField '%s' to '%s'"%(fullname, str(value)))
+
+        instance._storage[self.name]=value
+        instance.setHistory(self.name)
+    
+    def save(self, outfile, instance):
+        fullname = joinNamePath(instance._name, self.name)
+        value = self.__get__(instance)
+        outfile.write("from %s import %s\n"%(self.dtype.__module__, self.dtype.__name__))
+        if value is not None:
+            value._save(outfile)
+        else:
+            outfile.write("%s=%s\n"%(fullname, None))
+

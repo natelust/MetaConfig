@@ -32,13 +32,16 @@ class InnerConfig(Config):
     f = Field(float, "Inner.f", default=0.0, check = lambda x: x >= 0, optional=False)
 
 
-def outerInitFunc(name=None):
-    x = InnerConfig(name, storage=None)
-    x.f = 5
-    return x
-
 class OuterConfig(InnerConfig, Config):
-    i = ConfigField(InnerConfig, "Outer.i", optional=False, initFunc=outerInitFunc, check = lambda x : x.f >4)    
+    i = ConfigField(InnerConfig, "Outer.i", optional=False)   
+    def __init__(self):
+        Config.__init__(self)
+        self.i.f = 5
+
+    def validate(self):
+        Config.validate(self)
+        if self.i.f < 5:
+            raise ValueError("validation failed, outer.i.f must be greater than 5")
 
 class PluginConfig(Config):
     algA = ConfigField(InnerConfig, "alg A policy", optional=True)
@@ -52,23 +55,7 @@ class PluginConfig(Config):
 
 class ListConfig(Config):
     li = ListField(int, "list of ints", default = [1,2,3], optional=False, length=3, itemCheck=lambda x: x > 0)
-    lc = ConfigListField(InnerConfig, "list of inners", default = None, optional=True)
     
-def chooseAlg(name, config):
-    if name == "A":
-        config.alg = InnerConfig()
-    elif name =="B":
-        config.alg = outerInitFunc()
-    else:
-        config.alg = None
-
-class CallbackConfig(Config):
-    name = ChoiceField(str, "name of alg", default="A", allowed={"A":"A doc", "B":"B doc"}, callback=chooseAlg)
-    alg = ConfigField(InnerConfig, "sub policy for alg", optional=False)
-
-
-
-
 class ConfigTest(unittest.TestCase):
     def setUp(self):    
         pass
@@ -99,14 +86,6 @@ class ConfigTest(unittest.TestCase):
         o.i = InnerConfig()
         self.assertRaises(ValueError, o.validate)
 
-        d = {"i.f":"6"};
-        o.override(d);
-        o.validate()
-
-        d= {"i":{"f":7}}
-        o.override(d);
-        o.validate()
-
         p = PluginConfig()
         self.assertRaises(ValueError, p.validate)
 
@@ -123,9 +102,6 @@ class ConfigTest(unittest.TestCase):
 
         listConfig.li[1]=5
         self.assertEqual(listConfig.li[1], 5)
-        listConfig.lc = []
-        listConfig.lc.append(InnerConfig())
-        self.assertEqual(listConfig.lc[0].f, 0)
 
 
     def testSave(self):
@@ -134,20 +110,12 @@ class ConfigTest(unittest.TestCase):
         p.algChoice = "B"
         p.save("roundtrip.test")
 
-        roundTrip = PluginConfig();
-        roundTrip.load("roundtrip.test")
-        os.remove("roundtrip.test")
+        roundTrip = Config.load("roundtrip.test")
+        #os.remove("roundtrip.test")
 
         self.assertEqual(p.algB.i.f, roundTrip.algB.i.f)
         self.assertEqual(p.algA, roundTrip.algA)
         self.assertEqual(p.algChoice, roundTrip.algChoice)
-
-    def testCallback(self):
-        b = CallbackConfig()
-        b.name = "A"
-        self.assertEqual(b.alg.f, 0)
-        b.name = "B"
-        self.assertEqual(b.alg.f, 5)
 
 
 def  suite():
