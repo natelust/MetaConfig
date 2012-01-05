@@ -1,5 +1,0 @@
-{
-    "appStages": ["lsst.pcons.pex.harness.IOStage.InputStage", "lsst.detection.pipeline.DetectionStage", "lsst.pex.harness.IOStage.OutputStage"],
-    "eventTopics": ["None", "None", "None"],
-    "stagePolicies": ["policy/input_policy.paf", "policy/DetectionStagePolicy.paf", "policy/output_policy.paf"]
-}
