@@ -1,110 +1,12 @@
-namespace lsst { namespace pex { namespace policy {
+namespace lsst { namespace pex { namespace config {
 
 /**
-\mainpage lsst::pex::policy: configuration data management
-\page pexPolicyMain
+\mainpage lsst::pex::config: configuration data management
+\page pexConfigMain
 
-\section secPolicyIntro Introduction
+\section secConfigIntro Introduction
 
-A policy is a set of named parameters that can be used to configure
-the internal data and behavior of an object within an application.  An
-important feature Policy objects is that the parameters can be
-loaded in from a file.  Thus, it allows applications fine-grained
-control of objects even if much of the configuration parameters they
-provide are normally set to defaults and otherwise do not change.
-
-\section secPolicy Obtaining Data from a Policy Object
-
-The Policy interface allows an application to pull out parameter values 
-by name.  Typically, the application "knows" the names it needs from a 
-Policy to configure itself--that is, these names and the use of their 
-values are hard-coded into the application.  The application simply calls 
-one of the "get" methods to retrieve a typed value for the parameter.  
-(Nevertheless, if necessary, the parameter names contained in a policy 
-can be retrieved via the Policy::names() member function.
-
-Policy parameters values are restricted to a limited set of types to ensure 
-simple, well-defined ASCII text serialization format.  These types are 
-In particular, a Policy parameter can be one of:
- - integer (int not long)
- - double
- - string
- - boolean (bool)
- - Policy
- - PolicyFile, a reference to file containing additional Policy data
- - arrays of any of the above
-
-As implied by the inclusion of Policy as a value type, a Policy can be  
-hierarchical (like a PropertySet).  Values deep within the hierarchy 
-can be retrieved via a hiearchical name.  Such a name is made up of 
-name fields delimited by dots (.) where each name field represents a 
-level of the hierarchy.  The first field represents the top level of 
-the hierarchy.  If a given name does not resolve to value, a NameNotFound
-exception is thrown.  If one expects a different value type for a name 
-than what is actually stored, (e.g. one calls 
-\ref Policy::getInt() "getInt(name)" for a  parameter that is actually
-a string), a TypeError exception is thrown.
-
-A hierarchical Policy allows an application to configure a whole
-hierarchy of objects, even if the object classes (and their associated
-policy parameters) were developed by different people.  In particular,
-if an application that is configuring one of the objects it uses, it
-can either pull out the relevent values directly by their hierarchical
-names, or if that object supports configuration from a Policy, it can
-pull all of the values for the object by retrieving a Policy (via 
-\ref Policy::getPolicy() "getPolicy(name)") and passing it to the object.
-
-It is important to note that parameter names relative the Policy that 
-contains them.  For example, suppose you have a parameter accessible via 
-the name "foo.bar.zub".  This implies that the name "foo.bar" will 
-resolve to a Policy object.  You can retrieve the "zub" parameter from
-that "sub-Policy" object by asking for "zub".  
-
-\section secLoading Loading Policy Data from a File
-
-One can read Policy data via the constructors that take a file name in
-some form as an input argument; however the prefered manner is via one
-of the \ref Policy::createPolicy() "createPolicy()" functions.  The
-latter is able to intelligently differentiate between simple 
-\ref PolicyFile "Policy file" and a Dictionary file.  
-
-In general, the format of the file is detected automatically (via the
-PolicyFile and SupportedFormats).  By default, the formats supported
-are those currently built into this package: 
- - \ref pagePAF "Policy Authoring Format (PAF)" -- a custom format
-   optimized for human editing.  
- - JSON format (deprecated)
- - XML (future)
-
-Other formats can be plugged in via the SupportedFormats class.  
-
-\section secDictionary Dictionaries
-
-When a class uses a Policy to configure itself, there is an implicit
-expectation as to the data available from the policy and the names
-with which they can be retrieved; that is, the class expects the file
-to follow a particular schema.  A Dictionary provides a way to
-document the schema of a  Policy file.  A Dictionary itself is a 
-Policy (and thus can be written in any Policy file format) with a
-particular schema.  When a Dictionary fully documents a Policy schema,
-the Dictionary can be used to validate a particular Policy
-instance--i.e. test that it actually complies with the schema.  A 
-Dictionary can also provide default values for Policy parameters.
-
-For explanation of the Dictionary schema and how to encode it using
-the \ref pagePAF "PAF format", see 
-\ref pageDictionary "The Dictionary Schema".  
-
-\section secDefaults Default Policy Data
-
-When an object using a Policy fails to find a parameter it was expecting,
-it is a little inelegant to provide a default hard-coded in the object's
-implementation, <em>by design</em>.  Instead it is recommended that 
-defaults be loaded from another Policy.  The intended way to do this is 
-to load defaults via a DefaultPolicyFile (which can located a policy file
-from any EUPS-setup installation directory) and to merge them into to the
-primary Policy instance via the Policy::mergeDefaults() function.  
-
+Proper documention to be addded later
 
 */
 }}}

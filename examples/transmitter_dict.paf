@@ -1,8 +1,0 @@
-#<?cfg paf dictionary ?>  
-#
-# This is a stub dictionary, referenced in EventTransmitter_dict.paf.
-
-target: transmitter
-definitions: {
-   bar: {}
-}

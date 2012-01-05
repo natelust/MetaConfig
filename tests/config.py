@@ -23,7 +23,7 @@
 #
 import lsst.utils.tests as utilsTests
 import unittest
-from lsst.pex.policy import *
+from lsst.pex.config import *
 import os
 
 
@@ -122,7 +122,7 @@ class ConfigTest(unittest.TestCase):
         self.comp.save("roundtrip.test")
 
         roundTrip = Config.load("roundtrip.test")
-        #os.remove("roundtrip.test")
+        os.remove("roundtrip.test")
 
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
         self.assertEqual(self.comp.r.active, roundTrip.r.active)

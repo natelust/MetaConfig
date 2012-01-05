@@ -20,7 +20,7 @@
  * see <http://www.lsstcorp.org/LegalNotices/>.
  */
  
-#ifndef LSST_PEX_POLICY_H
-#define LSST_PEX_POLICY_H
+#ifndef LSST_PEX_CONFIG_H
+#define LSST_PEX_CONFIG_H
 
 #endif
