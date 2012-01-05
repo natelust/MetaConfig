@@ -25,3 +25,5 @@ tests/Policy_3
 tests/Policy_4
 tests/testBadPAFWrite
 tests/testDefaults
+
+roundtrip.test
