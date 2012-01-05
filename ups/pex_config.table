@@ -1,0 +1,2 @@
+setupRequired(pex_policy)
+envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
