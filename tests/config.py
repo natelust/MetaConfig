@@ -23,7 +23,7 @@
 #
 import lsst.utils.tests as utilsTests
 import unittest
-from lsst.pex.policy import *
+from lsst.pex.config import *
 import os
 
 
