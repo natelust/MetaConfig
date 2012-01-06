@@ -145,6 +145,16 @@ class Config(object):
 
     __metaclass__ = ConfigMeta
 
+    def iterkeys(self) :
+        return self._storage.iterkeys()
+
+    def itervalues(self):
+        return self._storage.itervalues()
+
+    def iteritems(self):
+        return self._storage.iteritems()
+
+
     def __init__(self, storage=None):
         """Initialize the Config.
 
@@ -189,9 +199,7 @@ class Config(object):
         When such a file is loaded, an instance of MyConfig would be returned 
         """
         local = {}
-        f = open(filename, 'r')
-        exec(f.read(), {}, local)
-        f.close()
+        execfile(filename, {}, local)
         return local['root']
 
     def save(self, filename):
@@ -365,7 +373,7 @@ class ChoiceField(Field):
             fullname = joinNamePath(instance._name, self.name)
             fieldType = type(self).__name__
             msg = "Value ('%s') is not allowed"%str(value)
-            raise FieldValidationError(fieldtype, fullname, msg) 
+            raise FieldValidationError(fieldType, fullname, msg) 
 
 class ListExpr(object):
     def __init__(self, listfield, config):
@@ -467,21 +475,21 @@ class ListField(Field):
             lenValue =len(value)
             if self.length is not None and not lenValue == self.length:
                 msg = "Required list length=%d, got length=%d"%(self.length, lenValue)                
-                raise FieldValidationError(fieldtype, fullname, msg)
+                raise FieldValidationError(fieldType, fullname, msg)
             elif self.minLength is not None and lenValue < self.minLength:
                 msg = "Minimum allowed list length=%d, got length=%d"%(self.minLength, lenValue)                
-                raise FieldValidationError(fieldtype, fullname, msg)
+                raise FieldValidationError(fieldType, fullname, msg)
             elif self.maxLength is not None and lenValue > self.maxLength:
                 msg = "Maximum allowed list length=%d, got length=%d"%(self.maxLength, lenValue)                
-                raise FieldValidationError(fieldtype, fullname, msg)
+                raise FieldValidationError(fieldType, fullname, msg)
             elif self.listCheck is not None and not self.listCheck(value):
                 msg = "%s is not a valid value"%str(value)
-                raise FieldValidationError(fieldtype, fullname, msg)
+                raise FieldValidationError(fieldType, fullname, msg)
             elif self.itemCheck is not None:
                 for i, v in enumerate(value):
                     if not self.itemCheck(value[i]):
                         msg="Invalid value %s at position %d"%(str(v), i)
-                        raise FieldValidationError(fieldtype, fullname, msg)
+                        raise FieldValidationError(fieldType, fullname, msg)
 
 class ConfigListExpr(ListExpr):
     def __setitem__(self, k, x):
