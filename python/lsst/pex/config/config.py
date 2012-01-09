@@ -2,7 +2,8 @@ import traceback
 import copy
 import sys
 
-__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigListField", "ConfigField", "RegistryField"]
+__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigListField", "ConfigField",
+    "RegistryField"]
 
 def joinNamePath(prefix, name, index=None):
     """
@@ -64,7 +65,7 @@ class Field(object):
         doc -------- Documentation for the field.
         default ---- A default value for the field.
         check ------ A callable to be called with the field value that returns 
-                     False if the valueis invalid.  More complex inter-field 
+                     False if the value is invalid.  More complex inter-field 
                      validation can be written as part of Config validate() 
                      method; this will be ignored if set to None.
         optional --- When False, Config validate() will fail if value is None
@@ -166,7 +167,7 @@ class Config(object):
         for field in self._fields.itervalues():
             field.__set__(self, field.default)
 
-        #apply first batch of overides from the provided storage
+        #apply first batch of overrides from the provided storage
         if storage is not None:
             for k,v in storage.iteritems():
                 target, name = self._getTargetConfig(k)
@@ -266,7 +267,7 @@ class Config(object):
         """
         Internal use only.
 
-        Traverse Config hierarchy using a compoud field name 
+        Traverse Config hierarchy using a compound field name 
         (e.g. fieldname="foo.bar[5].zed['foo']")
         """
         dot = fieldname.rfind(".")
@@ -513,7 +514,7 @@ class ConfigField(Field):
 
     Note that configType must be a subclass of Config.
 
-    If optional=False, and default=None, the field will default to a default-constucted
+    If optional=False, and default=None, the field will default to a default-constructed
     instance of configType
 
     Additionally, to allow for fewer deep-copies, assigning an instance of ConfigField 
@@ -586,7 +587,7 @@ class ConfigListField(ListField):
     This type of Field behaves much like a ListField but is aware that each item in the 
     list is a Config object. 
 
-    By default configType=Config. To enforce that all list items be isntances of
+    By default configType=Config. To enforce that all list items be instances of
     a particular derived Config type, specify this argument.
 
     Additionally, each item in the list will behave like a ConfigField. See ConfigField
@@ -759,7 +760,7 @@ class RegistryField(Field):
       instance.registry["CCC"]=AaaConfig
       instance.registry["BBB"]=AaaConfig
 
-    However, once a name has been associted with a particular type, it cannot be assigned
+    However, once a name has been associated with a particular type, it cannot be assigned
     to a different type.
 
     When saving a registry, the entire set is saved, as well as the active selection
@@ -768,7 +769,9 @@ class RegistryField(Field):
         if len(typemap)==0 and restricted:
             raise ValueError("Cannot instantiate a restricted RegistryField with an empty typemap")
         if not issubclass(basetype, Config):
-            raise ValueError("basetype='%s' is not allowed in RegistryField. basetype must be a subclass of Config."%(basetype))
+            raise ValueError(
+                "basetype='%s' is not allowed in RegistryField. basetype must be a subclass of Config." % \
+                (basetype))
 
         Field.__init__(self, ConfigRegistry, doc, default=default, check=None, optional=optional)
         self.typemap = typemap
