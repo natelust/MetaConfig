@@ -66,7 +66,8 @@ class ConfigTest(unittest.TestCase):
         self.inner = InnerConfig()
         self.outer = OuterConfig()
         self.comp = Complex()
-
+        print self.simple
+        print self.comp
     def tearDown(self):
         del self.simple
         del self.inner

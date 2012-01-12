@@ -121,38 +121,36 @@ class _List(list):
         list.__imul__(self, y)
         self.history.append((list(self), traceback.extract_stack()[:-1]))
 
-class Registry(object):
+class Registry(dict):
     def __init__(self, fullname, basetype, types, restricted):
+        dict.__init__(self)
         self.fullname = fullname
         self.basetype = basetype
         self.restricted = restricted
         self.name = None
-        self.active = None 
+        self._active = None 
         self.types = copy.deepcopy(types) if types is not None else {}
-        self.values = {}
         self.history = []
-
-    def iteritems(self):
-        return self.values.iteritems()
-    def itervalues(self):
-        return self.values.itervalues()
-    def iterkeys(self):
-        return self.values.iterkeys()
+    
+    active = property(lambda x: x[x.name] if x.name else None)
 
     def __getitem__(self, k):
         if k not in self.types:
-            raise KeyError("Unknown key '%s' in Registry '%s'"%(k, self.fullname))
-        elif k not in self.values or not self.values[k]:
+            raise KeyError("Unknown key %s in Registry '%s'"%(repr(k), self.fullname))
+        
+        value = dict.get(self, k, None)
+        if not value:
             try:
-                history = self.values[k].history
-            except KeyError, AttributeError:
-                history = {}
+                history = value.history
+            except AttributeError:
+                history = None
             value = self.types[k]()
             value._rename(joinNamePath(name=self.fullname, index=k))
-            value.history = history
-            self.values[k] = value
+            if history:
+                value.history = history
+            dict.__setitem__(self, k, value)
         
-        return self.values[k]
+        return value
 
     def __setitem__(self, k, value):
         #determine type
@@ -174,7 +172,7 @@ class Registry(object):
         
         #set value
         try:
-            oldValue = self.values[k]
+            oldValue = dict.__getitem__(self, k)
             history = oldValue.history
         except KeyError, AttributeError:
             history = {}
@@ -190,22 +188,22 @@ class Registry(object):
             storage = value._storage
         elif value is not None:
             raise ValueError("Invalid type %s. Registry entry '%s' must be of type %s"%\
-                    (type(val), name, dtype))
+                    (type(value), name, dtype))
        
         if not value: 
             value = _None()
             value.history = history
-            self.values[k] = value
+            dict.__setitem__(self, k, value)
         else:
             if not oldValue:
                 oldValue = dtype()
                 oldValue._rename(name)
-                self.values[k]=  oldValue
+                dict.__setitem__(self, k, oldValue)
                 oldValue.history = history
             oldValue.override(storage)
 
     def __delitem__(self, k):
-        self[k]=None
+        self[k]=None    
 
 class ConfigMeta(type):
     """A metaclass for Config
@@ -302,7 +300,6 @@ class Field(object):
             msg = "%s is not a valid value"%str(value)
             raise FieldValidationError(fieldType, fullname, msg)
 
-
     def save(self, outfile, instance):
         """
         Saves an instance of this field to file.
@@ -312,6 +309,9 @@ class Field(object):
         value = self.__get__(instance)
         fullname = joinNamePath(instance._name, self.name)
         outfile.write("%s=%s\n"%(fullname, repr(value)))
+    
+    def toDict(self, instance):
+        return self.__get__(instance)
 
     def __get__(self, instance, owner=None):
         if instance is None or not isinstance(instance, Config):
@@ -350,10 +350,21 @@ class Config(object):
     __metaclass__ = ConfigMeta
 
     def __iter__(self):
-        return self._storage.iteritems()
+        return self._fields.__iter__()
 
     def keys(self):
         return self._storage.keys()
+    def values(self):
+        return self._storage.values()
+    def items(self):
+        return self._storage.items()
+
+    def iteritems(self):
+        return self._storage.iteritems()
+    def itervalues(self):
+        return self.storage.itervalues()
+    def iterkeys(self):
+        return self.storage.iterkeys()
 
     def __contains__(self, name):
         return self._storage.__contains__(name)
@@ -398,7 +409,8 @@ class Config(object):
         local = {}
         execfile(filename, {}, local)
         return local['root']
-    
+   
+ 
     def override(self, dict_):
         norm = self._normalizeDict(dict_)
         for k, kv in norm.iteritems():
@@ -451,7 +463,7 @@ class Config(object):
             outfile.close()
         finally:
             self._rename(tmp)
-
+    
     def _save(self, outfile):
         """
         Internal use only. Save this Config to file
@@ -461,7 +473,11 @@ class Config(object):
         for field in self._fields.itervalues():
             field.save(outfile, self)
         
-
+    def toDict(self):
+        dict_ = {}
+        for name, field in self._fields.iteritems():
+            dict_[name] = field.toDict(self)
+        return dict_
     def _rename(self, name):
         """
         Internal use only. 
@@ -572,6 +588,11 @@ class Config(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __str__(self):
+        return str(self.toDict())
+
+    def __repr__(self):
+        return repr(self.toDict())
 class RangeField(Field):
     """
     Defines a Config Field which allows only a range of values.
@@ -767,6 +788,13 @@ class ConfigField(Field):
         else:
             outfile.write("%s=%s\n"%(fullname, str(None)))
 
+    def toDict(self, instance):
+        value = self.__get__(instance)
+        if value:
+            return value.toDict()
+        else:
+            return None
+
     def validate(self, instance):
         Field.validate(self, instance)
         value = self.__get__(instance)
@@ -851,18 +879,16 @@ class RegistryField(Field):
         registry = self.__get__(instance)
         if value in registry.types:
             registry.name = value
-            registry.active = registry[value]
         elif value is None:
-            registry.active = None
             registry.name = None
         else:
             raise KeyError("Unknown key %s in RegistryField %s"%\
-                    (repr(value), joinNamePath(instance._name, self.name)))
+                    (repr(value), registry.fullname))
         registry.history.append((value, traceback.extract_stack()[:-1]))
 
     def rename(self, instance):
         registry = self.__get__(instance)
-        for k, v in registry.values.iteritems():
+        for k, v in registry.iteritems():
             fullname = joinNamePath(instance._name, self.name, k)
             v._rename(fullname)
 
@@ -875,7 +901,14 @@ class RegistryField(Field):
             raise FieldValidationError(fieldType, fullname, msg)
         elif registry.active:
             registry.active.validate()
-        
+
+    def toDict(self, instance):
+        active = self.__get__(instance).active
+        if active:
+            return active.toDict()
+        else:
+            return None
+
     def save(self, outfile, instance):
         registry = self.__get__(instance)
         fullname = registry.fullname
@@ -885,6 +918,6 @@ class RegistryField(Field):
             typesStr += "'%s':%s, "%(k, typeString(t))
         typesStr += "}"
         outfile.write("%s.types=%s\n"%(fullname, typesStr))
-        for v in registry.values.itervalues():
+        for v in registry.itervalues():
             v._save(outfile)
         outfile.write("%s=%s\n"%(fullname, repr(registry.name)))
