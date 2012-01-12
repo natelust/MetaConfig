@@ -66,8 +66,7 @@ class ConfigTest(unittest.TestCase):
         self.inner = InnerConfig()
         self.outer = OuterConfig()
         self.comp = Complex()
-        print self.simple
-        print self.comp
+    
     def tearDown(self):
         del self.simple
         del self.inner
@@ -122,7 +121,7 @@ class ConfigTest(unittest.TestCase):
         self.comp.save("roundtrip.test")
 
         roundTrip = Config.load("roundtrip.test")
-        #os.remove("roundtrip.test")
+        os.remove("roundtrip.test")
 
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
