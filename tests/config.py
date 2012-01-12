@@ -56,10 +56,9 @@ class OuterConfig(InnerConfig, Config):
             raise ValueError("validation failed, outer.i.f must be greater than 5")
 
 class Complex(Config):
-    c = ConfigField(InnerConfig, "an inner config", default=OuterConfig, optional=False)
+    c = ConfigField(InnerConfig, "an inner config", optional=False)
     r = RegistryField("restricted registry", typemap={"AAA":Simple, "BBB":InnerConfig}, restricted=True, default="AAA", optional=False)    
     p = RegistryField("open, plugin-style registry", optional=True)
-    l = ConfigListField("list of configs", default=[Simple, InnerConfig, OuterConfig], optional=False, length=3)
 
 class ConfigTest(unittest.TestCase):
     def setUp(self): 
@@ -88,8 +87,8 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.outer.f, 0.0)
 
         self.assertEqual(self.comp.c.f, 0.0)
-        self.assertEqual(self.comp.r.active, "AAA")
-        self.assertEqual(self.comp.r[self.comp.r.active].f, 3.0)
+        self.assertEqual(self.comp.r.name, "AAA")
+        self.assertEqual(self.comp.r.active.f, 3.0)
         self.assertEqual(self.comp.r["BBB"].f, 0.0)
         self.assertEqual(self.comp.p.active, None)
 
@@ -122,16 +121,12 @@ class ConfigTest(unittest.TestCase):
         self.comp.save("roundtrip.test")
 
         roundTrip = Config.load("roundtrip.test")
-        os.remove("roundtrip.test")
+        #os.remove("roundtrip.test")
 
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
-        self.assertEqual(self.comp.r.active, roundTrip.r.active)
-        self.assertEqual(self.comp.p.active, roundTrip.p.active)
+        self.assertEqual(self.comp.r.name, roundTrip.r.name)
+        self.assertEqual(self.comp.p.name, roundTrip.p.name)
         self.assertEqual(self.comp.p["foo"].i, roundTrip.p["foo"].i)
-        self.assertEqual(len(self.comp.l), len(roundTrip.l))
-        self.assertEqual(self.comp.l[0].f, roundTrip.l[0].f)
-        self.assertEqual(self.comp.l[1].f, roundTrip.l[1].f)
-        self.assertEqual(self.comp.l[2].f, roundTrip.l[2].f)
 
 def  suite():
     utilsTests.init()
