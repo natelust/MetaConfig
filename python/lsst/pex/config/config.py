@@ -116,7 +116,7 @@ class Field(object):
         doc -------- Documentation for the field.
         default ---- A default value for the field.
         check ------ A callable to be called with the field value that returns 
-                     False if the valueis invalid.  More complex inter-field 
+                     False if the value is invalid.  More complex inter-field 
                      validation can be written as part of Config validate() 
                      method; this will be ignored if set to None.
         optional --- When False, Config validate() will fail if value is None
@@ -235,7 +235,7 @@ class Config(object):
         for field in self._fields.itervalues():
             field.__set__(self, field.default)
 
-        #apply first batch of overides from the provided storage
+        #apply first batch of overrides from the provided storage
         if storage is not None:
             self.override(storage)
 
@@ -556,7 +556,7 @@ class List(list):
 
 class ListField(Field):
     """
-    Defines a field which is a container of values of type itemType
+    Defines a field which is a container of values of type dtype
 
     If length is not None, then instances of this field must match this length exactly
     If minLength is not None, then instances of the field must be no shorter then minLength
@@ -566,12 +566,13 @@ class ListField(Field):
     listCheck - used to validate the list as a whole, and
     itemCheck - used to validate each item individually    
     """
-    def __init__(self, itemType, doc, default=None, optional=False,
+    def __init__(self, dtype, doc, default=None, optional=False,
             listCheck=None, itemCheck=None, length=None, minLength=None, maxLength=None):
         Field.typeWrapper[List] = List
         Field.__init__(self, List, doc, default=default, optional=optional, check=None)
         self.listCheck = listCheck
         self.itemCheck = itemCheck
+        self.itemType = dtype
         self.length=length
         self.minLength=minLength
         self.maxLength=maxLength
@@ -597,6 +598,13 @@ class ListField(Field):
                 raise FieldValidationError(fieldType, fullname, msg)
             elif self.itemCheck is not None:
                 for i, v in enumerate(value):
+                    try:
+                        v = self.itemType(v)
+                        list.__setitem__(value, i, v)
+                    except TypeError:
+                        msg="Invalid value %s at position %d"%(str(v), i)
+                        raise FieldValidationError(fieldType, fullname, msg)
+                        
                     if not self.itemCheck(value[i]):
                         msg="Invalid value %s at position %d"%(str(v), i)
                         raise FieldValidationError(fieldType, fullname, msg)
@@ -609,7 +617,7 @@ class ConfigField(Field):
 
     Note that dtype must be a subclass of Config.
 
-    If optional=False, and default=None, the field will default to a default-constucted
+    If optional=False, and default=None, the field will default to a default-constructed
     instance of dtype
 
     Additionally, to allow for fewer deep-copies, assigning an instance of ConfigField to dtype istelf,
@@ -808,7 +816,7 @@ class RegistryField(Field):
       instance.registry["CCC"]=AaaConfig
       instance.registry["BBB"]=AaaConfig
 
-    However, once a name has been associted with a particular type, it cannot be assigned
+    However, once a name has been associated with a particular type, it cannot be assigned
     to a different type.
 
     When saving a registry, the entire set is saved, as well as the active selection
@@ -817,7 +825,9 @@ class RegistryField(Field):
         if len(typemap)==0 and restricted:
             raise ValueError("Cannot instantiate a restricted RegistryField with an empty typemap")
         if not issubclass(basetype, Config):
-            raise ValueError("basetype='%s' is not allowed in RegistryField. basetype must be a subclass of Config."%(basetype))
+            raise ValueError(
+                "basetype='%s' is not allowed in RegistryField. basetype must be a subclass of Config."% \
+                (basetype))
 
         Field.typeWrapper[ConfigRegistry] = ConfigRegistry
         Field.__init__(self, ConfigRegistry, doc, default=default, check=None, optional=optional)
