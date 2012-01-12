@@ -31,7 +31,7 @@ def typeString(aType):
         return aType.__module__+"."+aType.__name__
 
 
-class ConfigBool(int):
+class _Bool(int):
     def __init__(self, value=None):
         bool.__init__(self, value)
 
@@ -46,7 +46,7 @@ class ConfigBool(int):
         else:
             self.__dict__[attr] = value
 
-class ConfigNone(object):
+class _None(object):
     def __repr__(self):
         return repr(None)
 
@@ -73,7 +73,140 @@ class ConfigNone(object):
             return setattr(None, attr, value)
         else:
             self.__dict__[attr] = value
+
+class _List(list):
+    def __init__(self, x=[]):
+        list.__init__(self, x)
+        self.history = []
+        self.history.append((list(self), traceback.extract_stack()[:-1]))
+
+    def __setitem__(self, i, x):
+        list.__setitem__(self, i, x)
+        self.history.append((list(self), traceback.extract_stack()[:-1]))
     
+    def __delitem__(self, i):
+        list.__delitem__(self, i)
+        self.history.append((list(self), traceback.extract_stack()[:-1]))
+
+    def __setslice__(self, i, x):
+        list.__setslice__(self, i, x)
+        self.history.append((list(self), traceback.extract_stack()[:-1]))
+
+    def append(self, x):
+        self[len(self):len(self)] = [x]
+
+    def extend(self, x):
+        self[len(self):len(self)] = x
+
+    def insert(self, i, x):
+        self[i:i] = [x]
+
+    def pop(self, i=-1):
+        list.pop(self, i)
+        self.history.append((list(self), traceback.extract_stack()[:-1]))
+
+    def remove(self, x):
+        list.remove(self, i)
+        self.history.append((list(self), traceback.extract_stack()[:-1]))
+   
+    def sort(self, cmp=None, key=None, reverse=False):
+        list.sort(self, cmp, key, reverse)
+        self.history.append((list(self), traceback.extract_stack()[:-1]))
+
+    def __iadd__(self, y):
+        list.__iadd__(self, y)
+        self.history.append((list(self), traceback.extract_stack()[:-1]))
+    
+    def __imul__(self, y):
+        list.__imul__(self, y)
+        self.history.append((list(self), traceback.extract_stack()[:-1]))
+
+class Registry(object):
+    def __init__(self, fullname, basetype, types, restricted):
+        self.fullname = fullname
+        self.basetype = basetype
+        self.restricted = restricted
+        self.name = None
+        self.active = None 
+        self.types = copy.deepcopy(types) if types is not None else {}
+        self.values = {}
+        self.history = []
+
+    def iteritems(self):
+        return self.values.iteritems()
+    def itervalues(self):
+        return self.values.itervalues()
+    def iterkeys(self):
+        return self.values.iterkeys()
+
+    def __getitem__(self, k):
+        if k not in self.types:
+            raise KeyError("Unknown key '%s' in Registry '%s'"%(k, self.fullname))
+        elif k not in self.values or not self.values[k]:
+            try:
+                history = self.values[k].history
+            except KeyError, AttributeError:
+                history = {}
+            value = self.types[k]()
+            value._rename(joinNamePath(name=self.fullname, index=k))
+            value.history = history
+            self.values[k] = value
+        
+        return self.values[k]
+
+    def __setitem__(self, k, value):
+        #determine type
+        dtype = self.types.get(k)
+        if dtype is None:
+            if self.restricted:            
+                raise ValueError("Cannot register '%s' in restricted Registry %s"%\
+                        (str(k), self.fullname))
+            if isinstance(value, type) and issubclass(value, self.basetype):
+                dtype = value
+            elif isinstance(value, self.basetype):
+                dtype = type(value)
+            elif value is None:
+                dtype = self.basetype
+            else:
+                raise ValueError("Invalid type %s. All values in Registry '%s' must be of type %s"%\
+                        (dtype, self.fullname, self.basetype))
+            self.types[k] = dtype
+        
+        #set value
+        try:
+            oldValue = self.values[k]
+            history = oldValue.history
+        except KeyError, AttributeError:
+            history = {}
+            oldValue = None
+        
+        name=joinNamePath(name=self.fullname, index=k)
+        if type(value) == dtype:
+            storage = value._storage
+        elif isinstance(value, dict):
+            storage = value
+        elif value == dtype:
+            value = dtype()
+            storage = value._storage
+        elif value is not None:
+            raise ValueError("Invalid type %s. Registry entry '%s' must be of type %s"%\
+                    (type(val), name, dtype))
+       
+        if not value: 
+            value = _None()
+            value.history = history
+            self.values[k] = value
+        else:
+            if not oldValue:
+                oldValue = dtype()
+                oldValue._rename(name)
+                self.values[k]=  oldValue
+                oldValue.history = history
+            oldValue.override(storage)
+
+    def __delitem__(self, k):
+        self[k]=None
+
 class ConfigMeta(type):
     """A metaclass for Config
 
@@ -107,9 +240,16 @@ class Field(object):
     class Example(Config):
         myInt = Field(int, "an integer field!", default=0)
     """
-    typeWrapper = {bool:ConfigBool, type(None):ConfigNone}
+    typeWrapper = {
+        bool:_Bool, 
+        type(None):_None, 
+        _None:_None, 
+        list:_List, 
+        _List:_List,
+        Registry:Registry
+    }
 
-    def __init__(self, dtype, doc, default=None, check=None, optional=False):
+    def __init__(self, doc, dtype, default=None, check=None, optional=False):
         """Initialize a Field.
         
         dtype ------ Data type for the field.  
@@ -189,7 +329,7 @@ class Field(object):
         if value is not None:
             wrap = self.typeWrapper[self.dtype](value)
         else:
-            wrap = ConfigNone()
+            wrap = _None()
         wrap.__doc__ = self.doc
         wrap.history = history
         instance._storage[self.name]=wrap
@@ -263,7 +403,7 @@ class Config(object):
         norm = self._normalizeDict(dict_)
         for k, kv in norm.iteritems():
             target, name, index = self._getTarget(k)
-            if kv is None or isinstance(kv, ConfigNone):
+            if kv is None or isinstance(kv, _None):
                 kv = None
 
             if index:
@@ -439,7 +579,7 @@ class RangeField(Field):
     If min or max is None, the range will be open in that direction
     If inclusive[Min|Max] is True the range will include the [min|max] value
     """
-    def __init__(self, dtype, doc, default=None, optional=False, 
+    def __init__(self, doc, dtype, default=None, optional=False, 
             min=None, max=None, inclusiveMin=True, inclusiveMax=False):
 
         if min is not None and max is not None and min > max:
@@ -461,7 +601,7 @@ class RangeField(Field):
             self.minCheck = lambda x, y: True if y is None else x >= y
         else:
             self.minCheck = lambda x, y: True if y is None else x > y
-        Field.__init__(self, dtype, doc, default=default, optional=optional) 
+        Field.__init__(self, doc=doc, dtype=dtype, default=default, optional=optional) 
 
     def validate(self, instance):
         Field.validate(self, instance)
@@ -480,8 +620,7 @@ class ChoiceField(Field):
     Allowed values should be provided as a dict of value, doc string pairs
 
     """
-
-    def __init__(self, dtype, doc, allowed, default=None, optional=True):
+    def __init__(self, doc, dtype, allowed, default=None, optional=True):
         self.allowed = dict(allowed)
         if optional and None not in self.allowed: 
             self.allowed[None]="Field is optional"
@@ -496,7 +635,7 @@ class ChoiceField(Field):
                         (choice, type(choice), dtype))
             doc += "\t%s\t%s\n"%(str(choice), choiceDoc)
 
-        Field.__init__(self, dtype, doc, default=default, check=None, optional=optional)
+        Field.__init__(self, doc=doc, dtype=dtype, default=default, check=None, optional=optional)
 
     def validate(self, instance):
         Field.validate(self, instance)
@@ -506,53 +645,6 @@ class ChoiceField(Field):
             fieldType = type(self).__name__
             msg = "Value ('%s') is not allowed"%str(value)
             raise FieldValidationError(fieldType, fullname, msg) 
-
-class List(list):
-    def __init__(self, x=[]):
-        list.__init__(self, x)
-        self.history = []
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-
-    def __setitem__(self, i, x):
-        list.__setitem__(self, i, x)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-    
-    def __delitem__(self, i):
-        list.__delitem__(self, i)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-
-    def __setslice__(self, i, x):
-        list.__setslice__(self, i, x)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-
-    def append(self, x):
-        self[len(self):len(self)] = [x]
-
-    def extend(self, x):
-        self[len(self):len(self)] = x
-
-    def insert(self, i, x):
-        self[i:i] = [x]
-
-    def pop(self, i=-1):
-        list.pop(self, i)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-
-    def remove(self, x):
-        list.remove(self, i)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-   
-    def sort(self, cmp=None, key=None, reverse=False):
-        list.sort(self, cmp, key, reverse)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-
-    def __iadd__(self, y):
-        list.__iadd__(self, y)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-    
-    def __imul__(self, y):
-        list.__imul__(self, y)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
 
 class ListField(Field):
     """
@@ -566,10 +658,9 @@ class ListField(Field):
     listCheck - used to validate the list as a whole, and
     itemCheck - used to validate each item individually    
     """
-    def __init__(self, dtype, doc, default=None, optional=False,
+    def __init__(self, doc, dtype, default=None, optional=False,
             listCheck=None, itemCheck=None, length=None, minLength=None, maxLength=None):
-        Field.typeWrapper[List] = List
-        Field.__init__(self, List, doc, default=default, optional=optional, check=None)
+        Field.__init__(self, doc=doc, dtype=_List, default=default, optional=optional, check=None)
         self.listCheck = listCheck
         self.itemCheck = itemCheck
         self.itemType = dtype
@@ -625,17 +716,13 @@ class ConfigField(Field):
 
     This means that the argument default can be dtype, rather than an instance of dtype
     """
-    def __init__(self, dtype, doc=None, default=None, check=None, optional=False):        
-        if not doc:
-            doc = dtype.__doc__
-        else:
-            doc = dtype.__doc__            
+    def __init__(self, doc, dtype, default=None, check=None, optional=False):        
         if not issubclass(dtype, Config):
             raise TypeError("configType='%s' is not a subclass of Config)"%dtype)
         if default is None and not optional:
             default = dtype
         self.typeWrapper[dtype] = dtype
-        Field.__init__(self, dtype=dtype, doc=doc, check=check, default=default, optional=optional)
+        Field.__init__(self, doc=doc, dtype=dtype, check=check, default=default, optional=optional)
         
     def __set__(self, instance, value):
         try:
@@ -656,7 +743,7 @@ class ConfigField(Field):
             raise ValueError("Cannot set ConfigField '%s' to '%s'"%(name, str(value)))
        
         if not value: 
-            value = ConfigNone()
+            value = _None()
             value.history = history
             instance._storage[self.name] = value
         else:
@@ -685,94 +772,6 @@ class ConfigField(Field):
         value = self.__get__(instance)
         if value:
             value.validate()
-
-
-class ConfigRegistry(object):
-    def __init__(self, fullname, basetype, types, restricted):
-        self.fullname = fullname
-        self.basetype = basetype
-        self.restricted = restricted
-        self.name = None
-        self.active = None 
-        self.types = copy.deepcopy(types) if types is not None else {}
-        self.values = {}
-        self.history = []
-
-    def iteritems(self):
-        return self.values.iteritems()
-    def itervalues(self):
-        return self.values.itervalues()
-    def iterkeys(self):
-        return self.values.iterkeys()
-
-    def __getitem__(self, k):
-        if k not in self.types:
-            raise KeyError("Unknown key '%s' in ConfigRegistry '%s'"%(k, self.fullname))
-        elif k not in self.values or not self.values[k]:
-            try:
-                history = self.values[k].history
-            except KeyError, AttributeError:
-                history = {}
-            value = self.types[k]()
-            value._rename(joinNamePath(name=self.fullname, index=k))
-            value.history = history
-            self.values[k] = value
-        
-        return self.values[k]
-
-    def __setitem__(self, k, value):
-        #determine type
-        dtype = self.types.get(k)
-        if dtype is None:
-            if self.restricted:            
-                raise ValueError("Cannot register '%s' in restricted ConfigRegistry %s"%\
-                        (str(k), self.fullname))
-            if isinstance(value, type) and issubclass(value, self.basetype):
-                dtype = value
-            elif isinstance(value, self.basetype):
-                dtype = type(value)
-            elif value is None:
-                dtype = self.basetype
-            else:
-                raise ValueError("Invalid type %s. All values in ConfigRegistry '%s' must be of type %s"%\
-                        (dtype, self.fullname, self.basetype))
-            self.types[k] = dtype
-        
-        #set value
-        try:
-            oldValue = self.values[k]
-            history = oldValue.history
-        except KeyError, AttributeError:
-            history = {}
-            oldValue = None
-        
-        name=joinNamePath(name=self.fullname, index=k)
-        if type(value) == dtype:
-            storage = value._storage
-        elif isinstance(value, dict):
-            storage = value
-        elif value == dtype:
-            value = dtype()
-            storage = value._storage
-        elif value is not None:
-            raise ValueError("Invalid type %s. ConfigRegistry entry '%s' must be of type %s"%\
-                    (type(val), name, dtype))
-       
-        if not value: 
-            value = ConfigNone()
-            value.history = history
-            self.values[k] = value
-        else:
-            if not oldValue:
-                oldValue = dtype()
-                oldValue._rename(name)
-                self.values[k]=  oldValue
-                oldValue.history = history
-            oldValue.override(storage)
-
-
-    def __delitem__(self, k):
-        self[k] = None
 
 class RegistryField(Field):
     """
@@ -821,25 +820,23 @@ class RegistryField(Field):
 
     When saving a registry, the entire set is saved, as well as the active selection
     """
-    def __init__(self, doc, basetype=Config, default=None, typemap={}, restricted=False, optional=False):
+    def __init__(self, doc, dtype=Config, default=None, typemap={}, restricted=False, optional=False):
         if len(typemap)==0 and restricted:
             raise ValueError("Cannot instantiate a restricted RegistryField with an empty typemap")
-        if not issubclass(basetype, Config):
-            raise ValueError(
-                "basetype='%s' is not allowed in RegistryField. basetype must be a subclass of Config."% \
-                (basetype))
+        if not issubclass(dtype, Config):
+            raise ValueError("dtype='%s' must be a must be a subclass of Config."%(basetype))
 
-        Field.typeWrapper[ConfigRegistry] = ConfigRegistry
-        Field.__init__(self, ConfigRegistry, doc, default=default, check=None, optional=optional)
+        Field.__init__(self, doc, Registry, default=default, check=None, optional=optional)
         self.typemap = typemap
         self.restricted=restricted
-        self.basetype = basetype if basetype is not None else Config
+        self.basetype = dtype if dtype is not None else Config
     
     def _getOrMake(self, instance):
         registry = instance._storage.get(self.name)
         if registry is None:
             name = joinNamePath(instance._name, self.name)
-            registry = ConfigRegistry(name, self.basetype, self.typemap, self.restricted)
+            registry = Registry(name, self.basetype, self.typemap, self.restricted)
+            registry.__doc__ = self.doc
             instance._storage[self.name] = registry
         return registry
 

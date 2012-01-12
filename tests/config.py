@@ -28,24 +28,24 @@ import os
 
 
 class Simple(Config):
-    i = Field(int, "integer test", optional=True)
-    f = Field(float, "float test", default=3.0)
-    b = Field(bool, "boolean test", default=False, optional=False)
-    t = Field(tuple, "tuple test", default=("A", 1), optional=False, 
+    i = Field("integer test", int, optional=True)
+    f = Field("float test", float, default=3.0)
+    b = Field("boolean test", bool, default=False, optional=False)
+    t = Field("tuple test", tuple, default=("A", 1), optional=False, 
             check=lambda x: len(x)==2 and type(x[0])==str and type(x[1])==int)
-    c = ChoiceField(str, "choice test", default="Hello",
+    c = ChoiceField("choice test", str, default="Hello",
             allowed={"Hello":"First choice", "World":"second choice"})
-    r = RangeField(float, "Range test", default = 3.0, optional=False,
+    r = RangeField("Range test", float, default = 3.0, optional=False,
             min=3.0, inclusiveMin=True)
-    l = ListField(int, "list test", default=[1,2,3], maxLength=5, itemCheck=lambda x: x is not None and x>0)
+    l = ListField("list test", int, default=[1,2,3], maxLength=5, itemCheck=lambda x: x is not None and x>0)
 
 
 class InnerConfig(Config):
-    f = Field(float, "Inner.f", default=0.0, check = lambda x: x >= 0, optional=False)
+    f = Field("Inner.f", float, default=0.0, check = lambda x: x >= 0, optional=False)
 
 
 class OuterConfig(InnerConfig, Config):
-    i = ConfigField(InnerConfig, "Outer.i", optional=False)   
+    i = ConfigField("Outer.i", InnerConfig, optional=False)   
     def __init__(self):
         Config.__init__(self)
         self.i.f = 5
@@ -56,9 +56,9 @@ class OuterConfig(InnerConfig, Config):
             raise ValueError("validation failed, outer.i.f must be greater than 5")
 
 class Complex(Config):
-    c = ConfigField(InnerConfig, "an inner config", optional=False)
+    c = ConfigField("an inner config", InnerConfig, optional=False)
     r = RegistryField("restricted registry", typemap={"AAA":Simple, "BBB":InnerConfig}, restricted=True, default="AAA", optional=False)    
-    p = RegistryField("open, plugin-style registry", optional=True)
+    p = RegistryField("open, plugin-style registry", InnerConfig, optional=True)
 
 class ConfigTest(unittest.TestCase):
     def setUp(self): 
@@ -115,7 +115,7 @@ class ConfigTest(unittest.TestCase):
 
     def testSave(self):
         self.comp.p["test"]=InnerConfig
-        self.comp.p["foo"]=Simple
+        self.comp.p["foo"]=OuterConfig
         self.comp.p = "test"
 
         self.comp.save("roundtrip.test")
@@ -126,7 +126,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
         self.assertEqual(self.comp.p.name, roundTrip.p.name)
-        self.assertEqual(self.comp.p["foo"].i, roundTrip.p["foo"].i)
+        self.assertEqual(self.comp.p.active.f, roundTrip.p.active.f)
 
 def  suite():
     utilsTests.init()
