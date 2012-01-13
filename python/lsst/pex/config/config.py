@@ -42,7 +42,7 @@ class _Bool(int):
     
     def __setattr__(self, attr, value):
         if attr != "history" and attr != "__doc__":
-            return setattr(None, attr, value)
+            return setattr(bool, attr, value)
         else:
             self.__dict__[attr] = value
 
