@@ -311,7 +311,12 @@ class Field(object):
         outfile.write("%s=%s\n"%(fullname, repr(value)))
     
     def toDict(self, instance):
-        return self.__get__(instance)
+        value = self.__get__(instance)
+        if isinstance(value, _None):            
+            return None
+        elif isinstance(value, _Bool):
+            return bool(value)
+    
 
     def __get__(self, instance, owner=None):
         if instance is None or not isinstance(instance, Config):
