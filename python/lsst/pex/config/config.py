@@ -124,53 +124,52 @@ class _List(list):
 class Registry(dict):
     def __init__(self, fullname, basetype, types, restricted, multi):
         dict.__init__(self)
-        self.fullname = fullname
-        self.basetype = basetype
-        self.restricted = restricted
+        self._fullname = fullname
+        self._basetype = basetype
+        self._restricted = restricted
         self._selection = None
-        self.multi=multi
-
+        self._multi=multi
         self.types = copy.deepcopy(types) if types is not None else {}
         self.history = []
 
     def _setSelection(self,value):
         if value is None:
             self._selection=None
-        elif self.multi:
+        elif self._multi:
             for v in value:
                 if not v in self.types: 
-                    raise KeyError("Unknown key %s in Registry %s"% (repr(v), self.fullname))
+                    raise KeyError("Unknown key %s in Registry %s"% (repr(v), self._fullname))
             self._selection=list(value)
         else:
             if value not in self.types:
-                raise KeyError("Unknown key %s in Registry %s"% (repr(value), self.fullname))
+                raise KeyError("Unknown key %s in Registry %s"% (repr(value), self._fullname))
             self._selection=value
         self.history.append((value, traceback.extract_stack()[:-1]))
     
     def _getNames(self):
-        if not self.multi:
-            raise AttributeError("Single-selection Registry %s has no attribute 'names'"%self.fullname)
+        if not self._multi:
+            raise AttributeError("Single-selection Registry %s has no attribute 'names'"%self._fullname)
         return self._selection
     def _setNames(self, value):
-        if not self.multi:
-            raise AttributeError("Single-selection Registry %s has no attribute 'names'"%self.fullname)
+        if not self._multi:
+            raise AttributeError("Single-selection Registry %s has no attribute 'names'"%self._fullname)
         self._setSelection(self, value)
     def _delNames(self):
-        if not self.multi:
-            raise AttributeError("Single-selection Registry %s has no attribute 'names'"%self.fullname)
+        if not self._multi:
+            raise AttributeError("Single-selection Registry %s has no attribute 'names'"%self._fullname)
         self._selection = None
     
     def _getName(self):
-        if self.multi:
-            raise AttributeError("Multi-selection Registry %s has no attribute 'name'"%self.fullname)
+        if self._multi:
+            raise AttributeError("Multi-selection Registry %s has no attribute 'name'"%self._fullname)
         return self._selection
     def _setName(self, value):
-        if self.multi:
-            raise AttributeError("Multi-selection Registry %s has no attribute 'name'"%self.fullname)
+        if self._multi:
+            raise AttributeError("Multi-selection Registry %s has no attribute 'name'"%self._fullname)
         self._setSelection(value)
     def _delName(self):
-        if self.multi:
-            raise AttributeError("Multi-selection Registry %s has no attribute 'name'"%self.fullname)
+        if self._multi:
+            raise AttributeError("Multi-selection Registry %s has no attribute 'name'"%self._fullname)
         self._selection=None
         
     names = property(_getNames, _setNames, _delNames)
@@ -180,7 +179,7 @@ class Registry(dict):
         if self._selection is None:
             return None
 
-        if self.multi:
+        if self._multi:
             return [self[c] for c in self._selection]
         else:
             return self[self._selection]
@@ -189,7 +188,7 @@ class Registry(dict):
     
     def __getitem__(self, k):
         if k not in self.types:
-            raise KeyError("Unknown key %s in Registry '%s'"%(repr(k), self.fullname))
+            raise KeyError("Unknown key %s in Registry '%s'"%(repr(k), self._fullname))
         
         value = dict.get(self, k, None)
         if not value:
@@ -198,7 +197,7 @@ class Registry(dict):
             except AttributeError:
                 history = None
             value = self.types[k]()
-            value._rename(_joinNamePath(name=self.fullname, index=k))
+            value._rename(_joinNamePath(name=self._fullname, index=k))
             if history:
                 value.history = history
             dict.__setitem__(self, k, value)
@@ -209,18 +208,18 @@ class Registry(dict):
         #determine type
         dtype = self.types.get(k)
         if dtype is None:
-            if self.restricted:            
+            if self._restricted:            
                 raise ValueError("Cannot register '%s' in restricted Registry %s"%\
-                        (str(k), self.fullname))
-            if isinstance(value, type) and issubclass(value, self.basetype):
+                        (str(k), self._fullname))
+            if isinstance(value, type) and issubclass(value, self._basetype):
                 dtype = value
-            elif isinstance(value, self.basetype):
+            elif isinstance(value, self._basetype):
                 dtype = type(value)
             elif value is None:
-                dtype = self.basetype
+                dtype = self._basetype
             else:
                 raise ValueError("Invalid type %s. All values in Registry '%s' must be of type %s"%\
-                        (dtype, self.fullname, self.basetype))
+                        (dtype, self._fullname, self._basetype))
             self.types[k] = dtype
         
         #set value
@@ -231,7 +230,7 @@ class Registry(dict):
             history = {}
             oldValue = None
         
-        name=_joinNamePath(name=self.fullname, index=k)
+        name=_joinNamePath(name=self._fullname, index=k)
         if type(value) == dtype:
             storage = value._storage
         elif isinstance(value, dict):
@@ -982,7 +981,7 @@ class RegistryField(Field):
 
     def save(self, outfile, instance):
         registry = self.__get__(instance)
-        fullname = registry.fullname
+        fullname = registry._fullname
         typesStr = "{"
         for k, t in registry.types.iteritems():
             outfile.write("import %s\n"%(t.__module__))
