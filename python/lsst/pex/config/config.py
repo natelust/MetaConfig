@@ -2,7 +2,7 @@ import traceback
 import copy
 import sys
 
-__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigField", "RegistryField"]
+__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigField", "Registry", "RegistryField"]
 
 def _joinNamePath(prefix=None, name=None, index=None):
     """
@@ -29,54 +29,6 @@ def _typeString(aType):
         return None
     else:
         return aType.__module__+"."+aType.__name__
-
-
-class List(list):
-    def __init__(self, x=[], history=None):
-        list.__init__(self, x)
-        self.history = [] if history is None else history
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-
-    def __setitem__(self, i, x):
-        list.__setitem__(self, i, x)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-    
-    def __delitem__(self, i):
-        list.__delitem__(self, i)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-
-    def __setslice__(self, i, x):
-        list.__setslice__(self, i, x)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-
-    def append(self, x):
-        self[len(self):len(self)] = [x]
-
-    def extend(self, x):
-        self[len(self):len(self)] = x
-
-    def insert(self, i, x):
-        self[i:i] = [x]
-
-    def pop(self, i=-1):
-        list.pop(self, i)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-
-    def remove(self, x):
-        list.remove(self, i)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-   
-    def sort(self, cmp=None, key=None, reverse=False):
-        list.sort(self, cmp, key, reverse)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-
-    def __iadd__(self, y):
-        list.__iadd__(self, y)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
-    
-    def __imul__(self, y):
-        list.__imul__(self, y)
-        self.history.append((list(self), traceback.extract_stack()[:-1]))
 
 class Registry(dict):
     def __init__(self, fullname, typemap, multi, history=None):
@@ -211,6 +163,8 @@ class Field(object):
     class Example(Config):
         myInt = Field(int, "an integer field!", default=0)
     """
+    supportedTypes=[str, bool, float, int]
+
     def __init__(self, doc, dtype, default=None, check=None, optional=False):
         """Initialize a Field.
         
@@ -223,6 +177,12 @@ class Field(object):
                      method; this will be ignored if set to None.
         optional --- When False, Config validate() will fail if value is None
         """
+        if dtype not in self.supportedTypes:
+            raise ValueError("Unsuported Field dtype '%s'"%dtype.__name__)
+        self._setup(doc, dtype, default, check, optional)
+
+
+    def _setup(self, doc, dtype, default, check, optional):
         self.dtype = dtype
         self.doc = doc
         self.__doc__ = doc
@@ -254,7 +214,7 @@ class Field(object):
         if not self.optional and value is None:
             msg = "Required value cannot be None"
             raise FieldValidationError(fieldType, fullname, msg)
-        if value and not isinstance(value, self.dtype):
+        if value is not None and not isinstance(value, self.dtype):
             msg = " Expected type '%s', got '%s'"%(self.dtype, type(value))
             raise FieldValidationError(fieldType, fullname, msg)
         if self.check is not None and not self.check(value):
@@ -377,43 +337,6 @@ class Config(object):
         return local['root']
    
  
-    def override(self, dict_):
-        norm = self._normalizeDict(dict_)
-        for k, kv in norm.iteritems():
-            target, name, index = self._getTarget(k)
-            if index:
-                getattr(target, name)[index] = kv
-            else:
-                setattr(target, name, kv)
-
-    @staticmethod
-    def _normalizeDict(dict_): 
-        def hasConflict(target, name):
-            for key in target:
-                key = repr(key)
-                if name.startswith(key) or key.startswith(name):
-                    return True        
-            return False
-
-        norm = {}
-        for k, kv in dict_.iteritems():
-            if isinstance(kv, dict):
-                sub = _normalizeDict(kv)
-            else:
-                sub = None
-            
-            if sub:
-                for i, iv in sub.iteritems():
-                    fullname = k + "["+repr(i) + "]"
-                    if hasConflict(norm, fullname):
-                        raise ValueError("ambiguous dict: multiple values for %s"%fullname)
-                    norm[fullname]=iv
-            else:
-                if hasConflict(norm, repr(k)):
-                    raise ValueError("ambiguous dict: multiple values for %s"%k)
-                norm[k]=kv
-        return norm
-
     def save(self, filename):
         """
         Generates a python script, which, when loaded, reproduces this Config
@@ -461,7 +384,7 @@ class Config(object):
         Complex single-field validation can be defined by deriving new Field 
         types. As syntactic sugar, some derived Field types are defined in 
         this module which handle recursing into sub-configs 
-        (ConfigField, RegistryField, ConfigListField)
+        (ConfigField, RegistryField)
 
         Inter-field relationships should only be checked in derived Config 
         classes after calling this method, and base validation is complete
@@ -473,43 +396,6 @@ class Config(object):
     Read-only history property
     """
     history = property(lambda x: x._history)
-
-    def _getTarget(self, fieldname):
-        """
-        Internal use only.
-
-        Traverse Config hierarchy using a compound field name 
-        (e.g. fieldname="foo.bar[5].zed['foo']")
-        """
-        dot = fieldname.rfind(".")
-
-        target = self
-        if dot > 0: 
-            try:
-                path = fieldname[:dot]
-                target = eval("self."+fieldname[:dot])
-            except SyntaxError:
-                ValueError("Malformed field name '%s'"%fieldname)
-            except AttributeError:
-                ValueError("Could not find target '%s' in Config %s"%\
-                        (fieldname, self._name))
-        openBrace = fieldname.find("[", max(dot, 0))
-        closeBrace = fieldname.find("]", openBrace)
-        if (openBrace >0 and closeBrace < 0) or (openBrace < 0 and closeBrace > 0)\
-                or (closeBrace > 0 and closeBrace != len(fieldname) -1) \
-                or (closeBrace == openBrace + 1):
-            raise ValueError("Malformed field name '%s'"%fieldname)
-        elif openBrace > 0:
-            name = fieldname[dot+1:openBrace]
-            index = eval(fieldname[openBrace+1:closeBrace])
-        else:
-            name = fieldname[dot+1:]
-            index = None
-
-        if not name in target._fields:
-            raise ValueError("Config does not include field '%s'"%fieldname)
-
-        return target, name, index
 
     def __setattr__(self, attr, value):
         if attr in self._fields:
@@ -610,7 +496,7 @@ class ChoiceField(Field):
             msg = "Value ('%s') is not allowed"%str(value)
             raise FieldValidationError(fieldType, fullname, msg) 
 
-class ListField(Field):
+class ListField(Field):    
     """
     Defines a field which is a container of values of type dtype
 
@@ -624,7 +510,7 @@ class ListField(Field):
     """
     def __init__(self, doc, dtype, default=None, optional=False,
             listCheck=None, itemCheck=None, length=None, minLength=None, maxLength=None):
-        Field.__init__(self, doc=doc, dtype=List, default=default, optional=optional, check=None)
+        Field._setup(self, doc=doc, dtype=tuple, default=default, optional=optional, check=None)
         self.listCheck = listCheck
         self.itemCheck = itemCheck
         self.itemType = dtype
@@ -651,18 +537,19 @@ class ListField(Field):
             elif self.listCheck is not None and not self.listCheck(value):
                 msg = "%s is not a valid value"%str(value)
                 raise FieldValidationError(fieldType, fullname, msg)
-            elif self.itemCheck is not None:
-                for i, v in enumerate(value):
-                    try:
-                        v = self.itemType(v)
-                        list.__setitem__(value, i, v)
-                    except TypeError:
-                        msg="Invalid value %s at position %d"%(str(v), i)
-                        raise FieldValidationError(fieldType, fullname, msg)
+            
+            for i, v in enumerate(value):
+                if not isinstance(v, self.itemType):
+                    msg="Invalid value %s at position %d"%(str(v), i)
+                    raise FieldValidationError(fieldType, fullname, msg)
                         
-                    if not self.itemCheck(value[i]):
-                        msg="Invalid value %s at position %d"%(str(v), i)
-                        raise FieldValidationError(fieldType, fullname, msg)
+                if not self.itemCheck(value[i]):
+                    msg="Invalid value %s at position %d"%(str(v), i)
+                    raise FieldValidationError(fieldType, fullname, msg)
+
+    def __set__(self, instance, value):
+        value = [self.itemType(v) for v in value]
+        Field.__set__(self, instance, value)
 
 class ConfigField(Field):
     """
@@ -680,12 +567,13 @@ class ConfigField(Field):
 
     This means that the argument default can be dtype, rather than an instance of dtype
     """
+
     def __init__(self, doc, dtype, default=None, check=None):        
         if not issubclass(dtype, Config):
             raise TypeError("configType='%s' is not a subclass of Config)"%dtype)
         if default is None:
             default = dtype
-        Field.__init__(self, doc=doc, dtype=dtype, check=check, default=default, optional=False)
+        Field._setup(self, doc=doc, dtype=dtype, check=check, default=default, optional=False)
   
     def __get__(self, instance, owner=None):
         if instance is None or not isinstance(instance, Config):
@@ -713,30 +601,21 @@ class ConfigField(Field):
             raise ValueError("Cannot set ConfigField '%s' to '%s'"%(name, str(value)))
 
     def rename(self, instance):
-        value = instance._storage[self.name]
-        if value is not None:
-            value._rename(_joinNamePath(instance._name, self.name))
+        value = self.__get__(instance)
+        value._rename(_joinNamePath(instance._name, self.name))
         
     def save(self, outfile, instance):
         fullname = _joinNamePath(instance._name, self.name)
         value = self.__get__(instance)
-        if value is not None:
-            value._save(outfile)
-        else:
-            outfile.write("%s=%s\n"%(fullname, str(None)))
+        value._save(outfile)
 
     def toDict(self, instance):
         value = self.__get__(instance)
-        if value is not None:
-            return value.toDict()
-        else:
-            return None
+        return value.toDict()
 
     def validate(self, instance):
-        Field.validate(self, instance)
         value = self.__get__(instance)
-        if value is not None:
-            value.validate()
+        value.validate()
 
 class RegistryField(Field):
     """
@@ -791,7 +670,7 @@ class RegistryField(Field):
     When saving a registry, the entire set is saved, as well as the active selection
     """
     def __init__(self, doc, typemap, default=None, multi=False, optional=False):
-        Field.__init__(self, doc, Registry, default=default, check=None, optional=optional)
+        Field._setup(self, doc, Registry, default=default, check=None, optional=optional)
         self.typemap = typemap
         self.multi=multi
     

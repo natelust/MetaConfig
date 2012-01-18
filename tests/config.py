@@ -24,6 +24,7 @@
 import lsst.utils.tests as utilsTests
 import unittest
 from lsst.pex.config import *
+import lsst.pex.config.convert
 import os
 
 
@@ -31,8 +32,6 @@ class Simple(Config):
     i = Field("integer test", int, optional=True)
     f = Field("float test", float, default=3.0)
     b = Field("boolean test", bool, default=False, optional=False)
-    t = Field("tuple test", tuple, default=("A", 1), optional=False, 
-            check=lambda x: len(x)==2 and type(x[0])==str and type(x[1])==int)
     c = ChoiceField("choice test", str, default="Hello",
             allowed={"Hello":"First choice", "World":"second choice"})
     r = RangeField("Range test", float, default = 3.0, optional=False,
@@ -80,7 +79,6 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.simple.i, None)
         self.assertEqual(self.simple.f, 3.0)
         self.assertEqual(self.simple.b, False)
-        self.assertEqual(self.simple.t, ("A", 1))
         self.assertEqual(self.simple.c, "Hello")
         self.assertEqual(list(self.simple.l), [1,2,3])
 
@@ -128,6 +126,23 @@ class ConfigTest(unittest.TestCase):
         self.comp.r["AAA"].f = 5.0
         self.assertEqual(self.comp.p["AAA"].f, 3.0)
 
+    def testConvert(self):
+        pol = lsst.pex.config.convert.makePolicy(self.simple)
+        self.assertEqual(pol.exists("i"), False)
+        self.assertEqual(pol.get("f"), self.simple.f)
+        self.assertEqual(pol.get("b"), self.simple.b)
+        self.assertEqual(pol.get("c"), self.simple.c)
+        self.assertEqual(tuple(pol.getArray("l")), self.simple.l)
+        
+        ps = lsst.pex.config.convert.makePropertySet(self.simple)
+        self.assertEqual(ps.exists("i"), False)
+        self.assertEqual(ps.get("f"), self.simple.f)
+        self.assertEqual(ps.get("b"), self.simple.b)
+        self.assertEqual(ps.get("c"), self.simple.c)
+        self.assertEqual(ps.get("l"), self.simple.l)
+
+        pol = lsst.pex.config.convert.makePolicy(self.comp)
+
 def  suite():
     utilsTests.init()
     suites = []
@@ -135,7 +150,7 @@ def  suite():
     suites += unittest.makeSuite(utilsTests.MemoryTestCase)
     return unittest.TestSuite(suites)
 
-def run(sexit=False):
+def run(exit=False):
     utilsTests.run(suite(), exit)
 
 if __name__=='__main__':
