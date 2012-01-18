@@ -108,7 +108,7 @@ class Registry(dict):
     def _setNames(self, value):
         if not self._multi:
             raise AttributeError("Single-selection Registry %s has no attribute 'names'"%self._fullname)
-        self._setSelection(self, value)
+        self._setSelection(value)
     def _delNames(self):
         if not self._multi:
             raise AttributeError("Single-selection Registry %s has no attribute 'names'"%self._fullname)
@@ -191,6 +191,12 @@ class ConfigMeta(type):
             if isinstance(v, Field):
                 v.name = k
                 self._fields[k] = v
+
+    def __setattr__(self, name, value):
+        if isinstance(value, Field):
+            value.name = name
+            self._fields[name] = value
+        type.__setattr__(self, name, value)
 
 class FieldValidationError(ValueError):
     def __init__(self, fieldtype, fullname, msg):
