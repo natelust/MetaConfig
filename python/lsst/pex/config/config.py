@@ -289,32 +289,25 @@ class Config(object):
     def __contains__(self, name):
         return self._storage.__contains__(name)
 
-    def __init__(self, storage=None):
+    def __init__(self, **kw):
         """Initialize the Config.
 
-        Pure-Python control objects will just use the default constructor, which
-        sets up a simple Python dict as the storage for field values.
-
-        Any other object with __getitem__, __setitem__, and __contains__ may be
-        used as storage.  This is used to support C++ control objects,
-        which will implement a storage interface to C++ data members in SWIG.
+        Keyword arguments will be used to set field values.
         """
         self._name="root"
 
         self._storage = {}
         self._history = {}
-        #load up defaults
+        # load up defaults
         for field in self._fields.itervalues():
             field.__set__(self, field.default)
 
-        #apply first batch of overrides from the provided storage
-        if storage is not None:
-            for name, value in storage:
-                try:
-                    field = self._fields[name]
-                    field.__set__(self, value)
-                except KeyError:
-                    pass
+        # use keyword args to set fields
+        for name, value in kw.iteritems():            
+            try:
+                setattr(self, name, value)
+            except KeyError:
+                pass
 
     @staticmethod
     def load(filename):
@@ -399,10 +392,16 @@ class Config(object):
 
     def __setattr__(self, attr, value):
         if attr in self._fields:
+            # This allows Field descriptors to work.
             self._fields[attr].__set__(self, value)
+        elif hasattr(getattr(self.__class__, attr, None), '__set__'):
+            # This allows properties and other non-Field descriptors to work.
+            return object.__setattr__(self, attr, value)
         elif attr in self.__dict__ or attr == "_name" or attr == "_history" or attr=="_storage":
+            # This allows specific private attributes to work.
             self.__dict__[attr] = value
         else:
+            # We throw everything else.
             raise AttributeError("%s has no attribute %s"%(type(self).__name__, attr))
 
     def __eq__(self, other):
