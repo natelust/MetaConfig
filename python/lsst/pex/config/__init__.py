@@ -21,4 +21,5 @@
 #
 from .config import *
 from .registry import *
+from .wrap import *
 from .version import *
