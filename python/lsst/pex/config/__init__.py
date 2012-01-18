@@ -19,5 +19,6 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-from config import *
+from .config import *
+from .registry import *
 from .version import *

@@ -7,7 +7,7 @@ def makePropertySet(config):
         for k,v in dict_.iteritems():
             if isinstance(v, dict):
                 p.set(k, _helper(v))
-            else:
+            elif v is not None:
                 p.set(k, v)
         return p
     if config:
@@ -20,9 +20,9 @@ def makePolicy(config):
         p = lsst.pex.policy.Policy()
         for k,v in dict_.iteritems():
             if isinstance(v, dict):
-                p.put(k, _helper(v))
-            else:
-                p.put(k, v)
+                p.set(k, _helper(v))
+            elif v is not None:
+                p.set(k, v)
         return p
     if config:
         return _helper(config.toDict())
