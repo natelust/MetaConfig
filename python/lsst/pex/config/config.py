@@ -159,6 +159,7 @@ class Field(object):
     """A field in a a Config.
 
     Instances of Field should be class attributes of Config subclasses:
+    Field only supports basic data types (int, float, bool, str)
 
     class Example(Config):
         myInt = Field(int, "an integer field!", default=0)
@@ -289,7 +290,7 @@ class Config(object):
     def __contains__(self, name):
         return self._storage.__contains__(name)
 
-    def __init__(self, storage=None):
+    def __init__(self, **kwargs):
         """Initialize the Config.
 
         Pure-Python control objects will just use the default constructor, which
@@ -308,13 +309,12 @@ class Config(object):
             field.__set__(self, field.default)
 
         #apply first batch of overrides from the provided storage
-        if storage is not None:
-            for name, value in storage:
-                try:
-                    field = self._fields[name]
-                    field.__set__(self, value)
-                except KeyError:
-                    pass
+        for name, value in kwargs.itervalues():
+            try:
+                field = self._fields[name]
+                field.__set__(self, value)
+            except KeyError:
+                pass
 
     @staticmethod
     def load(filename):
@@ -406,9 +406,9 @@ class Config(object):
             raise AttributeError("%s has no attribute %s"%(type(self).__name__, attr))
 
     def __eq__(self, other):
-        if isinstance(other, type(self)):
+        if type(other) == type(self):
             for name in self._fields:
-                if self._storage[name] != other._storage[name]:
+                if getattr(self, name) != getattr(other, name):
                     return False
             return True
         return False
@@ -592,11 +592,11 @@ class ConfigField(Field):
         name=_joinNamePath(prefix=instance._name, name=self.name)
         oldValue = self.__get__(instance)
         if type(value) == self.dtype:
-            for field in self.dtype._fields.itervalues():
-                field.__set__(oldValue, field.__get__(value))
+            for field in self.dtype._fields:
+                setattr(oldValue, field, getattr(value, field))
         elif value == self.dtype:
             for field in self.dtype._fields.itervalues():
-                field.__set__(oldValue, field.default)
+                setattr(oldValue, field.name, field.default)
         else:
             raise ValueError("Cannot set ConfigField '%s' to '%s'"%(name, str(value)))
 
@@ -619,16 +619,21 @@ class ConfigField(Field):
 
 class RegistryField(Field):
     """
-    Defines a set of name, config pairs, and an "active" choice.
-    To set the active choice, assign the field to the name of the choice:
+    Registry Fields allow the config to choose from a set of possible Config types.
+    The set of allowable types is given by the typemap argument to the constructor
+
+    The typemap object must implement __getitem__, and __iter__ (e.g. a dict)
+
+    While the typemap is shared by all instances of the field, each instance of
+    the field has its own instance of a particular sub-config type
 
     For example:
 
       class AaaConfig(Config):
         somefield = Field(int, "...")
-
+      REGISTRY = {"A", AaaConfig}
       class MyConfig(Config):
-        registry = RegistryField("doc for registry", typemap={"A":AaaConfig})
+        registry = RegistryField("doc for registry", REGISTRY)
       
       instance = MyConfig()
       instance.registry['AAA'].somefield = 5
@@ -640,32 +645,13 @@ class RegistryField(Field):
     Validation of this field is performed only the "active" selection.
     If active is None and the field is not optional, validation will fail. 
     
-    Registries can be restricted or unrestriced, and allow single selections, or
-    multiple selections.
-
+    Registries can allow single selections or multiple selections.
     Single selection registries set that selection through property name, and 
     multi-selection registries use the property names. 
 
-    Restricted registries define all allowed mapping much the same a ChoiceField 
-    does. The user provides these mappings in the argument typemap in the Field
-    constructor.
-
-    Unrestricted registries allow new entries to be added to the set at runtime.
-    This enables plugin style configurations, for which the full set of valid
-    configs is not known until runtime.
-
-    Following the previous example:
-      class BbbConfig(Config):
-        anotherField = Field(float, "...")
-      instance.registry["BBB"]=BbbConfig
-    This adds another entry to the unrestricted registry, which is an instance of BbbConfig
-    
     Registries also allow multiple values of the same type:
       instance.registry["CCC"]=AaaConfig
       instance.registry["BBB"]=AaaConfig
-
-    However, once a name has been associated with a particular type, it cannot be assigned
-    to a different type.
 
     When saving a registry, the entire set is saved, as well as the active selection
     """
