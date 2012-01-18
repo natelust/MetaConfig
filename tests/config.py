@@ -59,7 +59,10 @@ GLOBAL_REGISTRY = {"AAA":Simple, "BBB":InnerConfig}
 
 class Complex(Config):
     c = ConfigField("an inner config", InnerConfig)
-    r = RegistryField("an registry field", typemap=GLOBAL_REGISTRY, default="AAA", optional=False)    
+    r = RegistryField("an registry field", typemap=GLOBAL_REGISTRY, default="AAA", optional=False)
+    p = RegistryField("another registry", typemap=GLOBAL_REGISTRY, default="BBB", optional=True)
+
+
 class ConfigTest(unittest.TestCase):
     def setUp(self): 
         self.simple = Simple()
@@ -120,6 +123,10 @@ class ConfigTest(unittest.TestCase):
 
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
+
+    def testDuplicateRegistryNames(self):
+        self.comp.r["AAA"].f = 5.0
+        self.assertEqual(self.comp.p["AAA"].f, 3.0)
 
 def  suite():
     utilsTests.init()
