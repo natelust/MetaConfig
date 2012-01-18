@@ -31,53 +31,10 @@ def _typeString(aType):
         return aType.__module__+"."+aType.__name__
 
 
-class _Bool(int):
-    def __init__(self, value=None):
-        bool.__init__(self, value)
-
-    def __repr__(self):
-        return bool.__repr__(bool(self))
-    def __str__(self):
-        return bool.__str__(bool(self))
-    
-    def __setattr__(self, attr, value):
-        if attr != "history" and attr != "__doc__":
-            return setattr(bool, attr, value)
-        else:
-            self.__dict__[attr] = value
-
-class _None(object):
-    def __repr__(self):
-        return repr(None)
-
-    def __str__(self):
-        return str(None)
-
-    def __nonzero__(self):
-        return False
-
-    def __len__(self):
-        return 0
-
-    def __call__(self):
-        return None
-
-    def __eq__(self, other):
-        return not other
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __setattr__(self, attr, value):
-        if attr != "history" and attr != "__doc__":
-            return setattr(None, attr, value)
-        else:
-            self.__dict__[attr] = value
-
-class _List(list):
-    def __init__(self, x=[]):
+class List(list):
+    def __init__(self, x=[], history=None):
         list.__init__(self, x)
-        self.history = []
+        self.history = [] if history is None else history
         self.history.append((list(self), traceback.extract_stack()[:-1]))
 
     def __setitem__(self, i, x):
@@ -122,15 +79,13 @@ class _List(list):
         self.history.append((list(self), traceback.extract_stack()[:-1]))
 
 class Registry(dict):
-    def __init__(self, fullname, basetype, types, restricted, multi):
+    def __init__(self, fullname, typemap, multi, history=None):
         dict.__init__(self)
         self._fullname = fullname
-        self._basetype = basetype
-        self._restricted = restricted
         self._selection = None
         self._multi=multi
-        self.types = copy.deepcopy(types) if types is not None else {}
-        self.history = []
+        self.types = typemap
+        self.history = [] if history is None else history
 
     def _setSelection(self,value):
         if value is None:
@@ -187,75 +142,35 @@ class Registry(dict):
     active = property(_getActive)
     
     def __getitem__(self, k):
-        if k not in self.types:
+        try:
+            dtype = self.types[k]
+        except:
             raise KeyError("Unknown key %s in Registry '%s'"%(repr(k), self._fullname))
         
-        value = dict.get(self, k, None)
-        if not value:
-            try:
-                history = value.history
-            except AttributeError:
-                history = None
-            value = self.types[k]()
+        try:
+            value = dict.__getitem__(self, k)
+        except KeyError:
+            value = dtype()
             value._rename(_joinNamePath(name=self._fullname, index=k))
-            if history:
-                value.history = history
             dict.__setitem__(self, k, value)
-        
         return value
 
     def __setitem__(self, k, value):
+        if k in self.__dict__:
+            raise ValueError("Cannot register '%s'. Reserved name")
+        
         #determine type
-        dtype = self.types.get(k)
-        if dtype is None:
-            if self._restricted:            
-                raise ValueError("Cannot register '%s' in restricted Registry %s"%\
-                        (str(k), self._fullname))
-            if isinstance(value, type) and issubclass(value, self._basetype):
-                dtype = value
-            elif isinstance(value, self._basetype):
-                dtype = type(value)
-            elif value is None:
-                dtype = self._basetype
-            else:
-                raise ValueError("Invalid type %s. All values in Registry '%s' must be of type %s"%\
-                        (dtype, self._fullname, self._basetype))
-            self.types[k] = dtype
-        
-        #set value
-        try:
-            oldValue = dict.__getitem__(self, k)
-            history = oldValue.history
-        except KeyError, AttributeError:
-            history = {}
-            oldValue = None
-        
         name=_joinNamePath(name=self._fullname, index=k)
+        oldValue = self[k]
+        dtype = self.types[k]
         if type(value) == dtype:
-            storage = value._storage
-        elif isinstance(value, dict):
-            storage = value
+            for field in dtype._fields.itervalues():
+                field.__set__(oldValue, field.__get__(value))
         elif value == dtype:
-            value = dtype()
-            storage = value._storage
-        elif value is not None:
-            raise ValueError("Invalid type %s. Registry entry '%s' must be of type %s"%\
-                    (type(value), name, dtype))
-       
-        if not value: 
-            value = _None()
-            value.history = history
-            dict.__setitem__(self, k, value)
+            for field in dtype._fields.itervalues():
+                field.__set__(oldValue, field.default)
         else:
-            if not oldValue:
-                oldValue = dtype()
-                oldValue._rename(name)
-                dict.__setitem__(self, k, oldValue)
-                oldValue.history = history
-            oldValue.override(storage)
-
-    def __delitem__(self, k):
-        self[k]=None    
+            raise ValueError("Cannot set Registry item '%s' to '%s'"%(name, str(value)))
 
 class ConfigMeta(type):
     """A metaclass for Config
@@ -290,15 +205,6 @@ class Field(object):
     class Example(Config):
         myInt = Field(int, "an integer field!", default=0)
     """
-    typeWrapper = {
-        bool:_Bool, 
-        type(None):_None, 
-        _None:_None, 
-        list:_List, 
-        _List:_List,
-        Registry:Registry
-    }
-
     def __init__(self, doc, dtype, default=None, check=None, optional=False):
         """Initialize a Field.
         
@@ -312,9 +218,6 @@ class Field(object):
         optional --- When False, Config validate() will fail if value is None
         """
         self.dtype = dtype
-        if not self.dtype in self.typeWrapper:
-            self.typeWrapper[self.dtype] = type(dtype.__name__, (dtype,), {})
-        
         self.doc = doc
         self.__doc__ = doc
         self.default = default
@@ -363,12 +266,7 @@ class Field(object):
         outfile.write("%s=%s\n"%(fullname, repr(value)))
     
     def toDict(self, instance):
-        value = self.__get__(instance)
-        if isinstance(value, _None):            
-            return None
-        elif isinstance(value, _Bool):
-            return bool(value)
-    
+        return self.__get__(instance)
 
     def __get__(self, instance, owner=None):
         if instance is None or not isinstance(instance, Config):
@@ -376,20 +274,19 @@ class Field(object):
         else:
             return instance._storage[self.name]
 
+
     def __set__(self, instance, value):
         try:
-            history = self.__get__(instance).history
-        except KeyError, AttributeError:
+            history = instance._history[self.name]
+        except KeyError:
             history = []
+            instance._history[self.name] = history
+        if value is not None:
+            value = self.dtype(value)
+        instance._storage[self.name]=value
         traceStack = traceback.extract_stack()[:-1]
         history.append((value, traceStack))
-        if value is not None:
-            wrap = self.typeWrapper[self.dtype](value)
-        else:
-            wrap = _None()
-        wrap.__doc__ = self.doc
-        wrap.history = history
-        instance._storage[self.name]=wrap
+
 
     def __delete__(self, instance):
         self.__set__(instance, None)
@@ -439,13 +336,19 @@ class Config(object):
         self._name="root"
 
         self._storage = {}
+        self._history = {}
         #load up defaults
         for field in self._fields.itervalues():
             field.__set__(self, field.default)
 
         #apply first batch of overrides from the provided storage
         if storage is not None:
-            self.override(storage)
+            for name, value in storage:
+                try:
+                    field = self._fields[name]
+                    field.__set__(self, value)
+                except KeyError:
+                    pass
 
     @staticmethod
     def load(filename):
@@ -472,9 +375,6 @@ class Config(object):
         norm = self._normalizeDict(dict_)
         for k, kv in norm.iteritems():
             target, name, index = self._getTarget(k)
-            if kv is None or isinstance(kv, _None):
-                kv = None
-
             if index:
                 getattr(target, name)[index] = kv
             else:
@@ -562,33 +462,11 @@ class Config(object):
         """
         for field in self._fields.itervalues():
             field.validate(self)
-    
-
-
-    def _setHistory(self, history):
-        """
-        Placeholder for adding a checkpoint in a field's history
-        """
-        for name, field in self._fields.iteritems():
-            try:
-                fieldHistory = history[name]
-                field.setHistory(self, fieldHistory)
-            except KeyError:
-                pass
-
-    def _getHistory(self):
-        """
-        Placeholder for retrieving a field's history.
-
-        Field histories are ordered lists of value, traceback pairs
-        with oldest information first.
-        """
-        history = {}
-        for name, value in self._storage.iteritems():
-            history[name]=value.history
-        return history
-
-    history = property(_getHistory, _setHistory)
+   
+    """
+    Read-only history property
+    """
+    history = property(lambda x: x._history)
 
     def _getTarget(self, fieldname):
         """
@@ -630,7 +508,7 @@ class Config(object):
     def __setattr__(self, attr, value):
         if attr in self._fields:
             self._fields[attr].__set__(self, value)
-        elif attr == "_name" or attr == "history" or attr == "_storage":
+        elif attr in self.__dict__ or attr == "_name" or attr == "_history" or attr=="_storage":
             self.__dict__[attr] = value
         else:
             raise AttributeError("%s has no attribute %s"%(type(self).__name__, attr))
@@ -740,7 +618,7 @@ class ListField(Field):
     """
     def __init__(self, doc, dtype, default=None, optional=False,
             listCheck=None, itemCheck=None, length=None, minLength=None, maxLength=None):
-        Field.__init__(self, doc=doc, dtype=_List, default=default, optional=optional, check=None)
+        Field.__init__(self, doc=doc, dtype=List, default=default, optional=optional, check=None)
         self.listCheck = listCheck
         self.itemCheck = itemCheck
         self.itemType = dtype
@@ -796,60 +674,54 @@ class ConfigField(Field):
 
     This means that the argument default can be dtype, rather than an instance of dtype
     """
-    def __init__(self, doc, dtype, default=None, check=None, optional=False):        
+    def __init__(self, doc, dtype, default=None, check=None):        
         if not issubclass(dtype, Config):
             raise TypeError("configType='%s' is not a subclass of Config)"%dtype)
-        if default is None and not optional:
+        if default is None:
             default = dtype
-        self.typeWrapper[dtype] = dtype
-        Field.__init__(self, doc=doc, dtype=dtype, check=check, default=default, optional=optional)
-        
-    def __set__(self, instance, value):
-        try:
-            oldValue = self.__get__(instance)
-            history = oldValue.history
-        except KeyError, AttributeError:
-            oldValue = None
-            history = {}
-        name=_joinNamePath(prefix=instance._name, name=self.name)
-        if type(value) == self.dtype:
-            storage = value._storage
-        elif isinstance(value, dict):
-            storage = value
-        elif value == self.dtype:
-            value = self.dtype()
-            storage = value._storage
-        elif value:
-            raise ValueError("Cannot set ConfigField '%s' to '%s'"%(name, str(value)))
-       
-        if not value: 
-            value = _None()
-            value.history = history
-            instance._storage[self.name] = value
+        Field.__init__(self, doc=doc, dtype=dtype, check=check, default=default, optional=False)
+  
+    def __get__(self, instance, owner=None):
+        if instance is None or not isinstance(instance, Config):
+            return self
         else:
-            if not oldValue:
-                oldValue = self.dtype()
-                oldValue._rename(name)
-                oldValue.history = history
-                instance._storage[self.name] = oldValue
-            oldValue.override(storage)
+            value = instance._storage.get(self.name, None)
+            if value is None:
+                value = self.default()
+                value._rename(_joinNamePath(instance._name, self.name))
+                instance._storage[self.name]=value
+                instance._history[self.name]={}
+            return value
+
+
+    def __set__(self, instance, value):
+        name=_joinNamePath(prefix=instance._name, name=self.name)
+        oldValue = self.__get__(instance)
+        if type(value) == self.dtype:
+            for field in self.dtype._fields.itervalues():
+                field.__set__(oldValue, field.__get__(value))
+        elif value == self.dtype:
+            for field in self.dtype._fields.itervalues():
+                field.__set__(oldValue, field.default)
+        else:
+            raise ValueError("Cannot set ConfigField '%s' to '%s'"%(name, str(value)))
 
     def rename(self, instance):
-        value = self.__get__(instance)
-        if value:
+        value = instance._storage[self.name]
+        if value is not None:
             value._rename(_joinNamePath(instance._name, self.name))
         
     def save(self, outfile, instance):
         fullname = _joinNamePath(instance._name, self.name)
         value = self.__get__(instance)
-        if value:
+        if value is not None:
             value._save(outfile)
         else:
             outfile.write("%s=%s\n"%(fullname, str(None)))
 
     def toDict(self, instance):
         value = self.__get__(instance)
-        if value:
+        if value is not None:
             return value.toDict()
         else:
             return None
@@ -857,7 +729,7 @@ class ConfigField(Field):
     def validate(self, instance):
         Field.validate(self, instance)
         value = self.__get__(instance)
-        if value:
+        if value is not None:
             value.validate()
 
 class RegistryField(Field):
@@ -912,30 +784,25 @@ class RegistryField(Field):
 
     When saving a registry, the entire set is saved, as well as the active selection
     """
-    def __init__(self, doc, dtype=Config, default=None, typemap={}, restricted=False, multi=False, optional=False):
-        if len(typemap)==0 and restricted:
-            raise ValueError("Cannot instantiate a restricted RegistryField with an empty typemap")
-        if not issubclass(dtype, Config):
-            raise ValueError("dtype='%s' must be a must be a subclass of Config."%(basetype))
-
+    def __init__(self, doc, typemap, default=None, multi=False, optional=False):
         Field.__init__(self, doc, Registry, default=default, check=None, optional=optional)
         self.typemap = typemap
-        self.restricted=restricted
         self.multi=multi
-        self.basetype = dtype if dtype is not None else Config
     
     def _getOrMake(self, instance):
         registry = instance._storage.get(self.name)
         if registry is None:
             name = _joinNamePath(instance._name, self.name)
-            registry = Registry(name, self.basetype, self.typemap, self.restricted, self.multi)
+            history = []
+            instance._history[self.name] = history
+            registry = Registry(name, self.typemap, self.multi, history)
             registry.__doc__ = self.doc
             instance._storage[self.name] = registry
         return registry
 
 
     def __get__(self, instance, owner=None):
-        if instance is None:
+        if instance is None or not isinstance(instance, Config):
             return self
         else:
             return self._getOrMake(instance)
@@ -982,12 +849,6 @@ class RegistryField(Field):
     def save(self, outfile, instance):
         registry = self.__get__(instance)
         fullname = registry._fullname
-        typesStr = "{"
-        for k, t in registry.types.iteritems():
-            outfile.write("import %s\n"%(t.__module__))
-            typesStr += "'%s':%s, "%(k, _typeString(t))
-        typesStr += "}"
-        outfile.write("%s.types=%s\n"%(fullname, typesStr))
         for v in registry.itervalues():
             v._save(outfile)
         if self.multi:

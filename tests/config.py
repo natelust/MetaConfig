@@ -45,7 +45,7 @@ class InnerConfig(Config):
 
 
 class OuterConfig(InnerConfig, Config):
-    i = ConfigField("Outer.i", InnerConfig, optional=False)   
+    i = ConfigField("Outer.i", InnerConfig)   
     def __init__(self):
         Config.__init__(self)
         self.i.f = 5
@@ -55,11 +55,11 @@ class OuterConfig(InnerConfig, Config):
         if self.i.f < 5:
             raise ValueError("validation failed, outer.i.f must be greater than 5")
 
-class Complex(Config):
-    c = ConfigField("an inner config", InnerConfig, optional=False)
-    r = RegistryField("restricted registry", typemap={"AAA":Simple, "BBB":InnerConfig}, restricted=True, default="AAA", optional=False)    
-    p = RegistryField("open, plugin-style registry", InnerConfig, optional=True)
+GLOBAL_REGISTRY = {"AAA":Simple, "BBB":InnerConfig}
 
+class Complex(Config):
+    c = ConfigField("an inner config", InnerConfig)
+    r = RegistryField("an registry field", typemap=GLOBAL_REGISTRY, default="AAA", optional=False)    
 class ConfigTest(unittest.TestCase):
     def setUp(self): 
         self.simple = Simple()
@@ -90,7 +90,6 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.comp.r.name, "AAA")
         self.assertEqual(self.comp.r.active.f, 3.0)
         self.assertEqual(self.comp.r["BBB"].f, 0.0)
-        self.assertEqual(self.comp.p.active, None)
 
 
     def testValidate(self):
@@ -114,10 +113,6 @@ class ConfigTest(unittest.TestCase):
         self.comp.validate()
 
     def testSave(self):
-        self.comp.p["test"]=InnerConfig
-        self.comp.p["foo"]=OuterConfig
-        self.comp.p = "test"
-
         self.comp.save("roundtrip.test")
 
         roundTrip = Config.load("roundtrip.test")
@@ -125,8 +120,6 @@ class ConfigTest(unittest.TestCase):
 
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
-        self.assertEqual(self.comp.p.name, roundTrip.p.name)
-        self.assertEqual(self.comp.p.active.f, roundTrip.p.active.f)
 
 def  suite():
     utilsTests.init()
