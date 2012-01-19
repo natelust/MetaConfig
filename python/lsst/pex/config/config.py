@@ -2,7 +2,8 @@ import traceback
 import copy
 import sys
 
-__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigField", "Registry", "RegistryField"]
+__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigField",
+           "Registry", "RegistryField"]
 
 def _joinNamePath(prefix=None, name=None, index=None):
     """
@@ -302,7 +303,9 @@ class Config(object):
         # load up defaults
         for field in self._fields.itervalues():
             field.__set__(self, field.default)
-
+        self.update(**kw)
+            
+    def update(self, **kw):
         for name, value in kw.iteritems():            
             try:
                 setattr(self, name, value)
@@ -419,7 +422,10 @@ class Config(object):
         return str(self.toDict())
 
     def __repr__(self):
-        return repr(self.toDict())
+        return "%s(%s)" % (
+            type(self).__name__, 
+            ", ".join("%s=%r" % (k, v) for k, v in self.toDict().iteritems() if v is not None)
+            )
 
 class RangeField(Field):
     """
