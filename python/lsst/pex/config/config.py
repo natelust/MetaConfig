@@ -495,7 +495,7 @@ class ChoiceField(Field):
             msg = "Value ('%s') is not allowed"%str(value)
             raise FieldValidationError(fieldType, fullname, msg) 
 
-class ListField(Field):    
+class ListField(Field):
     """
     Defines a field which is a container of values of type dtype
 
@@ -528,10 +528,10 @@ class ListField(Field):
                 msg = "Required list length=%d, got length=%d"%(self.length, lenValue)                
                 raise FieldValidationError(fieldType, fullname, msg)
             elif self.minLength is not None and lenValue < self.minLength:
-                msg = "Minimum allowed list length=%d, got length=%d"%(self.minLength, lenValue)                
+                msg = "Minimum allowed list length=%d, got length=%d"%(self.minLength, lenValue)
                 raise FieldValidationError(fieldType, fullname, msg)
             elif self.maxLength is not None and lenValue > self.maxLength:
-                msg = "Maximum allowed list length=%d, got length=%d"%(self.maxLength, lenValue)                
+                msg = "Maximum allowed list length=%d, got length=%d"%(self.maxLength, lenValue)
                 raise FieldValidationError(fieldType, fullname, msg)
             elif self.listCheck is not None and not self.listCheck(value):
                 msg = "%s is not a valid value"%str(value)
@@ -547,7 +547,8 @@ class ListField(Field):
                     raise FieldValidationError(fieldType, fullname, msg)
 
     def __set__(self, instance, value):
-        value = [self.itemType(v) for v in value]
+        if value is not None:
+            value = [self.itemType(v) for v in value]
         Field.__set__(self, instance, value)
 
 class ConfigField(Field):
