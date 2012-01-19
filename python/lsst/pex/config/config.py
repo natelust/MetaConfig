@@ -2,7 +2,8 @@ import traceback
 import copy
 import sys
 
-__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigField", "Registry", "RegistryField"]
+__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigField",
+           "Registry", "RegistryField"]
 
 def _joinNamePath(prefix=None, name=None, index=None):
     """
@@ -303,7 +304,9 @@ class Config(object):
         # load up defaults
         for field in self._fields.itervalues():
             field.__set__(self, field.default)
-
+        self.update(**kw)
+            
+    def update(self, **kw):
         for name, value in kw.iteritems():            
             try:
                 setattr(self, name, value)
@@ -420,7 +423,10 @@ class Config(object):
         return str(self.toDict())
 
     def __repr__(self):
-        return repr(self.toDict())
+        return "%s(%s)" % (
+            type(self).__name__, 
+            ", ".join("%s=%r" % (k, v) for k, v in self.toDict().iteritems() if v is not None)
+            )
 
 class RangeField(Field):
     """
@@ -496,7 +502,7 @@ class ChoiceField(Field):
             msg = "Value ('%s') is not in the set of allowed values"%str(value)
             raise FieldValidationError(fieldType, fullname, msg) 
 
-class ListField(Field):    
+class ListField(Field):
     """
     Defines a field which is a container of values of type dtype
 
@@ -529,10 +535,10 @@ class ListField(Field):
                 msg = "Required list length=%d, got length=%d"%(self.length, lenValue)                
                 raise FieldValidationError(fieldType, fullname, msg)
             elif self.minLength is not None and lenValue < self.minLength:
-                msg = "Minimum allowed list length=%d, got length=%d"%(self.minLength, lenValue)                
+                msg = "Minimum allowed list length=%d, got length=%d"%(self.minLength, lenValue)
                 raise FieldValidationError(fieldType, fullname, msg)
             elif self.maxLength is not None and lenValue > self.maxLength:
-                msg = "Maximum allowed list length=%d, got length=%d"%(self.maxLength, lenValue)                
+                msg = "Maximum allowed list length=%d, got length=%d"%(self.maxLength, lenValue)
                 raise FieldValidationError(fieldType, fullname, msg)
             elif self.listCheck is not None and not self.listCheck(value):
                 msg = "%s is not a valid value"%str(value)
@@ -549,7 +555,8 @@ class ListField(Field):
                     raise FieldValidationError(fieldType, fullname, msg)
 
     def __set__(self, instance, value):
-        value = [self.itemType(v) for v in value]
+        if value is not None:
+            value = [self.itemType(v) for v in value]
         Field.__set__(self, instance, value)
 
 class ConfigField(Field):

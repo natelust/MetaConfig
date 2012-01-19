@@ -87,16 +87,27 @@ def wrap(ctrl):
         """
         for name in fields:
             setattr(self, name, getattr(control, name))
-    def validate(self):
-        """Validate the config object by constructing a control object and using
-        a C++ validate() implementation."""
-        super(cls, self).validate()
-        r = self.makeControl()
-        r.validate()
     def decorate(cls):
+        def validate(self):
+            """Validate the config object by constructing a control object and using
+            a C++ validate() implementation."""
+            super(cls, self).validate()
+            r = self.makeControl()
+            r.validate()
+        def __init__(self, **kw):
+            """Initialize the config object, using the Control objects default ctor
+            to provide defaults."""
+            r = self.Control()
+            defaults = {}
+            for name in fields:
+                value = getattr(r, name)
+                defaults[name] = value
+            super(cls, self).__init__(**defaults)
+            self.update(**kw)
         cls.Control = ctrl
         cls.makeControl = makeControl
         cls.readControl = readControl
+        cls.__init__ = __init__
         if hasattr(ctrl, "validate"):
             cls.validate = validate
         for name, field in fields.iteritems():
