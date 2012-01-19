@@ -97,7 +97,7 @@ class Registry(dict):
         try:
             dtype = self.types[k]
         except:
-            raise KeyError("Unknown key %s in Registry '%s'"%(repr(k), self._fullname))
+            raise KeyError("Unknown key %s in Registry %s"%(repr(k), self._fullname))
         
         try:
             value = dict.__getitem__(self, k)
@@ -122,7 +122,8 @@ class Registry(dict):
             for field in dtype._fields.itervalues():
                 setattr(oldValue, field.name, field.default)
         else:
-            raise ValueError("Cannot set Registry item '%s' to '%s'"%(name, str(value)))
+            raise ValueError("Cannot set Registry item '%s' to '%s'. Expected type %s"%\
+                    (str(name), str(value), dtype.__name__))
 
 class ConfigMeta(type):
     """A metaclass for Config
@@ -179,7 +180,7 @@ class Field(object):
         optional --- When False, Config validate() will fail if value is None
         """
         if dtype not in self.supportedTypes:
-            raise ValueError("Unsuported Field dtype '%s'"%dtype.__name__)
+            raise ValueError("Unsuported Field dtype '%s'"%(dtype.__name__)
         self._setup(doc, dtype, default, check, optional)
 
 
@@ -216,7 +217,7 @@ class Field(object):
             msg = "Required value cannot be None"
             raise FieldValidationError(fieldType, fullname, msg)
         if value is not None and not isinstance(value, self.dtype):
-            msg = " Expected type '%s', got '%s'"%(self.dtype, type(value))
+            msg = "Inconrrect type. Expected type '%s', got '%s'"%(self.dtype, type(value))
             raise FieldValidationError(fieldType, fullname, msg)
         if self.check is not None and not self.check(value):
             msg = "%s is not a valid value"%str(value)
@@ -492,7 +493,7 @@ class ChoiceField(Field):
         if value not in self.allowed:
             fullname = _joinNamePath(instance._name, self.name)
             fieldType = type(self).__name__
-            msg = "Value ('%s') is not allowed"%str(value)
+            msg = "Value ('%s') is not in the set of allowed values"%str(value)
             raise FieldValidationError(fieldType, fullname, msg) 
 
 class ListField(Field):    
@@ -539,11 +540,12 @@ class ListField(Field):
             
             for i, v in enumerate(value):
                 if not isinstance(v, self.itemType):
-                    msg="Invalid value %s at position %d"%(str(v), i)
+                    msg="Incorrect item type at position %d. Expected '%s', got '%s'"%\
+                            (i, type(v).__name__, self.itemType.__name__)
                     raise FieldValidationError(fieldType, fullname, msg)
                         
                 if not self.itemCheck(value[i]):
-                    msg="Invalid value %s at position %d"%(str(v), i)
+                    msg="Item at position %s is not a valid value"%(i, str(v))
                     raise FieldValidationError(fieldType, fullname, msg)
 
     def __set__(self, instance, value):
@@ -569,7 +571,7 @@ class ConfigField(Field):
 
     def __init__(self, doc, dtype, default=None, check=None):        
         if not issubclass(dtype, Config):
-            raise TypeError("configType='%s' is not a subclass of Config)"%dtype)
+            raise ValueError("dtype '%s' is not a subclass of Config)"%dtype)
         if default is None:
             default = dtype
         Field._setup(self, doc=doc, dtype=dtype, check=check, default=default, optional=False)
