@@ -142,7 +142,10 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(ps.get("l"), self.simple.l)
 
         pol = lsst.pex.config.convert.makePolicy(self.comp)
+        self.assertEqual(pol.get("c.f"), self.comp.c.f)
 
+        ps = lsst.pex.config.convert.makePropertySet(self.comp)
+        self.assertEqual(ps.get("c.f"), self.comp.c.f)
 def  suite():
     utilsTests.init()
     suites = []

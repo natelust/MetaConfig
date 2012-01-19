@@ -2,16 +2,18 @@ import lsst.pex.policy
 import lsst.daf.base
 
 def makePropertySet(config):
-    def _helper(dict_):
-        p = lsst.daf.base.PropertySet()
+    def _helper(ps, prefix, dict_):
         for k,v in dict_.iteritems():
+            name = prefix + "." + k if prefix is not None else k
             if isinstance(v, dict):
-                p.set(k, _helper(v))
+                _helper(ps, name, v)
             elif v is not None:
-                p.set(k, v)
-        return p
-    if config:
-        return _helper(config.toDict())
+                ps.set(name, v)
+
+    if config is not None:
+        ps = lsst.daf.base.PropertySet()
+        _helper(ps, None, config.toDict())
+        return ps
     else:
         return None
 
