@@ -437,6 +437,8 @@ class RangeField(Field):
     """
     def __init__(self, doc, dtype, default=None, optional=False, 
             min=None, max=None, inclusiveMin=True, inclusiveMax=False):
+        if min is None and max is None:
+            raise ValueError("min and max cannot both be None"
 
         if min is not None and max is not None and min > max:
             swap(min, max)
