@@ -181,7 +181,7 @@ class Field(object):
         optional --- When False, Config validate() will fail if value is None
         """
         if dtype not in self.supportedTypes:
-            raise ValueError("Unsuported Field dtype '%s'"%(dtype.__name__)
+            raise ValueError("Unsuported Field dtype '%s'"%(dtype.__name__))
         self._setup(doc, dtype, default, check, optional)
 
 
@@ -438,7 +438,7 @@ class RangeField(Field):
     def __init__(self, doc, dtype, default=None, optional=False, 
             min=None, max=None, inclusiveMin=True, inclusiveMax=False):
         if min is None and max is None:
-            raise ValueError("min and max cannot both be None"
+            raise ValueError("min and max cannot both be None")
 
         if min is not None and max is not None and min > max:
             swap(min, max)
@@ -558,7 +558,7 @@ class ListField(Field):
 
     def __set__(self, instance, value):
         if value is not None:
-            value = [v if isinstance(v, self.itemType) else self.itemType(v) for v in value]
+            value = [self.itemType(v) if v is not None else None for v in value]
         Field.__set__(self, instance, value)
 
 class ConfigField(Field):
@@ -627,6 +627,13 @@ class ConfigField(Field):
         value = self.__get__(instance)
         value.validate()
 
+        if self.check is not None and not self.check(value):
+            fieldType = ConfigField
+            fullname = value._name
+            msg = "%s is not a valid value"%str(value)
+            raise FieldValidationError(fieldType, fullname, msg)
+
+
 class RegistryField(Field):
     """
     Registry Fields allow the config to choose from a set of possible Config types.
@@ -665,7 +672,7 @@ class RegistryField(Field):
 
     When saving a registry, the entire set is saved, as well as the active selection
     """
-    def __init__(self, doc, typemap, default=None, multi=False, optional=False):
+    def __init__(self, doc, typemap, default=None, optional=False, multi=False):
         Field._setup(self, doc, Registry, default=default, check=None, optional=optional)
         self.typemap = typemap
         self.multi=multi

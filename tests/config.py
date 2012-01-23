@@ -25,6 +25,7 @@ import lsst.utils.tests as utilsTests
 import unittest
 from lsst.pex.config import *
 import lsst.pex.config.convert
+import lsst.pex.config.registry
 import os
 
 
