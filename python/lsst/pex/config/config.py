@@ -558,7 +558,7 @@ class ListField(Field):
 
     def __set__(self, instance, value):
         if value is not None:
-            value = [self.itemType(v) for v in value]
+            value = [v if isinstance(v, self.itemType) else self.itemType(v) for v in value]
         Field.__set__(self, instance, value)
 
 class ConfigField(Field):
