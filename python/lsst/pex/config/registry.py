@@ -149,7 +149,7 @@ class AlgorithmRegistry(_BaseRegistry):
         return self._dict[name].ConfigClass
     
     def _check(self, name, alg):
-        for attrName in ("AlgorithmRegistry",) + tuple(self._requiredAttributes):
+        for attrName in self._requiredAttributes:
             if not hasattr(alg, attrName):
                 raise TypeError("Algorithm %r with name %r has no attribute %r" % (alg, name, attrName))
 
