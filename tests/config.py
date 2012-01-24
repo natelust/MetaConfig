@@ -21,46 +21,46 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-import lsst.utils.tests as utilsTests
-import unittest
-from lsst.pex.config import *
-import lsst.pex.config.convert
-import lsst.pex.config.registry
 import os
+import unittest
+import lsst.utils.tests as utilsTests
+import lsst.pex.config as pexConfig
 
+GLOBAL_REGISTRY = pexConfig.makeConfigRegistry(doc="Configs for unit tests")
 
-class Simple(Config):
-    i = Field("integer test", int, optional=True)
-    f = Field("float test", float, default=3.0)
-    b = Field("boolean test", bool, default=False, optional=False)
-    c = ChoiceField("choice test", str, default="Hello",
+class Simple(pexConfig.Config):
+    i = pexConfig.Field("integer test", int, optional=True)
+    f = pexConfig.Field("float test", float, default=3.0)
+    b = pexConfig.Field("boolean test", bool, default=False, optional=False)
+    c = pexConfig.ChoiceField("choice test", str, default="Hello",
             allowed={"Hello":"First choice", "World":"second choice"})
-    r = RangeField("Range test", float, default = 3.0, optional=False,
+    r = pexConfig.RangeField("Range test", float, default = 3.0, optional=False,
             min=3.0, inclusiveMin=True)
-    l = ListField("list test", int, default=[1,2,3], maxLength=5, itemCheck=lambda x: x is not None and x>0)
+    l = pexConfig.ListField("list test", int, default=[1,2,3], maxLength=5,
+        itemCheck=lambda x: x is not None and x>0)
+GLOBAL_REGISTRY.add("AAA", Simple)
+
+@pexConfig.register("BBB", GLOBAL_REGISTRY)
+class InnerConfig(pexConfig.Config):
+    f = pexConfig.Field("Inner.f", float, default=0.0, check = lambda x: x >= 0, optional=False)
 
 
-class InnerConfig(Config):
-    f = Field("Inner.f", float, default=0.0, check = lambda x: x >= 0, optional=False)
-
-
-class OuterConfig(InnerConfig, Config):
-    i = ConfigField("Outer.i", InnerConfig)   
+class OuterConfig(InnerConfig, pexConfig.Config):
+    i = pexConfig.ConfigField("Outer.i", InnerConfig)   
     def __init__(self):
-        Config.__init__(self)
+        pexConfig.Config.__init__(self)
         self.i.f = 5
 
     def validate(self):
-        Config.validate(self)
+        pexConfig.Config.validate(self)
         if self.i.f < 5:
             raise ValueError("validation failed, outer.i.f must be greater than 5")
 
-GLOBAL_REGISTRY = {"AAA":Simple, "BBB":InnerConfig}
 
-class Complex(Config):
-    c = ConfigField("an inner config", InnerConfig)
-    r = RegistryField("an registry field", typemap=GLOBAL_REGISTRY, default="AAA", optional=False)
-    p = RegistryField("another registry", typemap=GLOBAL_REGISTRY, default="BBB", optional=True)
+class Complex(pexConfig.Config):
+    c = pexConfig.ConfigField("an inner config", InnerConfig)
+    r = pexConfig.RegistryField("a registry field", typemap=GLOBAL_REGISTRY, default="AAA", optional=False)
+    p = pexConfig.RegistryField("another registry", typemap=GLOBAL_REGISTRY, default="BBB", optional=True)
 
 
 class ConfigTest(unittest.TestCase):
@@ -117,7 +117,7 @@ class ConfigTest(unittest.TestCase):
     def testSave(self):
         self.comp.save("roundtrip.test")
 
-        roundTrip = Config.load("roundtrip.test")
+        roundTrip = pexConfig.Config.load("roundtrip.test")
         os.remove("roundtrip.test")
 
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
@@ -128,24 +128,24 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.comp.p["AAA"].f, 3.0)
 
     def testConvert(self):
-        pol = lsst.pex.config.convert.makePolicy(self.simple)
+        pol = pexConfig.makePolicy(self.simple)
         self.assertEqual(pol.exists("i"), False)
         self.assertEqual(pol.get("f"), self.simple.f)
         self.assertEqual(pol.get("b"), self.simple.b)
         self.assertEqual(pol.get("c"), self.simple.c)
         self.assertEqual(tuple(pol.getArray("l")), self.simple.l)
         
-        ps = lsst.pex.config.convert.makePropertySet(self.simple)
+        ps = pexConfig.makePropertySet(self.simple)
         self.assertEqual(ps.exists("i"), False)
         self.assertEqual(ps.get("f"), self.simple.f)
         self.assertEqual(ps.get("b"), self.simple.b)
         self.assertEqual(ps.get("c"), self.simple.c)
         self.assertEqual(ps.get("l"), self.simple.l)
 
-        pol = lsst.pex.config.convert.makePolicy(self.comp)
+        pol = pexConfig.makePolicy(self.comp)
         self.assertEqual(pol.get("c.f"), self.comp.c.f)
 
-        ps = lsst.pex.config.convert.makePropertySet(self.comp)
+        ps = pexConfig.makePropertySet(self.comp)
         self.assertEqual(ps.get("c.f"), self.comp.c.f)
 def  suite():
     utilsTests.init()

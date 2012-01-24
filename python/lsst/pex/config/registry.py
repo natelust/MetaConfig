@@ -1,6 +1,6 @@
 from .config import Config
 
-__all__ = ("ConfigRegistry", "AlgorithmRegistry", "register")
+__all__ = ("ConfigRegistry", "makeConfigRegistry", "AlgorithmRegistry", "makeAlgorithmRegistry", "register")
 
 # 
 # LSST Data Management System
@@ -30,7 +30,7 @@ class _BaseRegistry(object):
     - keys(): return all names
     - getConfigClass(name): return the Config class associated with the given name
     
-    Subclasses must implement getConfigClass and may override _checkItem.
+    Subclasses must implement getConfigClass and may override _check.
     """
     def __init__(self):
         """Construct a registry of items
@@ -65,16 +65,16 @@ class _BaseRegistry(object):
         """
         if name.startswith("_"):
             raise RuntimeError("Name must not start with underscore")
-        elif bool(isNew) != bool(name in self._dict):
+        elif bool(isNew) == bool(name in self._dict):
             if isNew:
                 raise RuntimeError("An item already exists with name %r" % (name,))
             else:
                 raise RuntimeError("Could not find item %r to replace" % (name,))
-        self._checkItem(item)
+        self._check(name, item)
         self._dict[name] = item
     
-    def _checkItem(self, item):
-        """Raise an exception if the item is invalid
+    def _check(self, name, item):
+        """Raise an exception if the name or item is invalid
         """
         pass
     
@@ -92,18 +92,17 @@ class ConfigRegistry(_BaseRegistry):
         @param baseType: all Configs in this registry must be an instance of baseType;
             baseType must itself be a subclass of Config
         """
-        _BaseRegistry.__init__()
-        if not issubclass(baseType, Config):
-            raise TypeError("baseType = %r; must be a subclass of Config" % (baseType,))
-        self._basetype = baseType
+        _BaseRegistry.__init__(self)
+        self._baseType = baseType
+        if not issubclass(self._baseType, Config):
+            raise TypeError("baseType = %r; must be a subclass of Config" % (self._baseType,))
 
     def getConfigClass(self, name):
         return self.get(name)
 
-    def _checkItem(self, name, config):
-        if not issubclass(value, self._baseType):
-            raise TypeError("Registry item '%r' with name '%s' is not a subclass of '%r'."
-                            % (value, key, self._baseType))
+    def _check(self, name, config):
+        if not issubclass(config, self._baseType):
+            raise TypeError("Config %r with name %r is not a subclass of %r" % (config, key, self._baseType))
 
 
 def makeConfigRegistry(doc, baseType=Config):
@@ -139,7 +138,8 @@ class AlgorithmRegistry(_BaseRegistry):
         @param requiredAttributes: a list of required attribute names for each algorithm;
             these are checked in addition to ConfigClass
         """
-        self._requiredAttributes = tuple(requiredAttributes)
+        _BaseRegistry.__init__(self)
+        self._requiredAttributes = ("ConfigClass",) + tuple(requiredAttributes)
 
     def getConfigClass(self, name):
         """Get an algorithm's config by name
@@ -148,10 +148,10 @@ class AlgorithmRegistry(_BaseRegistry):
         """
         return self._dict[name].ConfigClass
     
-    def _checkItem(self, alg):
+    def _check(self, name, alg):
         for attrName in ("AlgorithmRegistry",) + tuple(self._requiredAttributes):
             if not hasattr(alg, attrName):
-                raise TypeError("Algorithm %s has no attribute %s" % (alg, attrName))
+                raise TypeError("Algorithm %r with name %r has no attribute %r" % (alg, name, attrName))
 
 
 def makeAlgorithmRegistry(doc, requiredAttributes=()):
