@@ -1,89 +1,188 @@
 from .config import Config
 
-__all__ = ("makeConfigRegistry", "register")
+__all__ = ("ConfigRegistry", "AlgorithmRegistry", "register")
 
-class ConfigRegistryBase(dict):
-    """A dictionary used to map names to Config classes, used as the backend for a RegistryField.
+# 
+# LSST Data Management System
+# Copyright 2008, 2009, 2010 LSST Corporation.
+# 
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the LSST License Statement and 
+# the GNU General Public License along with this program.  If not, 
+# see <http://www.lsstcorp.org/LegalNotices/>.
+#
+class _BaseRegistry(object):
+    """A registry that can be used in a RegistryField
     
-    ConfigRegistryBase adds to dict:
-     - a check that all keys are strings and all values are subclasses of some class
-       (which may just be Config),
-     - (optionally) an additional user-defined check, given as a callable that returns
-       False for invalid items.
-
-    A ConfigRegistryBase should not be instantiated directly, as this does not allow use to add
-    a per-instance docstring.  Instead, use the makeConfigRegistry function to easily create
-    a subclass of ConfigRegistryBase with a custom docstring:
-
-    registry = makeConfigRegistry(doc, basetype, check)
-
+    All registries must support two methods:
+    - keys(): return all names
+    - getConfigClass(name): return the Config class associated with the given name
+    
+    Subclasses must implement getConfigClass and may override _checkItem.
     """
+    def __init__(self):
+        """Construct a registry of items
+        """
+        self._dict = dict()
+    
+    def keys(self):
+        """Return a list of item names
+        """
+        return self._dict.keys()
+    
+    def get(self, name):
+        """Get an item by name
+        """
+        return self._dict[name]
+    
+    def getConfigClass(self, name):
+        """Get the config class for an item
+        
+        Subclasses must override
+        """
+        raise NotImplementedError()
+    
+    def add(self, name, item, isNew=True):
+        """Register an item.
+        
+        @param name: name of item
+        @param item: item to add
+        @param isNew: is this a new item?
+            - if True then adding a new item (the name must not exist)
+            - if False then replacing an existing item (the name must exist)
+        """
+        if name.startswith("_"):
+            raise RuntimeError("Name must not start with underscore")
+        elif bool(isNew) != bool(name in self._dict):
+            if isNew:
+                raise RuntimeError("An item already exists with name %r" % (name,))
+            else:
+                raise RuntimeError("Could not find item %r to replace" % (name,))
+        self._checkItem(item)
+        self._dict[name] = item
+    
+    def _checkItem(self, item):
+        """Raise an exception if the item is invalid
+        """
+        pass
+    
 
-    def __new__(cls, basetype=Config, check=None):
-        self = dict.__new__(cls)
-        if not issubclass(basetype, Config):
-            raise TypeError("Base type for registries must be a subclass of Config.")
-        self.basetype = basetype
-        self.check = None
-        return self
+class ConfigRegistry(_BaseRegistry):
+    """A registry of configs (subclasses of pex_config Config)
+    
+    Each registry should make a subclass of AlgorithmRegistry with:
+    - A doc string describing the API of the algorithms in the registry (if you simply set __doc__
+      of the instantiated registry, the information does not appear in help(registry)).
+    """
+    def __init__(self, baseType=Config):
+        """Construct a new ConfigRegistry
+        
+        @param baseType: all Configs in this registry must be an instance of baseType;
+            baseType must itself be a subclass of Config
+        """
+        _BaseRegistry.__init__()
+        if not issubclass(baseType, Config):
+            raise TypeError("baseType = %r; must be a subclass of Config" % (baseType,))
+        self._basetype = baseType
 
-    def __init__(self, *args, **kwds):
-        dict.__init__(self)
+    def getConfigClass(self, name):
+        return self.get(name)
 
-    def __setitem__(self, key, value):
-        if not isinstance(key, basestring):
-            raise TypeError("Registry key '%r' is not a string." % key)
-        if not issubclass(value, self.basetype):
+    def _checkItem(self, name, config):
+        if not issubclass(value, self._baseType):
             raise TypeError("Registry item '%r' with name '%s' is not a subclass of '%r'."
-                            % (value, key, self.basetype))
-        if self.check is not None and not self.check(value):
-            raise TypeError("Registry item '%s' with name '%s' does not meet check requirements for registry."
-                            % (value, key))
-        dict.__setitem__(self, key, value)
+                            % (value, key, self._baseType))
 
-    def setitem(self, key, value):
-        try:
-            return self[key]
-        except KeyError:
-            self[key] = value
-            return value
 
-    def update(self, *args, **kwds):
-        tmp = dict(*args, **kwds)
-        for k, v in tmp.iteritems():
-            self[k] = v
+def makeConfigRegistry(doc, baseType=Config):
+    """Make a ConfigRegistry
 
-def makeConfigRegistry(doc, basetype=Config, check=None):
-    """Make a custom dictionary used to map names to Config types.
+    @param doc: doc string for registry
+    @param baseType: Base class for Config classes in the registry.  Attempting to add
+                     a class that is not a subclass of this class will raise TypeError.
 
-    Arguments:
-      basetype ------ Base class for Config classes in the registry.  Attempting to add
-                      a class that is not a subclass of this class will raise TypeError.
-      check --------- A single-argument callable that returns True if a given Config
-                      class can be added to the registry, and False otherwise.  Ignored
-                      if set to None (the default).
-
-    This creates a anonymous subclass of ConfigRegistryBase, installs a custom doc string,
-    and returns an instance of the anonymous type.  The type is anonymous because this the
-    registry should be a singleton; there should be no need to ever make another instance
-    of the same type.
+    This creates a subclass of ConfigRegistryBase, installs a custom doc string,
+    and returns an instance of the type.
+    
+    A convenience to save a bit of typing (simply intantiating a ConfigRegistry
+    does not supply the proper doc string).
     """
-    t = type("ConfigRegistry", (ConfigRegistryBase,), {"__doc__": doc})
-    return t(basetype, check)
+    t = type("configRegistry", (ConfigRegistry,), {"__doc__": doc})
+    return t(baseType)
+
+
+class AlgorithmRegistry(_BaseRegistry):
+    """A registry of algorithms, each of which has the same basic API
+    
+    Each registry should make a subclass of AlgorithmRegistry with:
+    - A doc string describing the API of the algorithms in the registry (if you simply set __doc__
+      of the instantiated registry, the information does not appear in help(registry)).
+    - A suitable value for _requiredAttributes, if such checking is desired
+
+    Every algorithm needs an attribute ConfigClass, which should be a subclass of pexConfig.Config
+    """
+    def __init__(self, requiredAttributes=()):
+        """Construct an AlgorithmRegistry
+        
+        @param requiredAttributes: a list of required attribute names for each algorithm;
+            these are checked in addition to ConfigClass
+        """
+        self._requiredAttributes = tuple(requiredAttributes)
+
+    def getConfigClass(self, name):
+        """Get an algorithm's config by name
+
+        @raise KeyError if item is not found.
+        """
+        return self._dict[name].ConfigClass
+    
+    def _checkItem(self, alg):
+        for attrName in ("AlgorithmRegistry",) + tuple(self._requiredAttributes):
+            if not hasattr(alg, attrName):
+                raise TypeError("Algorithm %s has no attribute %s" % (alg, attrName))
+
+
+def makeAlgorithmRegistry(doc, requiredAttributes=()):
+    """Make a AlgorithmRegistry
+
+    @param doc: doc string for registry
+    @param requiredAttributes: a tuple of attribute names required for each algorithm.
+
+    This creates a subclass of AlgorithmRegistry, installs a custom doc string,
+    and returns an instance of the type.
+    
+    A convenience to save a bit of typing (simply intantiating a AlgorithmRegistry
+    does not supply the proper doc string).
+    """
+    t = type("algorithmRegistry", (AlgorithmRegistry,), {"__doc__": doc})
+    return t(requiredAttributes=requiredAttributes)
+
 
 def register(name, registry):
-    """A parameterized decorator for subconfigs.  Use it like this:
+    """A parameterized decorator for items.  Use it like this:
     
-    @register("FOO", registry)
+    @register("foo", registry)
     class FooAstrometryConfig(Config):
         bar = Field("bar field for Foo algorithm", float)
 
     This will automatically do:
 
-    registry["FOO"] = FooAstrometryConfig
+    registry["foo"] = FooAstrometryConfig
     """
     def decorate(cls):
-        registry[name] = cls
+        registry.add(name, cls)
         cls.name = name
         return cls
     return decorate

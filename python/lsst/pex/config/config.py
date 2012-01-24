@@ -2,8 +2,7 @@ import traceback
 import copy
 import sys
 
-__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigField",
-           "Registry", "RegistryField"]
+__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigField", "RegistryField"]
 
 def _joinNamePath(prefix=None, name=None, index=None):
     """
@@ -31,7 +30,15 @@ def _typeString(aType):
     else:
         return aType.__module__+"."+aType.__name__
 
-class Registry(dict):
+class _Registry(dict):
+    """A registry of instantiated configs
+    
+    Contains a registry of config classes, e.g. ConfigRegistry or AlgorithmRegistry
+    
+    typemap must support the following:
+    - keys(): return a collection of registered names
+    - getConfigClass(name): return the specified config class
+    """
     def __init__(self, fullname, typemap, multi, history=None):
         dict.__init__(self)
         self._fullname = fullname
@@ -45,11 +52,11 @@ class Registry(dict):
             self._selection=None
         elif self._multi:
             for v in value:
-                if not v in self.types: 
+                if not v in self.types.keys(): 
                     raise KeyError("Unknown key %s in Registry %s"% (repr(v), self._fullname))
             self._selection=list(value)
         else:
-            if value not in self.types:
+            if value not in self.types.keys():
                 raise KeyError("Unknown key %s in Registry %s"% (repr(value), self._fullname))
             self._selection=value
         self.history.append((value, traceback.extract_stack()[:-1]))
@@ -96,7 +103,7 @@ class Registry(dict):
     
     def __getitem__(self, k):
         try:
-            dtype = self.types[k]
+            dtype = self.types.getConfigClass(k)
         except:
             raise KeyError("Unknown key %s in Registry %s"%(repr(k), self._fullname))
         
@@ -115,7 +122,7 @@ class Registry(dict):
         #determine type
         name=_joinNamePath(name=self._fullname, index=k)
         oldValue = self[k]
-        dtype = self.types[k]
+        dtype = self.types.getConfigClass(k)
         if type(value) == dtype:
             for field in dtype._fields:
                 setattr(oldValue, field, getattr(value, field))
@@ -181,7 +188,7 @@ class Field(object):
         optional --- When False, Config validate() will fail if value is None
         """
         if dtype not in self.supportedTypes:
-            raise ValueError("Unsuported Field dtype '%s'"%(dtype.__name__))
+            raise ValueError("Unsuported Field dtype '%s'"%(dtype.__name__,))
         self._setup(doc, dtype, default, check, optional)
 
 
@@ -218,7 +225,7 @@ class Field(object):
             msg = "Required value cannot be None"
             raise FieldValidationError(fieldType, fullname, msg)
         if value is not None and not isinstance(value, self.dtype):
-            msg = "Inconrrect type. Expected type '%s', got '%s'"%(self.dtype, type(value))
+            msg = "Incorrect type. Expected type '%s', got '%s'"%(self.dtype, type(value))
             raise FieldValidationError(fieldType, fullname, msg)
         if self.check is not None and not self.check(value):
             msg = "%s is not a valid value"%str(value)
@@ -227,8 +234,7 @@ class Field(object):
     def save(self, outfile, instance):
         """
         Saves an instance of this field to file.
-        This is invoked by the owning config object, and should not be called
-        directly
+        This is invoked by the owning config object, and should not be called directly
         """
         value = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)
@@ -351,7 +357,7 @@ class Config(object):
         """
         Internal use only. Save this Config to file
         """
-        outfile.write("import %s\n"%(type(self).__module__))
+        outfile.write("import %s\n"%(type(self).__module__,))
         outfile.write("%s=%s()\n"%(self._name, _typeString(type(self))))
         for field in self._fields.itervalues():
             field.save(outfile, self)
@@ -639,7 +645,7 @@ class RegistryField(Field):
     Registry Fields allow the config to choose from a set of possible Config types.
     The set of allowable types is given by the typemap argument to the constructor
 
-    The typemap object must implement __getitem__, and __iter__ (e.g. a dict)
+    The typemap object must implement getConfigClass(name), and keys()
 
     While the typemap is shared by all instances of the field, each instance of
     the field has its own instance of a particular sub-config type
@@ -673,7 +679,7 @@ class RegistryField(Field):
     When saving a registry, the entire set is saved, as well as the active selection
     """
     def __init__(self, doc, typemap, default=None, optional=False, multi=False):
-        Field._setup(self, doc, Registry, default=default, check=None, optional=optional)
+        Field._setup(self, doc, _Registry, default=default, check=None, optional=optional)
         self.typemap = typemap
         self.multi=multi
     
@@ -683,7 +689,7 @@ class RegistryField(Field):
             name = _joinNamePath(instance._name, self.name)
             history = []
             instance._history[self.name] = history
-            registry = Registry(name, self.typemap, self.multi, history)
+            registry = _Registry(name, self.typemap, self.multi, history)
             registry.__doc__ = self.doc
             instance._storage[self.name] = registry
         return registry
