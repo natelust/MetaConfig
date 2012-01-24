@@ -102,7 +102,7 @@ class ConfigRegistry(_BaseRegistry):
 
     def _check(self, name, config):
         if not issubclass(config, self._baseType):
-            raise TypeError("Config %r with name %r is not a subclass of %r" % (config, key, self._baseType))
+            raise TypeError("Config %r with name %r is not a subclass of %r" % (config, name, self._baseType))
 
 
 def makeConfigRegistry(doc, baseType=Config):
