@@ -88,22 +88,22 @@ class ConfigTest(unittest.TestCase):
         """Test replacement in config registry
         """
         self.assertRaises(Exception, self.configRegistry.add, "foo1", self.fooConfig1Class)
-        self.assertRaises(Exception, self.configRegistry.add, "foo3", self.fooConfig1Class, isNew=False)
         self.assertEqual(self.configRegistry.get("foo1"), self.fooConfig1Class)
-        self.configRegistry.add("foo1", self.fooConfig2Class, isNew=False)
+        #force replace
+        self.configRegistry.add("foo1", self.fooConfig2Class, doReplace=True)
         self.assertEqual(self.configRegistry.get("foo1"), self.fooConfig2Class)
-        self.configRegistry.add("foo1", self.fooConfig1Class, isNew=False)
+        self.configRegistry.add("foo1", self.fooConfig1Class, doReplace=True)
         self.assertEqual(self.configRegistry.get("foo1"), self.fooConfig1Class)
     
     def testAlgorithmReplace(self):
         """Test replacement in algorithm registry
         """
         self.assertRaises(Exception, self.algorithmRegistry.add, "foo1", self.fooAlg1Class)
-        self.assertRaises(Exception, self.algorithmRegistry.add, "foo3", self.fooAlg1Class, isNew=False)
         self.assertEqual(self.algorithmRegistry.get("foo1"), self.fooAlg1Class)
-        self.algorithmRegistry.add("foo1", self.fooAlg2Class, isNew=False)
+        #force replace
+        self.algorithmRegistry.add("foo1", self.fooAlg2Class, doReplace=True)
         self.assertEqual(self.algorithmRegistry.get("foo1"), self.fooAlg2Class)
-        self.algorithmRegistry.add("foo1", self.fooAlg1Class, isNew=False)
+        self.algorithmRegistry.add("foo1", self.fooAlg1Class, doReplace=True)
         self.assertEqual(self.algorithmRegistry.get("foo1"), self.fooAlg1Class)
     
     def testClass(self):
