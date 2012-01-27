@@ -20,7 +20,6 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 from .config import *
-from .registry import *
 from .convert import *
 from .wrap import *
 from .version import *

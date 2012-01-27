@@ -26,7 +26,7 @@ import unittest
 import lsst.utils.tests as utilsTests
 import lsst.pex.config as pexConfig
 
-GLOBAL_REGISTRY = pexConfig.makeConfigRegistry(doc="Configs for unit tests")
+GLOBAL_REGISTRY = {}
 
 class Simple(pexConfig.Config):
     i = pexConfig.Field("integer test", int, optional=True)
@@ -38,12 +38,11 @@ class Simple(pexConfig.Config):
             min=3.0, inclusiveMin=True)
     l = pexConfig.ListField("list test", int, default=[1,2,3], maxLength=5,
         itemCheck=lambda x: x is not None and x>0)
-GLOBAL_REGISTRY.add("AAA", Simple)
+GLOBAL_REGISTRY["AAA"] = Simple
 
-@pexConfig.register("BBB", GLOBAL_REGISTRY)
 class InnerConfig(pexConfig.Config):
     f = pexConfig.Field("Inner.f", float, default=0.0, check = lambda x: x >= 0, optional=False)
-
+GLOBAL_REGISTRY["BBB"] = InnerConfig
 
 class OuterConfig(InnerConfig, pexConfig.Config):
     i = pexConfig.ConfigField("Outer.i", InnerConfig)   
@@ -59,8 +58,10 @@ class OuterConfig(InnerConfig, pexConfig.Config):
 
 class Complex(pexConfig.Config):
     c = pexConfig.ConfigField("an inner config", InnerConfig)
-    r = pexConfig.RegistryField("a registry field", typemap=GLOBAL_REGISTRY, default="AAA", optional=False)
-    p = pexConfig.RegistryField("another registry", typemap=GLOBAL_REGISTRY, default="BBB", optional=True)
+    r = pexConfig.ConfigChoiceField("a registry field", typemap=GLOBAL_REGISTRY,
+                                    default="AAA", optional=False)
+    p = pexConfig.ConfigChoiceField("another registry", typemap=GLOBAL_REGISTRY,
+                                    default="BBB", optional=True)
 
 
 class ConfigTest(unittest.TestCase):
@@ -158,4 +159,4 @@ def run(exit=False):
     utilsTests.run(suite(), exit)
 
 if __name__=='__main__':
-    run()
+    run(True)

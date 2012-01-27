@@ -1,7 +1,9 @@
 import traceback
 import sys
+import collections
 
-__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigField"]
+__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigField",
+           "ConfigInstanceDict", "ConfigChoiceField"]
 
 def _joinNamePath(prefix=None, name=None, index=None):
     """
@@ -18,6 +20,139 @@ def _joinNamePath(prefix=None, name=None, index=None):
         return "%s[%s]"%(name, repr(index))
     else:
         return name
+
+def _typeString(aType):
+    """
+    Utility function for generating type strings.
+    Used internally for saving Config to file
+    """
+    if aType is None:
+        return None
+    else:
+        return aType.__module__+"."+aType.__name__
+
+class ConfigInstanceDict(collections.Mapping):
+    """A dict of instantiated configs, used to populate a ConfigChoiceField.
+    
+    typemap must support the following:
+    - typemap[name]: return the config class associated with the given name
+    """
+    def __init__(self, fullname, types, multi, history=None):
+        collections.Mapping.__init__(self)
+        self._dict = dict()
+        self._fullname = fullname
+        self._selection = None
+        self._multi = multi
+        self.types = types
+        self.history = [] if history is None else history
+
+    def __contains__(self, k): return k in self._dict
+
+    def __len__(self): return len(self._dict)
+
+    def __iter__(self): return iter(self._dict)
+
+    def _setSelection(self,value):
+        if value is None:
+            self._selection=None
+        # JFB:  Changed to ensure selection is present in this instance (and add it if it is not),
+        #       rather than just checking if it is present in self.types.
+        elif self._multi:
+            for v in value:
+                if v not in self._dict:
+                    r = self[v] # just invoke __getitem__ to make sure it's present
+            self._selection = list(value)
+        else:
+            if value not in self._dict:
+                r = self[value] # just invoke __getitem__ to make sure it's present
+            self._selection = value
+        self.history.append((value, traceback.extract_stack()[:-1]))
+    
+    def _getNames(self):
+        if not self._multi:
+            raise AttributeError("Single-selection field %s has no attribute 'names'"%self._fullname)
+        return self._selection
+    def _setNames(self, value):
+        if not self._multi:
+            raise AttributeError("Single-selection field %s has no attribute 'names'"%self._fullname)
+        self._setSelection(value)
+    def _delNames(self):
+        if not self._multi:
+            raise AttributeError("Single-selection field %s has no attribute 'names'"%self._fullname)
+        self._selection = None
+    
+    def _getName(self):
+        if self._multi:
+            raise AttributeError("Multi-selection field %s has no attribute 'name'"%self._fullname)
+        return self._selection
+    def _setName(self, value):
+        if self._multi:
+            raise AttributeError("Multi-selection field %s has no attribute 'name'"%self._fullname)
+        self._setSelection(value)
+    def _delName(self):
+        if self._multi:
+            raise AttributeError("Multi-selection field %s has no attribute 'name'"%self._fullname)
+        self._selection=None
+   
+    """
+    In a multi-selection ConfigInstanceDict, list of names of active items
+    Disabled In a single-selection _Regsitry)
+    """
+    names = property(_getNames, _setNames, _delNames)
+   
+    """
+    In a single-selection ConfigInstanceDict, name of the active item
+    Disabled In a multi-selection _Regsitry)
+    """
+    name = property(_getName, _setName, _delName)
+
+    def _getActive(self):
+        if self._selection is None:
+            return None
+
+        if self._multi:
+            return [self[c] for c in self._selection]
+        else:
+            return self[self._selection]
+
+    """
+    Readonly shortcut to access the selected item(s) of the registry.
+    for multi-selection _Regsitry, this is equivalent to: [self[name] for [name] in self.names]
+    for single-selection _Regsitry, this is equivalent to: self[name]
+    """
+    active = property(_getActive)
+    
+    def __getitem__(self, k):
+        try:
+            dtype = self.types[k]
+        except:
+            raise KeyError("Unknown key %s in field %s"%(repr(k), self._fullname))
+        try:
+            value = self._dict[k]
+        except KeyError:
+            value = dtype()
+            value._rename(_joinNamePath(name=self._fullname, index=k))
+            self._dict[k] = value
+        return value
+
+    def __setitem__(self, k, value):
+        # JFB: don't think this is a necessary check; e.g. self.names doesn't conflict with self['names']
+        if k in self.__dict__:
+            raise ValueError("Cannot register '%s'. Reserved name")
+        
+        name = _joinNamePath(name=self._fullname, index=k)
+        oldValue = self[k]
+        dtype = type(oldValue)
+        if type(value) == dtype:
+            for field in dtype._fields:
+                setattr(oldValue, field, getattr(value, field))
+        elif value == dtype:
+            for field in dtype._fields.itervalues():
+                setattr(oldValue, field.name, field.default)
+        else:
+            raise ValueError("Cannot set field item '%s' to '%s'. Expected type %s"%\
+                    (str(name), str(value), dtype.__name__))
+
 
 class ConfigMeta(type):
     """A metaclass for Config
@@ -134,7 +269,6 @@ class Field(object):
             return self
         else:
             return instance._storage[self.name]
-
 
     def __set__(self, instance, value):
         try:
@@ -275,7 +409,7 @@ class Config(object):
         Complex single-field validation can be defined by deriving new Field 
         types. As syntactic sugar, some derived Field types are defined in 
         this module which handle recursing into sub-configs 
-        (ConfigField, RegistryField)
+        (ConfigField, ConfigChoiceField)
 
         Inter-field relationships should only be checked in derived Config 
         classes after calling this method, and base validation is complete
@@ -526,3 +660,113 @@ class ConfigField(Field):
             fullname = value._name
             msg = "%s is not a valid value"%str(value)
             raise FieldValidationError(fieldType, fullname, msg)
+
+class ConfigChoiceField(Field):
+    """
+    ConfigChoiceFields allow the config to choose from a set of possible Config types.
+    The set of allowable types is given by the typemap argument to the constructor
+
+    The typemap object must implement typemap[name], which must return a Config subclass.
+
+    While the typemap is shared by all instances of the field, each instance of
+    the field has its own instance of a particular sub-config type
+
+    For example:
+
+      class AaaConfig(Config):
+        somefield = Field(int, "...")
+      TYPEMAP = {"A", AaaConfig}
+      class MyConfig(Config):
+          choice = ConfigChoiceField("doc for choice", TYPEMAP)
+      
+      instance = MyConfig()
+      instance.choice['AAA'].somefield = 5
+      instance.choice = "AAA"
+    
+    Alternatively, the last line can be written:
+      instance.choice.name = "AAA"
+
+    Validation of this field is performed only the "active" selection.
+    If active is None and the field is not optional, validation will fail. 
+    
+    ConfigChoiceFields can allow single selections or multiple selections.
+    Single selection fields set selection through property name, and 
+    multi-selection fields use the property names. 
+
+    ConfigChoiceFields also allow multiple values of the same type:
+      TYPEMAP["CCC"] = AaaConfig
+      TYPEMAP["BBB"] = AaaConfig
+
+    When saving a config with a ConfigChoiceField, the entire set is saved, as well as the active selection
+    """
+    def __init__(self, doc, typemap, default=None, optional=False, multi=False,
+                 instanceDictClass=ConfigInstanceDict):
+        Field._setup(self, doc, instanceDictClass, default=default, check=None, optional=optional)
+        self.typemap = typemap
+        self.multi = multi
+    
+    def _getOrMake(self, instance):
+        instanceDict = instance._storage.get(self.name)
+        if instanceDict is None:
+            name = _joinNamePath(instance._name, self.name)
+            history = []
+            instance._history[self.name] = history
+            instanceDict = ConfigInstanceDict(name, self.typemap, self.multi, history)
+            instanceDict.__doc__ = self.doc
+            instance._storage[self.name] = instanceDict
+        return instanceDict
+
+    def __get__(self, instance, owner=None):
+        if instance is None or not isinstance(instance, Config):
+            return self
+        else:
+            return self._getOrMake(instance)
+
+    def __set__(self, instance, value):
+        instanceDict = self.__get__(instance)
+        instanceDict._setSelection(value)
+
+    def rename(self, instance):
+        instanceDict = self.__get__(instance)
+        for k, v in instanceDict.iteritems():
+            fullname = _joinNamePath(instance._name, self.name, k)
+            v._rename(fullname)
+
+    def validate(self, instance):
+        instanceDict = self.__get__(instance)
+        if not instanceDict.active and not self.optional:
+            fullname = _joinNamePath(instance._name, self.name)
+            fieldType = type(self).__name__
+            msg = "Required field cannot be None"
+            raise FieldValidationError(fieldType, fullname, msg)
+        elif instanceDict.active:
+            if self.multi:
+                for a in instanceDict.active:
+                    a.validate()
+            else:
+                instanceDict.active.validate()
+
+    def toDict(self, instance):
+        instanceDict = self.__get__(instance)
+
+        dict_ = {}
+        if self.multi:
+            dict_["names"]=instanceDict.names
+        else:
+            dict_["name"] =instanceDict.name
+
+        for k, v in instanceDict.iteritems():
+            dict_[k]=v.toDict()
+        
+        return dict_
+
+    def save(self, outfile, instance):
+        instanceDict = self.__get__(instance)
+        fullname = instanceDict._fullname
+        for v in instanceDict.itervalues():
+            v._save(outfile)
+        if self.multi:
+            outfile.write("%s.names=%s\n"%(fullname, repr(instanceDict.names)))
+        else:
+            outfile.write("%s.name=%s\n"%(fullname, repr(instanceDict.name)))
+
