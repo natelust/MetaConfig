@@ -2,7 +2,7 @@ from .config import *
 
 import re
 
-__all__ = ("wrap",)
+__all__ = ("wrap", "makeConfigClass")
 
 _dtypeMap = {
     "bool": bool,
@@ -14,10 +14,20 @@ _dtypeMap = {
 
 _containerRegex = re.compile(r"(std::)?(vector|list)<\s*(?P<type>[a-z:]+)\s*>")
 
-def wrap(ctrl):
-    """A descriptor that adds fields from a C++ control object to a Python Config class.
+def makeConfigClass(ctrl, name=None, base=Config, doc=None, cls=None):
+    """A function that creates a Python config class that matches a  C++ control object class.
 
-    First, in C++, write a control object, using the LSST_CONTROL_FIELD macro in
+    @param ctrl   C++ control class to wrap.
+    @param name   Name of the new config class; defaults to the __name__ of the control
+                  class with 'Control' replaced with 'Config'
+    @param base   Base class for the config class.
+    @param doc    Docstring for the config class.
+    @param cfg    An existing config class to use instead of creating a new one; name, base
+                  and doc will be ignored if this is not None.
+
+    See the 'wrap' decorator as a way to use makeConfigClass that may be more convenient.
+
+    To use makeConfigClass, in C++, write a control object, using the LSST_CONTROL_FIELD macro in
     lsst/pex/config.h (note that it must have sensible default constructor):
 
     struct FooControl {
@@ -31,6 +41,7 @@ def wrap(ctrl):
 
     import mySwigLib
     import lsst.pex.config
+    FooConfig = lsst.pex.config.makeConfigClass(
     @lsst.pex.config.wrap(mySwigLib.FooControl)
     class FooConfig:
         pass
@@ -49,13 +60,19 @@ def wrap(ctrl):
     only supports bool, int, double, and std::string fields, along with std::list
     and std::vectors of those types.  Nested control objects are not supported.
     """
+    if name is None:
+        name = ctrl.__name__.replace("Control", "Config")
+    if cls is None:
+        cls = type(name, (base,), {"__doc__":doc})
+    if doc is None:
+        doc = ctrl.__doc__
     fields = {}
     for attr in dir(ctrl):
         if attr.startswith("_type_"):
-            name = attr[6:]
-            getDoc = "_doc_" + name
+            k = attr[6:]
+            getDoc = "_doc_" + k
             getType = attr
-            if hasattr(ctrl, name) and hasattr(ctrl, getDoc):
+            if hasattr(ctrl, k) and hasattr(ctrl, getDoc):
                 doc = getattr(ctrl, getDoc)()
                 ctype = getattr(ctrl, getType)()
                 try:
@@ -69,7 +86,7 @@ def wrap(ctrl):
                         FieldCls = ListField
                 if dtype is None:
                     raise TypeError("Could not parse field type '%s'." % ctype)
-                fields[name] = FieldCls(doc=doc, dtype=dtype, optional=True)
+                fields[k] = FieldCls(doc=doc, dtype=dtype, optional=True)
     def makeControl(self):
         """Construct a C++ Control object from this Config object.
 
@@ -77,40 +94,54 @@ def wrap(ctrl):
         Control object's default constructor.
         """
         r = self.Control()
-        for name in fields:
-            value = getattr(self, name)
+        for k in fields:
+            value = getattr(self, k)
             if value is not None:
-                setattr(r, name, value)
+                setattr(r, k, value)
         return r
     def readControl(self, control):
         """Read values from a C++ Control object and assign them to self's fields.
         """
-        for name in fields:
-            setattr(self, name, getattr(control, name))
+        for k in fields:
+            setattr(self, k, getattr(control, k))
+    def validate(self):
+        """Validate the config object by constructing a control object and using
+        a C++ validate() implementation."""
+        super(cls, self).validate()
+        r = self.makeControl()
+        r.validate()
+    def __init__(self, **kw):
+        """Initialize the config object, using the Control objects default ctor
+        to provide defaults."""
+        r = self.Control()
+        defaults = {}
+        for k in fields:
+            value = getattr(r, k)
+            defaults[k] = value
+        super(cls, self).__init__(**defaults)
+        self.update(**kw)
+    ctrl.ConfigClass = cls
+    cls.Control = ctrl
+    cls.makeControl = makeControl
+    cls.readControl = readControl
+    cls.__init__ = __init__
+    if hasattr(ctrl, "validate"):
+        cls.validate = validate
+    for k, field in fields.iteritems():
+        setattr(cls, k, field)
+    return cls
+
+def wrap(ctrl):
+    """A decorator that adds fields from a C++ control class to a Python config class.
+
+    Used like this:
+
+    @wrap(MyControlClass)
+    class MyConfigClass(Config):
+        pass
+
+    See makeConfigClass for more information.
+    """
     def decorate(cls):
-        def validate(self):
-            """Validate the config object by constructing a control object and using
-            a C++ validate() implementation."""
-            super(cls, self).validate()
-            r = self.makeControl()
-            r.validate()
-        def __init__(self, **kw):
-            """Initialize the config object, using the Control objects default ctor
-            to provide defaults."""
-            r = self.Control()
-            defaults = {}
-            for name in fields:
-                value = getattr(r, name)
-                defaults[name] = value
-            super(cls, self).__init__(**defaults)
-            self.update(**kw)
-        cls.Control = ctrl
-        cls.makeControl = makeControl
-        cls.readControl = readControl
-        cls.__init__ = __init__
-        if hasattr(ctrl, "validate"):
-            cls.validate = validate
-        for name, field in fields.iteritems():
-            setattr(cls, name, field)
-        return cls
+        return makeConfigClass(ctrl, cls=cls)
     return decorate
