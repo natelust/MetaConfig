@@ -711,7 +711,7 @@ class ConfigChoiceField(Field):
             name = _joinNamePath(instance._name, self.name)
             history = []
             instance._history[self.name] = history
-            instanceDict = ConfigInstanceDict(name, self.typemap, self.multi, history)
+            instanceDict = self.dtype(name, self.typemap, self.multi, history)
             instanceDict.__doc__ = self.doc
             instance._storage[self.name] = instanceDict
         return instanceDict
