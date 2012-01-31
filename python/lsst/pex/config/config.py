@@ -339,33 +339,26 @@ class Config(object):
             except KeyError:
                 pass
 
-    @staticmethod
-    def load(filename):
+    def load(self, filename, root="root"):
         """
-        Construct a new Config object by executing the python code in the 
+        modify this config in place by executing the python code in the 
         given file.
 
-        The python script should construct a Config name root.
+        The file should modify a Config named root
 
         For example:
-            from myModule import MyConfig
-
-            root = MyConfig()
             root.myField = 5
-
-        When such a file is loaded, an instance of MyConfig would be returned 
         """
-        local = {}
+        local = {root:self}
         execfile(filename, {}, local)
-        return local['root']
-   
  
-    def save(self, filename):
+    def save(self, filename, root="root"):
+        
         """
         Generates a python script, which, when loaded, reproduces this Config
         """
         tmp = self._name
-        self._rename("root")
+        self._rename(root)
         try:
             outfile = open(filename, 'w')
             self._save(outfile)
@@ -378,9 +371,7 @@ class Config(object):
         Internal use only. Save this Config to file
         """
         configType = type(self)
-        outfile.write("import %s\n"%(configType.__module__,))
         typeString = configType.__module__+"."+configType.__name__
-        outfile.write("%s=%s()\n"%(self._name, typeString))
         for field in self._fields.itervalues():
             field.save(outfile, self)
         

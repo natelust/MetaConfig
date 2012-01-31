@@ -116,10 +116,14 @@ class ConfigTest(unittest.TestCase):
         self.comp.validate()
 
     def testSave(self):
+        self.comp.r="BBB"
+        self.comp.p="AAA"
+        self.comp.c.f=5
         self.comp.save("roundtrip.test")
+        roundTrip = Complex()
 
-        roundTrip = pexConfig.Config.load("roundtrip.test")
-        os.remove("roundtrip.test")
+        roundTrip.load("roundtrip.test")
+        #os.remove("roundtrip.test")
 
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
