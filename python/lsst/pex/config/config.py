@@ -571,8 +571,8 @@ class ListField(Field):
                             (i, type(v).__name__, self.itemType.__name__)
                     raise FieldValidationError(fieldType, fullname, msg)
                         
-                if not self.itemCheck(value[i]):
-                    msg="Item at position %s is not a valid value"%(i, str(v))
+                if self.itemCheck is not None and not self.itemCheck(value[i]):
+                    msg="Item at position %s is not a valid value: %s"%(i, str(v))
                     raise FieldValidationError(fieldType, fullname, msg)
 
     def __set__(self, instance, value):
