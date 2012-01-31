@@ -22,4 +22,5 @@
 from .config import *
 from .convert import *
 from .wrap import *
+from .registry import *
 from .version import *
