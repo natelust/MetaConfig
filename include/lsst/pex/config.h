@@ -23,4 +23,15 @@
 #ifndef LSST_PEX_CONFIG_H
 #define LSST_PEX_CONFIG_H
 
+#define LSST_CONTROL_FIELD(NAME, TYPE, DOC)             \
+    static char const * _doc_ ## NAME() {               \
+        static char const * doc = DOC;                  \
+        return doc;                                     \
+    }                                                   \
+    static char const * _type_ ## NAME() {               \
+        static char const * type = #TYPE;               \
+        return type;                                    \
+    }                                                   \
+    TYPE NAME
+
 #endif
