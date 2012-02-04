@@ -138,14 +138,14 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(pol.get("f"), self.simple.f)
         self.assertEqual(pol.get("b"), self.simple.b)
         self.assertEqual(pol.get("c"), self.simple.c)
-        self.assertEqual(tuple(pol.getArray("l")), self.simple.l)
+        self.assertEqual(pol.getArray("l"), list(self.simple.l))
         
         ps = pexConfig.makePropertySet(self.simple)
         self.assertEqual(ps.exists("i"), False)
         self.assertEqual(ps.get("f"), self.simple.f)
         self.assertEqual(ps.get("b"), self.simple.b)
         self.assertEqual(ps.get("c"), self.simple.c)
-        self.assertEqual(ps.get("l"), self.simple.l)
+        self.assertEqual(list(ps.get("l")), list(self.simple.l))
 
         pol = pexConfig.makePolicy(self.comp)
         self.assertEqual(pol.get("c.f"), self.comp.c.f)
