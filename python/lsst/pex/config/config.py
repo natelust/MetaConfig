@@ -117,19 +117,19 @@ class ConfigInstanceDict(collections.Mapping):
 
     """
     Readonly shortcut to access the selected item(s) of the registry.
-    for multi-selection _Regsitry, this is equivalent to: [self[name] for [name] in self.names]
-    for single-selection _Regsitry, this is equivalent to: self[name]
+    for multi-selection _Registry, this is equivalent to: [self[name] for [name] in self.names]
+    for single-selection _Registry, this is equivalent to: self[name]
     """
     active = property(_getActive)
-    
+
     def __getitem__(self, k):
-        try:
-            dtype = self.types[k]
-        except:
-            raise KeyError("Unknown key %s in field %s"%(repr(k), self._fullname))
         try:
             value = self._dict[k]
         except KeyError:
+            try:
+                dtype = self.types[k]
+            except:
+                raise KeyError("Unknown key %s in field %s"%(repr(k), self._fullname))
             value = dtype()
             value._rename(_joinNamePath(name=self._fullname, index=k))
             self._dict[k] = value
