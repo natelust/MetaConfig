@@ -1,6 +1,7 @@
 import traceback
 import sys
 import collections
+import copy
 
 __all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigField",
            "ConfigInstanceDict", "ConfigChoiceField"]
@@ -230,17 +231,19 @@ class ConfigInstanceDict(collections.Mapping):
     Readonly shortcut to access the selected item(s) of the registry.
     for multi-selection _Regsitry, this is equivalent to: [self[name] for name in self.names]
     for single-selection _Regsitry, this is equivalent to: self[name]
+    for multi-selection _Registry, this is equivalent to: [self[name] for [name] in self.names]
+    for single-selection _Registry, this is equivalent to: self[name]
     """
     active = property(_getActive)
-    
+
     def __getitem__(self, k):
-        try:
-            dtype = self.types[k]
-        except:
-            raise KeyError("Unknown key %s in field %s"%(repr(k), self._fullname))
         try:
             value = self._dict[k]
         except KeyError:
+            try:
+                dtype = self.types[k]
+            except:
+                raise KeyError("Unknown key %s in field %s"%(repr(k), self._fullname))
             value = dtype()
             value._rename(_joinNamePath(name=self._fullname, index=k))
             self._dict[k] = value
@@ -286,11 +289,24 @@ class ConfigMeta(type):
 
     def __init__(self, name, bases, dict_):
         type.__init__(self, name, bases, dict_)
-        self._fields = {}
+        self._fields = {}        
         for b in bases:
-            dict_ = dict(dict_.items() + b.__dict__.items())
-        for k, v in dict_.iteritems():
-            if isinstance(v, Field):
+            try:
+                baseFields = b.__dict__["_fields"]
+                for k in baseFields:
+                    if k in self._fields:                        
+                        #k was defined in some other base class. Fail
+                        raise ValueError("Ambiguous Field definition for Field %s in Config %s"%(k, name))
+                    self._fields[k]=baseFields[k]
+            except KeyError, TypeError:                
+                #either '_fields' does not exist (KeyError)
+                # or else it is not a dict
+                # meaning that b was not a Config object.
+                # ignore it
+                continue
+
+        for k, v in dict_.iteritems():            
+            if isinstance(v, Field):                
                 v.name = k
                 self._fields[k] = v
 
@@ -612,7 +628,7 @@ class RangeField(Field):
             fullname = _joinNamePath(instance._name, self.name)
             fieldType = type(self).__name__
             msg = "%s is outside of valid range %s"%(value, self.rangeString)
-            raise FieldValidationException(fieldType, fullname, msg)
+            raise FieldValidationError(fieldType, fullname, msg)
             
 class ChoiceField(Field):
     """
