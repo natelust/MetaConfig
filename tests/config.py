@@ -132,6 +132,59 @@ class ConfigTest(unittest.TestCase):
         self.comp.r["AAA"].f = 5.0
         self.assertEqual(self.comp.p["AAA"].f, 3.0)
 
+    def testInheritance(self):
+        class AAA(pexConfig.Config):
+            a = pexConfig.Field("AAA.a", int, default=4)
+        class BBB(AAA):
+            b = pexConfig.Field("BBB.b", int, default=3)
+        class CCC(BBB):
+            c = pexConfig.Field("CCC.c", int, default=2)
+        
+        #test multi-level inheritance
+        c= CCC()
+        self.assertEqual(c.toDict().has_key("a"), True)
+        self.assertEqual(c._fields["a"].dtype, int)
+        self.assertEqual(c.a, 4)
+
+        #test conflicting multiple inheritance
+        class DDD(pexConfig.Config):
+            a = pexConfig.Field("DDD.a", float, default=0.0)
+
+        class EEE(DDD, AAA):
+            pass
+
+        e = EEE()
+        self.assertEqual(e._fields["a"].dtype, float)
+        self.assertEqual(e.toDict().has_key("a"), True)
+        self.assertEqual(e.a, 0.0)
+
+        class FFF(AAA, DDD):
+            pass
+        f = FFF()
+        self.assertEqual(f._fields["a"].dtype, int)
+        self.assertEqual(f.toDict().has_key("a"), True)
+        self.assertEqual(f.a, 4)
+
+        #test inheritance from non Config objects
+        class GGG(object):
+            a = pexConfig.Field("AAA.a", float, default=10)
+        class HHH(GGG, AAA):
+            pass
+        h = HHH()
+        self.assertEqual(h._fields["a"].dtype, float)
+        self.assertEqual(h.toDict().has_key("a"), True)
+        self.assertEqual(h.a, 10.0)
+
+        #test partial Field redefinition
+
+        class III(AAA):
+            pass
+        III.a.default=5
+
+        self.assertEqual(III.a.default, 5)
+        self.assertEqual(AAA.a.default, 4)
+            
+
     def testConvert(self):
         pol = pexConfig.makePolicy(self.simple)
         self.assertEqual(pol.exists("i"), False)

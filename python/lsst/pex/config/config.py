@@ -22,16 +22,6 @@ def _joinNamePath(prefix=None, name=None, index=None):
     else:
         return name
 
-def _typeString(aType):
-    """
-    Utility function for generating type strings.
-    Used internally for saving Config to file
-    """
-    if aType is None:
-        return None
-    else:
-        return aType.__module__+"."+aType.__name__
-
 class List(collections.MutableSequence):
     def __init__(self, dtype, value, history):
         self.dtype=dtype
@@ -263,20 +253,6 @@ class ConfigInstanceDict(collections.Mapping):
             raise ValueError("Cannot set field item '%s' to '%s'. Expected type %s"%\
                     (str(name), str(value), dtype.__name__))
 
-"""
-class SingleChoiceConfigInstanceDict(ConfigInstanceDict):
-    def __init__(self, fullname, types, history=None):
-        ConfigChoiceInstanceDict.__init__(self, fullname, types, False, history)
-
-    name = property(lambda x: x._selection, _setSelection, lambda x: x._setSelection(None))
-
-class MultiChoiceconfigInstanceDict(ConfigInstanceDict):
-    def __init__(self, fullname, types, history=None):
-        ConfigChoiceInstanceDict.__init__(self, fullname, types, False, history)
-
-    names = property(lambda x: x._selection, _setSelection, lambda x: x._setSelection(None))
-"""
-
 class ConfigMeta(type):
     """A metaclass for Config
 
@@ -289,26 +265,22 @@ class ConfigMeta(type):
 
     def __init__(self, name, bases, dict_):
         type.__init__(self, name, bases, dict_)
-        self._fields = {}        
-        for b in bases:
-            try:
-                baseFields = b.__dict__["_fields"]
-                for k in baseFields:
-                    if k in self._fields:                        
-                        #k was defined in some other base class. Fail
-                        raise ValueError("Ambiguous Field definition for Field %s in Config %s"%(k, name))
-                    self._fields[k]=baseFields[k]
-            except KeyError, TypeError:                
-                #either '_fields' does not exist (KeyError)
-                # or else it is not a dict
-                # meaning that b was not a Config object.
-                # ignore it
-                continue
+        self._fields = {}
+        def getFields(classtype):
+            fields = {}
+            bases=list(classtype.__bases__)
+            bases.reverse()
+            for b in bases:
+                fields.update(getFields(b))
 
-        for k, v in dict_.iteritems():            
-            if isinstance(v, Field):                
-                v.name = k
-                self._fields[k] = v
+            for k, v in classtype.__dict__.iteritems():
+                if isinstance(v, Field):
+                    fields[k] = v
+            return fields
+
+        fields = getFields(self)
+        for k, v in fields.iteritems():            
+            setattr(self, k, copy.deepcopy(v))
 
     def __setattr__(self, name, value):
         if isinstance(value, Field):
