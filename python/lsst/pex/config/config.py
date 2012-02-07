@@ -3,7 +3,7 @@ import sys
 import collections
 import copy
 
-__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigField",
+__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "DictField", "ConfigField",
            "ConfigInstanceDict", "ConfigChoiceField"]
 
 def _joinNamePath(prefix=None, name=None, index=None):
@@ -715,7 +715,7 @@ class DictField(Field):
     """
     def __init__(self, doc, default=None, optional=False, dictCheck=None, itemCheck=None):
         Field._setup(self, doc=doc, dtype=Dict, default=default, optional=optional, check=None)
-        self.dictCheck = listCheck
+        self.dictCheck = dictCheck
         self.itemCheck = itemCheck
     
     def validate(self, instance):
