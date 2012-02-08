@@ -87,7 +87,6 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.simple.b, False)
         self.assertEqual(self.simple.c, "Hello")
         self.assertEqual(list(self.simple.l), [1,2,3])
-        print >> sys.stderr, self.simple.d
         self.assertEqual(self.simple.d["key"], "value")
         self.assertEqual(self.inner.f, 0.0)
 

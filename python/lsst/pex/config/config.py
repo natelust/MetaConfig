@@ -100,17 +100,13 @@ class Dict(collections.MutableMapping):
         self._history.append((dict(self.value), traceStack))
 
     def __init__(self, keytype, itemtype, value, history):
-        print >> sys.stderr, "value", value.items()
-
         self.keytype = keytype
         self.itemtype = itemtype
         self.value = {}
         if value is not None:
-            for k, x in self.value.iteritems():                
+            for k, x in value.iteritems():                
                 k, x = self._checkItemType(k, x)
                 self.value[k]=x
-                print >> sys.stderr, "self.value[%s]=%s"%(k, x)
-        print >> sys.stderr, "self.value", self.value
         self._history = history if history is not None else []
 
     """
