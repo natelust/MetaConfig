@@ -1,9 +1,10 @@
 import traceback
 import sys
 import collections
+import copy
 
-__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigField",
-           "ConfigInstanceDict", "ConfigChoiceField"]
+__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "DictField", "ConfigField",
+           "ConfigInstanceDict", "ConfigChoiceField", "FieldValidationError"]
 
 def _joinNamePath(prefix=None, name=None, index=None):
     """
@@ -21,15 +22,134 @@ def _joinNamePath(prefix=None, name=None, index=None):
     else:
         return name
 
-def _typeString(aType):
+class List(collections.MutableSequence):
+    def __init__(self, dtype, value, history):
+        self.dtype=dtype
+        if value is not None:
+            self.value = [dtype(x) if x is not None else None for x in value]
+        else:
+            self.value = []
+        self._history = history if history is not None else {}
     """
-    Utility function for generating type strings.
-    Used internally for saving Config to file
+    Read-only history
     """
-    if aType is None:
-        return None
-    else:
-        return aType.__module__+"."+aType.__name__
+    history = property(lambda x: x._history)   
+
+    def __appendHistory(self):
+        traceStack = traceback.extract_stack()[:-2]
+        self._history.append((list(self.value), traceStack))
+
+    def __contains__(self, x):
+        return self.value.__contains__(x)
+
+    def __len__(self):
+        return len(self.value)
+
+    def __setitem__(self, i, x):
+        if isinstance(i, slice):
+            x = [self.dtype(xi) if xi is not None else None for xi in x]
+        else:
+            x = self.dtype(x)
+
+        try:
+            self.value[i]=x
+            self.__appendHistory()
+        except:
+            raise
+        
+    def __getitem__(self, i):
+        return self.value[i]
+    
+    def __delitem__(self, i):
+        try:
+            del self.value[i]
+            self.__appendHistory()
+        except:
+            raise
+
+    def __iter__(self):
+        return self.value.__iter__()
+
+    def insert(self, i, x):
+        if x is not None:
+            x = self.dtype(x)
+        self[i:i+1]=x
+
+    def __repr__(self):
+        return repr(self.value)
+
+    def __str__(self):
+        return str(self.value)
+
+
+class Dict(collections.MutableMapping):
+    def _checkItemType(self, k, x):
+        try:
+            k = self.keytype(k)
+        except:
+            raise TypeError("Key %s is of type %s, expected type %s"%\
+                    (k, type(k).__name__, self.keytype.__name__))
+        try:
+            x = self.itemtype(x)
+        except:
+            raise TypeError("Value %s at key %s is of type %s, expected type %s"%\
+                    (x, k, type(x).__name__, self.itemtype.__name__))
+        return k, x
+    def __appendHistory(self):
+        traceStack = traceback.extract_stack()[:-2]
+        self._history.append((dict(self.value), traceStack))
+
+    def __init__(self, keytype, itemtype, value, history):
+        self.keytype = keytype
+        self.itemtype = itemtype
+        self.value = {}
+        if value is not None:
+            for k, x in value.iteritems():                
+                k, x = self._checkItemType(k, x)
+                self.value[k]=x
+        self._history = history if history is not None else []
+
+    """
+    Read-only history
+    """
+    history = property(lambda x: x._history)   
+
+
+   
+    def __getitem__(self, k):
+        return self.value[k]
+
+    def __len__(self):
+        return len(self.value)
+
+    def __iter__(self):
+        return self.value.__iter__()
+
+    def __contains__(self, k):
+        return self.value.__contains__(k)
+
+    def __setitem__(self, k, x):
+        k,x = self._checkItemType(k, x)
+
+        try:
+            self.value[k]=x
+            self.__appendHistory()
+        except:
+            raise
+
+    def __delitem__(self, k):
+        try:
+            del self.value[k]
+            self.__appendHistory()
+        except:
+            raise
+
+    def __repr__(self):
+        return repr(self.value)
+
+    def __str__(self):
+        return str(self.value)
+    
 
 class ConfigInstanceDict(collections.Mapping):
     """A dict of instantiated configs, used to populate a ConfigChoiceField.
@@ -61,7 +181,7 @@ class ConfigInstanceDict(collections.Mapping):
             for v in value:
                 if v not in self._dict:
                     r = self[v] # just invoke __getitem__ to make sure it's present
-            self._selection = list(value)
+            self._selection = tuple(value)
         else:
             if value not in self._dict:
                 r = self[value] # just invoke __getitem__ to make sure it's present
@@ -117,29 +237,27 @@ class ConfigInstanceDict(collections.Mapping):
 
     """
     Readonly shortcut to access the selected item(s) of the registry.
-    for multi-selection _Regsitry, this is equivalent to: [self[name] for [name] in self.names]
+    for multi-selection _Regsitry, this is equivalent to: [self[name] for name in self.names]
     for single-selection _Regsitry, this is equivalent to: self[name]
+    for multi-selection _Registry, this is equivalent to: [self[name] for [name] in self.names]
+    for single-selection _Registry, this is equivalent to: self[name]
     """
     active = property(_getActive)
-    
+
     def __getitem__(self, k):
-        try:
-            dtype = self.types[k]
-        except:
-            raise KeyError("Unknown key %s in field %s"%(repr(k), self._fullname))
         try:
             value = self._dict[k]
         except KeyError:
+            try:
+                dtype = self.types[k]
+            except:
+                raise KeyError("Unknown key %s in field %s"%(repr(k), self._fullname))
             value = dtype()
             value._rename(_joinNamePath(name=self._fullname, index=k))
             self._dict[k] = value
         return value
 
     def __setitem__(self, k, value):
-        # JFB: don't think this is a necessary check; e.g. self.names doesn't conflict with self['names']
-        if k in self.__dict__:
-            raise ValueError("Cannot register '%s'. Reserved name")
-        
         name = _joinNamePath(name=self._fullname, index=k)
         oldValue = self[k]
         dtype = type(oldValue)
@@ -152,7 +270,6 @@ class ConfigInstanceDict(collections.Mapping):
         else:
             raise ValueError("Cannot set field item '%s' to '%s'. Expected type %s"%\
                     (str(name), str(value), dtype.__name__))
-
 
 class ConfigMeta(type):
     """A metaclass for Config
@@ -167,12 +284,21 @@ class ConfigMeta(type):
     def __init__(self, name, bases, dict_):
         type.__init__(self, name, bases, dict_)
         self._fields = {}
-        for b in bases:
-            dict_ = dict(dict_.items() + b.__dict__.items())
-        for k, v in dict_.iteritems():
-            if isinstance(v, Field):
-                v.name = k
-                self._fields[k] = v
+        def getFields(classtype):
+            fields = {}
+            bases=list(classtype.__bases__)
+            bases.reverse()
+            for b in bases:
+                fields.update(getFields(b))
+
+            for k, v in classtype.__dict__.iteritems():
+                if isinstance(v, Field):
+                    fields[k] = v
+            return fields
+
+        fields = getFields(self)
+        for k, v in fields.iteritems():            
+            setattr(self, k, copy.deepcopy(v))
 
     def __setattr__(self, name, value):
         if isinstance(value, Field):
@@ -194,7 +320,7 @@ class Field(object):
     class Example(Config):
         myInt = Field(int, "an integer field!", default=0)
     """
-    supportedTypes=[str, bool, float, int]
+    supportedTypes=(str, bool, float, int, complex)
 
     def __init__(self, doc, dtype, default=None, check=None, optional=False):
         """Initialize a Field.
@@ -453,7 +579,11 @@ class RangeField(Field):
     The range is defined by providing min and/or max values.
     If min or max is None, the range will be open in that direction
     If inclusive[Min|Max] is True the range will include the [min|max] value
+    
     """
+
+    supportedTypes=(int, float)
+
     def __init__(self, doc, dtype, default=None, optional=False, 
             min=None, max=None, inclusiveMin=True, inclusiveMax=False):
         if min is None and max is None:
@@ -488,7 +618,7 @@ class RangeField(Field):
             fullname = _joinNamePath(instance._name, self.name)
             fieldType = type(self).__name__
             msg = "%s is outside of valid range %s"%(value, self.rangeString)
-            raise FieldValidationException(fieldType, fullname, msg)
+            raise FieldValidationError(fieldType, fullname, msg)
             
 class ChoiceField(Field):
     """
@@ -537,7 +667,9 @@ class ListField(Field):
     """
     def __init__(self, doc, dtype, default=None, optional=False,
             listCheck=None, itemCheck=None, length=None, minLength=None, maxLength=None):
-        Field._setup(self, doc=doc, dtype=tuple, default=default, optional=optional, check=None)
+        if dtype not in Field.supportedTypes:
+            raise ValueError("Unsuported Field dtype '%s'"%(dtype.__name__,))
+        Field._setup(self, doc=doc, dtype=List, default=default, optional=optional, check=None)
         self.listCheck = listCheck
         self.itemCheck = itemCheck
         self.itemType = dtype
@@ -576,9 +708,76 @@ class ListField(Field):
                     raise FieldValidationError(fieldType, fullname, msg)
 
     def __set__(self, instance, value):
+        try:
+            history = instance._history.get(self.name)
+        except KeyError:
+            history = []
+            instance._history[self.name]=history
+
         if value is not None:
-            value = [self.itemType(v) if v is not None else None for v in value]
-        Field.__set__(self, instance, value)
+            instance._storage[self.name] = List(self.itemType, value, history)
+        else:
+            Field.__set__(self, instance, value)
+    
+    def toDict(self, instance):        
+        value = self.__get__(instance)        
+        return list(value) if value is not None else None
+
+class DictField(Field):
+    """
+    Defines a field which is a mapping of values
+
+    Users can provide two check functions:
+    dictCheck - used to validate the dict as a whole, and
+    itemCheck - used to validate each item individually    
+    """
+    def __init__(self, doc, keytype, itemtype, default=None, optional=False, dictCheck=None, itemCheck=None):
+        Field._setup(self, doc=doc, dtype=Dict, default=default, optional=optional, check=None)
+        if keytype not in self.supportedTypes:
+            raise ValueError("key type '%s' is not a supported type"%keytype.__name__)
+        elif itemtype not in self.supportedTypes:
+            raise ValueError("item type '%s' is not a supported type"%itemtype.__name__)
+
+        self.keytype = keytype
+        self.itemtype = itemtype
+        self.dictCheck = dictCheck
+        self.itemCheck = itemCheck
+    
+    def validate(self, instance):
+        Field.validate(self, instance)
+        value = self.__get__(instance) 
+        if value is not None:
+            fullname = _joinNamePath(instance._name, self.name)
+            fieldType = type(self).__name__
+            if self.dictCheck is not None and not self.dictCheck(value):
+                msg = "%s is not a valid value"%str(value)
+                raise FieldValidationError(fieldType, fullname, msg)
+            
+            for k, v in value.iteritems():
+                try:
+                    value._checkItemType(k, v)
+                except TypeError, e:
+                    raise FieldValidationError(fieldtype, fullname, str(e))
+                        
+                if self.itemCheck is not None and not self.itemCheck(v):
+                    msg="Item at key %s is not a valid value: %s"%(k, str(v))
+                    raise FieldValidationError(fieldType, fullname, msg)
+
+    def __set__(self, instance, value):
+        try:
+            history = instance._history.get(self.name)
+        except KeyError:
+            history = []
+            instance._history[self.name]=history
+
+        if value is not None:
+            instance._storage[self.name] = Dict(self.keytype, self.itemtype, value, history)
+        else:
+            Field.__set__(self, instance, value)
+    
+    def toDict(self, instance):        
+        value = self.__get__(instance)        
+        return dict(value) if value is not None else None
 
 class ConfigField(Field):
     """
@@ -592,7 +791,7 @@ class ConfigField(Field):
     instance of dtype
 
     Additionally, to allow for fewer deep-copies, assigning an instance of ConfigField to dtype istelf,
-    rather then an instance of dtype, will in fact reset defaults.
+    rather then an instance of dtype. Doing so will reset field values to their defaults.
 
     This means that the argument default can be dtype, rather than an instance of dtype
     """
@@ -613,13 +812,14 @@ class ConfigField(Field):
                 value = self.default()
                 value._rename(_joinNamePath(instance._name, self.name))
                 instance._storage[self.name]=value
-                instance._history[self.name]={}
+                instance._history[self.name]=value._history
             return value
 
 
     def __set__(self, instance, value):
         name=_joinNamePath(prefix=instance._name, name=self.name)
         oldValue = self.__get__(instance)
+
         if type(value) == self.dtype:
             for field in self.dtype._fields:
                 setattr(oldValue, field, getattr(value, field))
@@ -688,11 +888,11 @@ class ConfigChoiceField(Field):
       TYPEMAP["CCC"] = AaaConfig
       TYPEMAP["BBB"] = AaaConfig
 
-    When saving a config with a ConfigChoiceField, the entire set is saved, as well as the active selection
+    When saving a config with a ConfigChoiceField, the entire set is saved, as well as the active selection    
     """
-    def __init__(self, doc, typemap, default=None, optional=False, multi=False,
-                 instanceDictClass=ConfigInstanceDict):
-        Field._setup(self, doc, instanceDictClass, default=default, check=None, optional=optional)
+    instanceDictClass = ConfigInstanceDict
+    def __init__(self, doc, typemap, default=None, optional=False, multi=False):
+        Field._setup(self, doc, self.instanceDictClass, default=default, check=None, optional=optional)
         self.typemap = typemap
         self.multi = multi
     
@@ -745,10 +945,12 @@ class ConfigChoiceField(Field):
             dict_["names"]=instanceDict.names
         else:
             dict_["name"] =instanceDict.name
-
-        for k, v in instanceDict.iteritems():
-            dict_[k]=v.toDict()
         
+        values = {}
+        for k, v in instanceDict.iteritems():
+            values[k]=v.toDict()
+        dict_["values"]=values
+
         return dict_
 
     def save(self, outfile, instance):

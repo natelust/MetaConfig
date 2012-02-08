@@ -106,8 +106,7 @@ class RegistryAdaptor(object):
     def __getitem__(self, k):
         return self.registry[k].ConfigClass
 
-class RegistryInstanceDict(ConfigInstanceDict):
-
+class RegistryInstanceDict(ConfigInstanceDict):    
     def __init__(self, fullname, typemap, multi, history=None):
         ConfigInstanceDict.__init__(self, fullname, typemap, multi, history)
 
@@ -140,11 +139,10 @@ class RegistryInstanceDict(ConfigInstanceDict):
             return self.types.registry[self.name](self[self.name], *args, **kwds)
 
 class RegistryField(ConfigChoiceField):
-
-    def __init__(self, doc, registry, default=None, optional=False, multi=False,
-                 instanceDictClass=RegistryInstanceDict):
+    instanceDictClass = RegistryInstanceDict
+    def __init__(self, doc, registry, default=None, optional=False, multi=False):
         types = RegistryAdaptor(registry)
-        ConfigChoiceField.__init__(self, doc, types, default, optional, multi, instanceDictClass)
+        ConfigChoiceField.__init__(self, doc, types, default, optional, multi)
 
 def makeRegistry(doc, configBaseType=Config):
     """A convenience function to create a new registry.
