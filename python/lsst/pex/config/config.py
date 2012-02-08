@@ -80,7 +80,7 @@ class List(collections.MutableSequence):
 class Dict(collections.MutableMapping):
     def __init__(self, supportedTypes, value, history):
         self.supportedTypes = supportedTypes
-        self.value = dict(values)
+        self.value = dict(value)
         for k, x in self.value.iteritems():
             if type(k) not in self.supportedTypes:
                 raise TypeError("Key %s is of unssuported type %s"%(k, type(k).__name__))
