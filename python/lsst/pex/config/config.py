@@ -3,8 +3,8 @@ import sys
 import collections
 import copy
 
-__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "ConfigField",
-           "ConfigInstanceDict", "ConfigChoiceField"]
+__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "DictField", "ConfigField",
+           "ConfigInstanceDict", "ConfigChoiceField", "FieldValidationError"]
 
 def _joinNamePath(prefix=None, name=None, index=None):
     """
@@ -25,7 +25,10 @@ def _joinNamePath(prefix=None, name=None, index=None):
 class List(collections.MutableSequence):
     def __init__(self, dtype, value, history):
         self.dtype=dtype
-        self.value = [dtype(x) if x is not None else None for x in value]
+        if value is not None:
+            self.value = [dtype(x) if x is not None else None for x in value]
+        else:
+            self.value = []
         self._history = history if history is not None else {}
     """
     Read-only history
@@ -44,7 +47,7 @@ class List(collections.MutableSequence):
 
     def __setitem__(self, i, x):
         if isinstance(i, slice):
-            x = [self.dtype(xk) if xk is not None else None for xk in x]
+            x = [self.dtype(xi) if xi is not None else None for xi in x]
         else:
             x = self.dtype(x)
 
@@ -68,6 +71,8 @@ class List(collections.MutableSequence):
         return self.value.__iter__()
 
     def insert(self, i, x):
+        if x is not None:
+            x = self.dtype(x)
         self[i:i+1]=x
 
     def __repr__(self):
@@ -78,23 +83,42 @@ class List(collections.MutableSequence):
 
 
 class Dict(collections.MutableMapping):
-    def __init__(self, supportedTypes, value, history):
-        self.supportedTypes = supportedTypes
-        self.value = dict(values)
-        for k, x in self.value.iteritems():
-            if type(k) not in self.supportedTypes:
-                raise TypeError("Key %s is of unssuported type %s"%(k, type(k).__name__))
-            if type(x) not in self.supportedTypes:
-                raise TypeError("Value %s at key %s is of unsupported type %s"%(x, k, type(x).__name__))
-        self._history = history if history is not None else {}
+    def _checkItemType(self, k, x):
+        try:
+            k = self.keytype(k)
+        except:
+            raise TypeError("Key %s is of type %s, expected type %s"%\
+                    (k, type(k).__name__, self.keytype.__name__))
+        try:
+            x = self.itemtype(x)
+        except:
+            raise TypeError("Value %s at key %s is of type %s, expected type %s"%\
+                    (x, k, type(x).__name__, self.itemtype.__name__))
+        return k, x
+    def __appendHistory(self):
+        traceStack = traceback.extract_stack()[:-2]
+        self._history.append((dict(self.value), traceStack))
+
+    def __init__(self, keytype, itemtype, value, history):
+        print >> sys.stderr, "value", value.items()
+
+        self.keytype = keytype
+        self.itemtype = itemtype
+        self.value = {}
+        if value is not None:
+            for k, x in self.value.iteritems():                
+                k, x = self._checkItemType(k, x)
+                self.value[k]=x
+                print >> sys.stderr, "self.value[%s]=%s"%(k, x)
+        print >> sys.stderr, "self.value", self.value
+        self._history = history if history is not None else []
+
     """
     Read-only history
     """
     history = property(lambda x: x._history)   
 
-    def __appendHistory(self):
-        traceStack = traceback.extract_stack()[:-2]
-        self._history.append((dict(self.value), traceStack))
+
    
     def __getitem__(self, k):
         return self.value[k]
@@ -109,10 +133,7 @@ class Dict(collections.MutableMapping):
         return self.value.__contains__(k)
 
     def __setitem__(self, k, x):
-        if type(k) not in self.supportedTypes:
-            raise TypeError("Key %s is of unssuported type %s"%(k, type(k).__name__))
-        if type(x) not in self.supportedTypes:
-            raise TypeError("Value %s at key %s is of unsupported type %s"%(x, k, type(x).__name__))
+        k,x = self._checkItemType(k, x)
 
         try:
             self.value[k]=x
@@ -132,6 +153,7 @@ class Dict(collections.MutableMapping):
 
     def __str__(self):
         return str(self.value)
+    
 
 class ConfigInstanceDict(collections.Mapping):
     """A dict of instantiated configs, used to populate a ConfigChoiceField.
@@ -713,9 +735,16 @@ class DictField(Field):
     dictCheck - used to validate the dict as a whole, and
     itemCheck - used to validate each item individually    
     """
-    def __init__(self, doc, default=None, optional=False, dictCheck=None, itemCheck=None):
+    def __init__(self, doc, keytype, itemtype, default=None, optional=False, dictCheck=None, itemCheck=None):
         Field._setup(self, doc=doc, dtype=Dict, default=default, optional=optional, check=None)
-        self.dictCheck = listCheck
+        if keytype not in self.supportedTypes:
+            raise ValueError("key type '%s' is not a supported type"%keytype.__name__)
+        elif itemtype not in self.supportedTypes:
+            raise ValueError("item type '%s' is not a supported type"%itemtype.__name__)
+
+        self.keytype = keytype
+        self.itemtype = itemtype
+        self.dictCheck = dictCheck
         self.itemCheck = itemCheck
     
     def validate(self, instance):
@@ -728,13 +757,14 @@ class DictField(Field):
                 msg = "%s is not a valid value"%str(value)
                 raise FieldValidationError(fieldType, fullname, msg)
             
-            for i, v in value.iteritems:
-                if type(v) not in self.supportedTypes:
-                    msg="Unsupported item type %s at key %s."%(type(v), i)
-                    raise FieldValidationError(fieldType, fullname, msg)
+            for k, v in value.iteritems():
+                try:
+                    value._checkItemType(k, v)
+                except TypeError, e:
+                    raise FieldValidationError(fieldtype, fullname, str(e))
                         
                 if self.itemCheck is not None and not self.itemCheck(v):
-                    msg="Item at key %s is not a valid value: %s"%(i, str(v))
+                    msg="Item at key %s is not a valid value: %s"%(k, str(v))
                     raise FieldValidationError(fieldType, fullname, msg)
 
     def __set__(self, instance, value):
@@ -745,7 +775,7 @@ class DictField(Field):
             instance._history[self.name]=history
 
         if value is not None:
-            instance._storage[self.name] = Dict(self.supportedTypes, value, history)
+            instance._storage[self.name] = Dict(self.keytype, self.itemtype, value, history)
         else:
             Field.__set__(self, instance, value)
     

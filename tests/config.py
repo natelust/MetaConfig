@@ -25,6 +25,7 @@ import os
 import unittest
 import lsst.utils.tests as utilsTests
 import lsst.pex.config as pexConfig
+import sys
 
 GLOBAL_REGISTRY = {}
 
@@ -38,6 +39,9 @@ class Simple(pexConfig.Config):
             min=3.0, inclusiveMin=True)
     l = pexConfig.ListField("list test", int, default=[1,2,3], maxLength=5,
         itemCheck=lambda x: x is not None and x>0)
+    d = pexConfig.DictField("dict test", str, str, default={"key":"value"}, 
+            itemCheck=lambda x: x.startswith('v'))
+
 GLOBAL_REGISTRY["AAA"] = Simple
 
 class InnerConfig(pexConfig.Config):
@@ -83,7 +87,8 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.simple.b, False)
         self.assertEqual(self.simple.c, "Hello")
         self.assertEqual(list(self.simple.l), [1,2,3])
-
+        print >> sys.stderr, self.simple.d
+        self.assertEqual(self.simple.d["key"], "value")
         self.assertEqual(self.inner.f, 0.0)
 
         self.assertEqual(self.outer.i.f, 5.0)
@@ -103,6 +108,11 @@ class ConfigTest(unittest.TestCase):
         self.assertRaises(ValueError, self.outer.validate)
         self.outer.i.f=10
         self.outer.validate()
+
+        self.simple.d["failKey"]= "failValue"
+        self.assertRaises(pexConfig.FieldValidationError, self.simple.validate)
+        del self.simple.d["failKey"]
+        self.simple.validate()
 
         self.outer.i = InnerConfig
         self.assertRaises(ValueError, self.outer.validate)
@@ -183,8 +193,7 @@ class ConfigTest(unittest.TestCase):
 
         self.assertEqual(III.a.default, 5)
         self.assertEqual(AAA.a.default, 4)
-            
-
+    
     def testConvert(self):
         pol = pexConfig.makePolicy(self.simple)
         self.assertEqual(pol.exists("i"), False)
