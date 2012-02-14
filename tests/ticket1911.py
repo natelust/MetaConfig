@@ -56,6 +56,7 @@ class SubConfigDefaultsTest(unittest.TestCase):
         self.assertEqual(Config2.c.default, Config1)
         self.assertEqual(c2.c.r1.name, "C1")
         self.assertEqual(list(c2.c.r2.names), ["C2"])
+        c2.c=Config1
         
 
 def  suite():
