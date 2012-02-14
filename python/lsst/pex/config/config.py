@@ -237,8 +237,8 @@ class ConfigInstanceDict(collections.Mapping):
 
     """
     Readonly shortcut to access the selected item(s) of the registry.
-    for multi-selection _Regsitry, this is equivalent to: [self[name] for name in self.names]
-    for single-selection _Regsitry, this is equivalent to: self[name]
+    for multi-selection _Registry, this is equivalent to: [self[name] for name in self.names]
+    for single-selection _Registry, this is equivalent to: self[name]
     for multi-selection _Registry, this is equivalent to: [self[name] for [name] in self.names]
     for single-selection _Registry, this is equivalent to: self[name]
     """
@@ -252,24 +252,33 @@ class ConfigInstanceDict(collections.Mapping):
                 dtype = self.types[k]
             except:
                 raise KeyError("Unknown key %s in field %s"%(repr(k), self._fullname))
-            value = dtype()
-            value._rename(_joinNamePath(name=self._fullname, index=k))
-            self._dict[k] = value
+            value = self._reset(k, dtype)
+        return value
+
+    def _reset(self, k, value):
+        dtype = self.types[k]
+        if value == dtype:
+            value = value()
+        elif not type(value) == dtype:
+            raise TypeError("Cannot set ConfigChoiceField: type(%r) is not %r" % (value,dtype))
+        else:
+            value = copy.deepcopy(value)
+        value._rename(_joinNamePath(name=self._fullname, index=k))
+        self._dict[k] = value
         return value
 
     def __setitem__(self, k, value):
         name = _joinNamePath(name=self._fullname, index=k)
-        oldValue = self[k]
-        dtype = type(oldValue)
-        if type(value) == dtype:
-            for field in dtype._fields:
-                setattr(oldValue, field, getattr(value, field))
-        elif value == dtype:
-            for field in dtype._fields.itervalues():
-                setattr(oldValue, field.name, field.default)
+        oldValue = self._dict.get(k, None)
+        if oldValue is None:
+            self._reset(k, value)
         else:
-            raise ValueError("Cannot set field item '%s' to '%s'. Expected type %s"%\
-                    (str(name), str(value), dtype.__name__))
+            oldHistory = oldValue._history
+            # discard the old object, but merge in its history
+            newValue = self._reset(k, value)
+            for f in oldHistory:
+                oldList = newValue._history.setdefault(f, [])
+                oldList[:1] = oldHistory[f]
 
 class ConfigMeta(type):
     """A metaclass for Config
@@ -407,7 +416,6 @@ class Field(object):
         instance._storage[self.name]=value
         traceStack = traceback.extract_stack()[:-1]
         history.append((value, traceStack))
-
 
     def __delete__(self, instance):
         self.__set__(instance, None)
@@ -834,8 +842,10 @@ class ConfigField(Field):
         else:
             oldHistory = oldValue._history
             # discard the old object, but merge in its history
-            value = self._reset(instance, value)
-            value._history[:1] = oldHistory
+            newValue = self._reset(instance, value)
+            for k in oldHistory:
+                oldList = newValue._history.setdefault(k, [])
+                oldList[:1] = oldHistory[k]
 
     def rename(self, instance):
         value = self.__get__(instance)

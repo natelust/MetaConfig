@@ -46,8 +46,10 @@ class SubConfigDefaultsTest(unittest.TestCase):
                 pexConf.Config.__init__(self)
                 self.r1.name = "C1"
                 self.r2.names = ["C2"]
+        typemap = {"B": Config1}
         class Config2(pexConf.Config):
             c = pexConf.ConfigField(dtype=Config1, doc="holder for Config1")
+            b = pexConf.ConfigChoiceField(typemap=typemap, doc="choice holder for Config1")
         c1 = Config1()
         self.assertEqual(c1.r1.name, "C1")
         self.assertEqual(list(c1.r2.names), ["C2"])
@@ -56,7 +58,11 @@ class SubConfigDefaultsTest(unittest.TestCase):
         self.assertEqual(Config2.c.default, Config1)
         self.assertEqual(c2.c.r1.name, "C1")
         self.assertEqual(list(c2.c.r2.names), ["C2"])
-        c2.c=Config1
+        self.assertEqual(type(c2.b["B"]), Config1)
+        c2.b.name = "B"
+        self.assertEqual(c2.b.active.r1.name, "C1")
+        self.assertEqual(list(c2.b.active.r2.names), ["C2"])
+        c2.c = Config1
         
 
 def  suite():
