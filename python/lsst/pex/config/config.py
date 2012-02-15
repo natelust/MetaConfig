@@ -276,14 +276,10 @@ class ConfigInstanceDict(collections.Mapping):
             oldHistory = oldValue._history
             # discard the old object, but merge in its history
             newValue = self._reset(k, value)
-            for f in oldHistory:
-                oldList = newValue._history.setdefault(f, [])
-                oldList[:1] = oldHistory[f]
-    def _rename(self, fullname):
-        print >> sys.stderr, "renaming config instance dict to:", fullname
-        self._fullname=fullname
-        for k, v in self._dict.iteritems():
-            v._rename(_joinNamePath(name=fullname, index=k))
+            if False:  # history merging is broken; see ticket #1915
+                for f in oldHistory:
+                    oldList = newValue._history.setdefault(f, [])
+                    oldList[:1] = oldHistory[f]
 
 class ConfigMeta(type):
     """A metaclass for Config
@@ -848,9 +844,11 @@ class ConfigField(Field):
             oldHistory = oldValue._history
             # discard the old object, but merge in its history
             newValue = self._reset(instance, value)
-            for k in oldHistory:
-                oldList = newValue._history.setdefault(k, [])
-                oldList[:1] = oldHistory[k]
+            if False:  # history merging is broken; see ticket #1915
+                for k in oldHistory:
+                    oldList = newValue._history.setdefault(k, [])
+                    oldList[:1] = oldHistory[k]
+                    
 
     def rename(self, instance):
         value = self.__get__(instance)
