@@ -279,6 +279,11 @@ class ConfigInstanceDict(collections.Mapping):
             for f in oldHistory:
                 oldList = newValue._history.setdefault(f, [])
                 oldList[:1] = oldHistory[f]
+    def _rename(self, fullname):
+        print >> sys.stderr, "renaming config instance dict to:", fullname
+        self._fullname=fullname
+        for k, v in self._dict.iteritems():
+            v._rename(_joinNamePath(name=fullname, index=k))
 
 class ConfigMeta(type):
     """A metaclass for Config
@@ -937,9 +942,8 @@ class ConfigChoiceField(Field):
 
     def rename(self, instance):
         instanceDict = self.__get__(instance)
-        for k, v in instanceDict.iteritems():
-            fullname = _joinNamePath(instance._name, self.name, k)
-            v._rename(fullname)
+        fullname = _joinNamePath(instance._name, self.name)
+        instanceDict._rename(fullname)
 
     def validate(self, instance):
         instanceDict = self.__get__(instance)
