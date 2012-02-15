@@ -281,6 +281,11 @@ class ConfigInstanceDict(collections.Mapping):
                     oldList = newValue._history.setdefault(f, [])
                     oldList[:1] = oldHistory[f]
 
+    def _rename(self, fullname):
+        self._fullname=fullname
+        for k, v in self._dict.iteritems():
+            v._rename(_joinNamePath(name=fullname, index=k))
+
 class ConfigMeta(type):
     """A metaclass for Config
 

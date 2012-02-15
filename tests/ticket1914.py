@@ -39,7 +39,7 @@ class Config3(pexConf.Config):
 class FieldNameReportingTest(unittest.TestCase):
     def test(self):
         c3 = Config3()
-        pex_conf_dir = eups.productDir("pex_config")
+        pex_product_dir = eups.productDir("pex_config")
         c3.load(pex_product_dir+ "/tests/config/ticket1914.py")
 
 def  suite():
