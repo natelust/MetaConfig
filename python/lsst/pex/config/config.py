@@ -30,6 +30,7 @@ class List(collections.MutableSequence):
         else:
             self.value = []
         self._history = history if history is not None else {}
+        self.__appendHistory()
     """
     Read-only history
     """
@@ -108,6 +109,7 @@ class Dict(collections.MutableMapping):
                 k, x = self._checkItemType(k, x)
                 self.value[k]=x
         self._history = history if history is not None else []
+        self.__appendHistory()
 
     """
     Read-only history
@@ -722,7 +724,7 @@ class ListField(Field):
         if value is not None:
             instance._storage[self.name] = List(self.itemType, value, history)
         else:
-            instance._storage[self.name] = None
+            Field.__set__(instance, None)
 
     
     def toDict(self, instance):        
@@ -764,16 +766,11 @@ class DictField(Field):
                     raise ValueError(msg)
 
     def __set__(self, instance, value):
-        try:
-            history = instance._history.get(self.name)
-        except KeyError:
-            history = []
-            instance._history[self.name]=history
-
+        history = instance._history.setdefault(self.name, [])
         if value is not None:
             instance._storage[self.name] = Dict(self.keytype, self.itemtype, value, history)
         else:
-            Field.__set__(self, instance, value)
+            Field.__set__(self, instance, None)
     
     def toDict(self, instance):        
         value = self.__get__(instance)        
@@ -830,7 +827,6 @@ class ConfigField(Field):
             if value == self.dtype:
                 value = value()
             oldValue.update(**value._storage)
-                    
 
     def rename(self, instance):
         value = self.__get__(instance)
