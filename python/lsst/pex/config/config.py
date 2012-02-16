@@ -183,6 +183,9 @@ class ConfigInstanceDict(collections.Mapping):
                     r = self[v] # just invoke __getitem__ to make sure it's present
             self._selection = tuple(value)
         else:
+            print >> sys.stderr, "value", value, "type(value)", type(value)
+            print >> sys.stderr, "_dict", self._dict, "type(_dict)", type(self._dict)
+
             if value not in self._dict:
                 r = self[value] # just invoke __getitem__ to make sure it's present
             self._selection = value
@@ -252,34 +255,34 @@ class ConfigInstanceDict(collections.Mapping):
                 dtype = self.types[k]
             except:
                 raise KeyError("Unknown key %s in field %s"%(repr(k), self._fullname))
-            value = self._reset(k, dtype)
-        return value
-
-    def _reset(self, k, value):
-        dtype = self.types[k]
-        if value == dtype:
-            value = value()
-        elif not type(value) == dtype:
-            raise TypeError("Cannot set ConfigChoiceField: type(%r) is not %r" % (value,dtype))
-        else:
-            value = copy.deepcopy(value)
-        value._rename(_joinNamePath(name=self._fullname, index=k))
-        self._dict[k] = value
+            value = self._dict.setdefault(k, dtype())
         return value
 
     def __setitem__(self, k, value):
         name = _joinNamePath(name=self._fullname, index=k)
+        try:
+            dtype = self.types[k]
+        except:
+            raise KeyError("Unknown key %s in field %s"%(repr(k), self._fullname))
+
+        if value != dtype and type(value) != dtype:
+            raise TypeError("Cannot set ConfigField %s: type(%r) is not %r" % (name, value, dtype))
+
         oldValue = self._dict.get(k, None)
         if oldValue is None:
-            self._reset(k, value)
+            if value == dtype:
+                self._dict[k] = value()
+            else:
+                self._dict[k] = copy.deepcopy(value)
+            self._dict[k]._rename(name)
         else:
-            oldHistory = oldValue._history
-            # discard the old object, but merge in its history
-            newValue = self._reset(k, value)
-            if False:  # history merging is broken; see ticket #1915
-                for f in oldHistory:
-                    oldList = newValue._history.setdefault(f, [])
-                    oldList[:1] = oldHistory[f]
+            if value == dtype:
+                value = value()
+            oldValue.update(**value._storage)
+
+    def update(self, dict_):
+        for k,v in dict_.iteritems():
+            self[k] = v
 
     def _rename(self, fullname):
         self._fullname=fullname
@@ -403,6 +406,9 @@ class Field(object):
         outfile.write("%s=%s\n"%(fullname, repr(value)))
     
     def toDict(self, instance):
+        """
+        Convert the field value so that it can be set as the value of an item in a dict
+        """
         return self.__get__(instance)
 
     def __get__(self, instance, owner=None):
@@ -825,34 +831,25 @@ class ConfigField(Field):
         else:
             value = instance._storage.get(self.name, None)
             if value is None:
-                value = self._reset(instance, self.default)
+                self.__set__(instance, self.default)
             return value
-
-    def _reset(self, instance, value):
-        if value == self.dtype:
-            value = value()
-        elif not type(value) == self.dtype:
-            raise TypeError("Cannot set ConfigField: type(%r) is not %r" % (value,dtype))
-        else:
-            value = copy.deepcopy(value)
-        value._rename(_joinNamePath(instance._name, self.name))
-        instance._storage[self.name] = value
-        instance._history[self.name] = value._history
-        return value
 
     def __set__(self, instance, value):
         name = _joinNamePath(prefix=instance._name, name=self.name)
+        if value != self.dtype and type(value) != self.dtype:
+            raise TypeError("Cannot set ConfigField %s: type(%r) is not %r" % (name, value,dtype))
+
         oldValue = instance._storage.get(self.name, None)
         if oldValue is None:
-            self._reset(instance, value)
+            if value == self.dtype:
+                instance._storage[self.name] = value()
+            else:
+                instance._storage[self.name] = copy.deepcopy(value)
+            instance._storage[self.name]._rename(name)
         else:
-            oldHistory = oldValue._history
-            # discard the old object, but merge in its history
-            newValue = self._reset(instance, value)
-            if False:  # history merging is broken; see ticket #1915
-                for k in oldHistory:
-                    oldList = newValue._history.setdefault(k, [])
-                    oldList[:1] = oldHistory[k]
+            if value == self.dtype:
+                value = value()
+            oldValue.update(**value._storage)
                     
 
     def rename(self, instance):
@@ -867,7 +864,7 @@ class ConfigField(Field):
     def toDict(self, instance):
         value = self.__get__(instance)
         return value.toDict()
-
+    
     def validate(self, instance):
         value = self.__get__(instance)
         value.validate()
@@ -939,9 +936,13 @@ class ConfigChoiceField(Field):
         else:
             return self._getOrMake(instance)
 
-    def __set__(self, instance, value):
+    def __set__(self, instance, value):        
         instanceDict = self.__get__(instance)
-        instanceDict._setSelection(value)
+        if isinstance(value, self.instanceDictClass):
+            instanceDict.update(value)
+            instanceDict._setSelection(value._selection)
+        else:
+            instanceDict._setSelection(value)
 
     def rename(self, instance):
         instanceDict = self.__get__(instance)
