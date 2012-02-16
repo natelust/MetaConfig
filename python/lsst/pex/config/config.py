@@ -88,12 +88,12 @@ class Dict(collections.MutableMapping):
             k = self.keytype(k)
         except:
             raise TypeError("Key %s is of type %s, expected type %s"%\
-                    (k, type(k).__name__, self.keytype.__name__))
+                    (k, type(k), self.keytype))
         try:
             x = self.itemtype(x)
         except:
             raise TypeError("Value %s at key %s is of type %s, expected type %s"%\
-                    (x, k, type(x).__name__, self.itemtype.__name__))
+                    (x, k, type(x), self.itemtype))
         return k, x
     def __appendHistory(self):
         traceStack = traceback.extract_stack()[:-2]
@@ -319,7 +319,7 @@ class ConfigMeta(type):
 
 class FieldValidationError(ValueError):
     def __init__(self, fieldtype, fullname, msg):
-        error="%s '%s' failed validation: %s" % (fieldtype, fullname, msg)
+        error="%s '%s' failed validation: %s" % (fieldtype.__name__, fullname, msg)
         ValueError.__init__(self, error)
 
 class Field(object):
@@ -346,7 +346,7 @@ class Field(object):
         optional --- When False, Config validate() will fail if value is None
         """
         if dtype not in self.supportedTypes:
-            raise ValueError("Unsuported Field dtype '%s'"%(dtype.__name__,))
+            raise ValueError("Unsuported Field dtype '%s'"%(dtype))
         self._setup(doc, dtype, default, check, optional)
 
 
@@ -378,7 +378,7 @@ class Field(object):
         """
         value = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)
-        fieldType = type(self).__name__
+        fieldType = type(self)
         if not self.optional and value is None:
             msg = "Required value cannot be None"
             raise FieldValidationError(fieldType, fullname, msg)
@@ -411,13 +411,18 @@ class Field(object):
             return instance._storage[self.name]
 
     def __set__(self, instance, value):
-        try:
-            history = instance._history[self.name]
-        except KeyError:
-            history = []
-            instance._history[self.name] = history
+        history = instance._history.setdefault(self.name, [])
         if value is not None:
-            value = self.dtype(value)
+            fieldType= type(self)
+            fullname = _joinNamePath(instance._name, self.name)
+            try:
+                value = self.dtype(value)
+            except TypeError:
+                msg = "Incorrect type. Expected type '%s', got '%s'"%(self.dtype, type(value))
+                raise FieldValidationError(fieldType, fullname, msg)
+            if self.check is not None and not self.check(value):
+                msg = "%s is not a valid value"%str(value)
+                raise FieldValidationError(fieldType, fullname, msg)
         instance._storage[self.name]=value
         traceStack = traceback.extract_stack()[:-1]
         history.append((value, traceStack))
@@ -566,7 +571,7 @@ class Config(object):
             self.__dict__[attr] = value
         else:
             # We throw everything else.
-            raise AttributeError("%s has no attribute %s"%(type(self).__name__, attr))
+            raise AttributeError("%s has no attribute %s"%(type(self), attr))
 
     def __eq__(self, other):
         if type(other) == type(self):
@@ -631,7 +636,7 @@ class RangeField(Field):
         if not self.minCheck(value, self.min) or \
                 not self.maxCheck(value, self.max):
             fullname = _joinNamePath(instance._name, self.name)
-            fieldType = type(self).__name__
+            fieldType = type(self)
             msg = "%s is outside of valid range %s"%(value, self.rangeString)
             raise FieldValidationError(fieldType, fullname, msg)
             
@@ -664,7 +669,7 @@ class ChoiceField(Field):
         value = self.__get__(instance)
         if value not in self.allowed:
             fullname = _joinNamePath(instance._name, self.name)
-            fieldType = type(self).__name__
+            fieldType = type(self)
             msg = "Value ('%s') is not in the set of allowed values"%str(value)
             raise FieldValidationError(fieldType, fullname, msg) 
 
@@ -683,7 +688,7 @@ class ListField(Field):
     def __init__(self, doc, dtype, default=None, optional=False,
             listCheck=None, itemCheck=None, length=None, minLength=None, maxLength=None):
         if dtype not in Field.supportedTypes:
-            raise ValueError("Unsuported Field dtype '%s'"%(dtype.__name__,))
+            raise ValueError("Unsuported Field dtype '%s'"%dtype)
         Field._setup(self, doc=doc, dtype=List, default=default, optional=optional, check=None)
         self.listCheck = listCheck
         self.itemCheck = itemCheck
@@ -697,7 +702,7 @@ class ListField(Field):
         value = self.__get__(instance) 
         if value is not None:
             fullname = _joinNamePath(instance._name, self.name)
-            fieldType = type(self).__name__
+            fieldType = type(self)
             lenValue =len(value)
             if self.length is not None and not lenValue == self.length:
                 msg = "Required list length=%d, got length=%d"%(self.length, lenValue)                
@@ -715,7 +720,7 @@ class ListField(Field):
             for i, v in enumerate(value):
                 if not isinstance(v, self.itemType):
                     msg="Incorrect item type at position %d. Expected '%s', got '%s'"%\
-                            (i, type(v).__name__, self.itemType.__name__)
+                            (i, type(v), self.itemType)
                     raise FieldValidationError(fieldType, fullname, msg)
                         
                 if self.itemCheck is not None and not self.itemCheck(value[i]):
@@ -749,9 +754,9 @@ class DictField(Field):
     def __init__(self, doc, keytype, itemtype, default=None, optional=False, dictCheck=None, itemCheck=None):
         Field._setup(self, doc=doc, dtype=Dict, default=default, optional=optional, check=None)
         if keytype not in self.supportedTypes:
-            raise ValueError("key type '%s' is not a supported type"%keytype.__name__)
+            raise ValueError("key type '%s' is not a supported type"%keytype)
         elif itemtype not in self.supportedTypes:
-            raise ValueError("item type '%s' is not a supported type"%itemtype.__name__)
+            raise ValueError("item type '%s' is not a supported type"%itemtype)
 
         self.keytype = keytype
         self.itemtype = itemtype
@@ -763,7 +768,7 @@ class DictField(Field):
         value = self.__get__(instance) 
         if value is not None:
             fullname = _joinNamePath(instance._name, self.name)
-            fieldType = type(self).__name__
+            fieldType = type(self)
             if self.dictCheck is not None and not self.dictCheck(value):
                 msg = "%s is not a valid value"%str(value)
                 raise FieldValidationError(fieldType, fullname, msg)
@@ -949,7 +954,7 @@ class ConfigChoiceField(Field):
         instanceDict = self.__get__(instance)
         if not instanceDict.active and not self.optional:
             fullname = _joinNamePath(instance._name, self.name)
-            fieldType = type(self).__name__
+            fieldType = type(self)
             msg = "Required field cannot be None"
             raise FieldValidationError(fieldType, fullname, msg)
         elif instanceDict.active:

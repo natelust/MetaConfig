@@ -103,8 +103,7 @@ class ConfigTest(unittest.TestCase):
         self.simple.validate()
 
         self.inner.validate()
-        self.outer.i.f=-5
-        self.assertRaises(ValueError, self.outer.validate)
+        self.assertRaises(ValueError, setattr, self.outer.i, "f",-5)
         self.outer.i.f=10
         self.outer.validate()
 
