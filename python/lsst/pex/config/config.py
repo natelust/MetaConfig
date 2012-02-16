@@ -280,10 +280,10 @@ class ConfigInstanceDict(collections.Mapping):
                 value = value()
             oldValue.update(**value._storage)
 
-    def update(self, dict_):
-        for k,v in dict_.iteritems():
-            self[k] = v
-
+    def update(self, other):
+        for k in self.types:
+            self[k] = other[k]
+        
     def _rename(self, fullname):
         self._fullname=fullname
         for k, v in self._dict.iteritems():
@@ -939,6 +939,7 @@ class ConfigChoiceField(Field):
     def __set__(self, instance, value):        
         instanceDict = self.__get__(instance)
         if isinstance(value, self.instanceDictClass):
+            for
             instanceDict.update(value)
             instanceDict._setSelection(value._selection)
         else:
