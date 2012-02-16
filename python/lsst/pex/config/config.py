@@ -377,17 +377,23 @@ class Field(object):
         to re-implement validate
         """
         value = self.__get__(instance)
-        fullname = _joinNamePath(instance._name, self.name)
-        fieldType = type(self)
+        try:
+            self.validateValue(value)
+        except BaseException, e:
+            fullname = _joinNamePath(instance._name, self.name)
+            fieldType = type(self)
+            raise FieldValidationError(fieldType, fullname, e.message)
+    
+    def validateValue(self, value):
         if not self.optional and value is None:
             msg = "Required value cannot be None"
-            raise FieldValidationError(fieldType, fullname, msg)
+            raise ValueError(msg)
         if value is not None and not isinstance(value, self.dtype):
             msg = "Incorrect type. Expected type '%s', got '%s'"%(self.dtype, type(value))
-            raise FieldValidationError(fieldType, fullname, msg)
+            raise TypeError(msg)
         if self.check is not None and not self.check(value):
             msg = "%s is not a valid value"%str(value)
-            raise FieldValidationError(fieldType, fullname, msg)
+            raise ValueError(msg)
 
     def save(self, outfile, instance):
         """
@@ -413,17 +419,10 @@ class Field(object):
     def __set__(self, instance, value):
         history = instance._history.setdefault(self.name, [])
         if value is not None:
-            fieldType= type(self)
-            fullname = _joinNamePath(instance._name, self.name)
-            try:
-                value = self.dtype(value)
-            except TypeError:
-                msg = "Incorrect type. Expected type '%s', got '%s'"%(self.dtype, type(value))
-                raise FieldValidationError(fieldType, fullname, msg)
-            if self.check is not None and not self.check(value):
-                msg = "%s is not a valid value"%str(value)
-                raise FieldValidationError(fieldType, fullname, msg)
-        instance._storage[self.name]=value
+            value = self.dtype(value)
+            self.validateValue(value)
+        
+        instance._storage[self.name] = value
         traceStack = traceback.extract_stack()[:-1]
         history.append((value, traceStack))
 
@@ -630,15 +629,12 @@ class RangeField(Field):
             self.minCheck = lambda x, y: True if y is None else x > y
         Field.__init__(self, doc=doc, dtype=dtype, default=default, optional=optional) 
 
-    def validate(self, instance):
-        Field.validate(self, instance)
-        value = instance._storage[self.name]
+    def validateValue(self, value):
+        Field.validateValue(self, value)
         if not self.minCheck(value, self.min) or \
                 not self.maxCheck(value, self.max):
-            fullname = _joinNamePath(instance._name, self.name)
-            fieldType = type(self)
             msg = "%s is outside of valid range %s"%(value, self.rangeString)
-            raise FieldValidationError(fieldType, fullname, msg)
+            raise ValueError(msg)
             
 class ChoiceField(Field):
     """
@@ -664,14 +660,11 @@ class ChoiceField(Field):
 
         Field.__init__(self, doc=doc, dtype=dtype, default=default, check=None, optional=optional)
 
-    def validate(self, instance):
-        Field.validate(self, instance)
-        value = self.__get__(instance)
+    def validateValue(self, value):
+        Field.validateValue(self, value)
         if value not in self.allowed:
-            fullname = _joinNamePath(instance._name, self.name)
-            fieldType = type(self)
             msg = "Value ('%s') is not in the set of allowed values"%str(value)
-            raise FieldValidationError(fieldType, fullname, msg) 
+            raise ValueError(msg) 
 
 class ListField(Field):
     """
@@ -697,47 +690,40 @@ class ListField(Field):
         self.minLength=minLength
         self.maxLength=maxLength
     
-    def validate(self, instance):
-        Field.validate(self, instance)
-        value = self.__get__(instance) 
+    def validateValue(self, value):
+        Field.validateValue(self, value)
         if value is not None:
-            fullname = _joinNamePath(instance._name, self.name)
-            fieldType = type(self)
             lenValue =len(value)
             if self.length is not None and not lenValue == self.length:
                 msg = "Required list length=%d, got length=%d"%(self.length, lenValue)                
-                raise FieldValidationError(fieldType, fullname, msg)
+                raise ValueError(msg)
             elif self.minLength is not None and lenValue < self.minLength:
                 msg = "Minimum allowed list length=%d, got length=%d"%(self.minLength, lenValue)
-                raise FieldValidationError(fieldType, fullname, msg)
+                raise ValueError(msg)
             elif self.maxLength is not None and lenValue > self.maxLength:
                 msg = "Maximum allowed list length=%d, got length=%d"%(self.maxLength, lenValue)
-                raise FieldValidationError(fieldType, fullname, msg)
+                raise ValueError(msg)
             elif self.listCheck is not None and not self.listCheck(value):
                 msg = "%s is not a valid value"%str(value)
-                raise FieldValidationError(fieldType, fullname, msg)
+                raise ValueError(msg)
             
             for i, v in enumerate(value):
                 if not isinstance(v, self.itemType):
                     msg="Incorrect item type at position %d. Expected '%s', got '%s'"%\
                             (i, type(v), self.itemType)
-                    raise FieldValidationError(fieldType, fullname, msg)
+                    raise TypeError(msg)
                         
                 if self.itemCheck is not None and not self.itemCheck(value[i]):
                     msg="Item at position %s is not a valid value: %s"%(i, str(v))
-                    raise FieldValidationError(fieldType, fullname, msg)
+                    raise ValueError(msg)
 
     def __set__(self, instance, value):
-        try:
-            history = instance._history.get(self.name)
-        except KeyError:
-            history = []
-            instance._history[self.name]=history
-
+        history = instance._history.setdefault(self.name, [])
         if value is not None:
             instance._storage[self.name] = List(self.itemType, value, history)
         else:
-            Field.__set__(self, instance, value)
+            instance._storage[self.name] = None
+
     
     def toDict(self, instance):        
         value = self.__get__(instance)        
@@ -763,25 +749,19 @@ class DictField(Field):
         self.dictCheck = dictCheck
         self.itemCheck = itemCheck
     
-    def validate(self, instance):
-        Field.validate(self, instance)
-        value = self.__get__(instance) 
+    def validateValue(self, value):
+        Field.validateValue(self, value)
         if value is not None:
-            fullname = _joinNamePath(instance._name, self.name)
-            fieldType = type(self)
             if self.dictCheck is not None and not self.dictCheck(value):
                 msg = "%s is not a valid value"%str(value)
-                raise FieldValidationError(fieldType, fullname, msg)
+                raise ValueError(msg)
             
             for k, v in value.iteritems():
-                try:
-                    value._checkItemType(k, v)
-                except TypeError, e:
-                    raise FieldValidationError(fieldtype, fullname, str(e))
+                value._checkItemType(k, v)
                         
                 if self.itemCheck is not None and not self.itemCheck(v):
                     msg="Item at key %s is not a valid value: %s"%(k, str(v))
-                    raise FieldValidationError(fieldType, fullname, msg)
+                    raise ValueError(msg)
 
     def __set__(self, instance, value):
         try:
