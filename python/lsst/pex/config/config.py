@@ -183,9 +183,6 @@ class ConfigInstanceDict(collections.Mapping):
                     r = self[v] # just invoke __getitem__ to make sure it's present
             self._selection = tuple(value)
         else:
-            print >> sys.stderr, "value", value, "type(value)", type(value)
-            print >> sys.stderr, "_dict", self._dict, "type(_dict)", type(self._dict)
-
             if value not in self._dict:
                 r = self[value] # just invoke __getitem__ to make sure it's present
             self._selection = value
@@ -280,10 +277,6 @@ class ConfigInstanceDict(collections.Mapping):
                 value = value()
             oldValue.update(**value._storage)
 
-    def update(self, other):
-        for k in self.types:
-            self[k] = other[k]
-        
     def _rename(self, fullname):
         self._fullname=fullname
         for k, v in self._dict.iteritems():
@@ -403,7 +396,7 @@ class Field(object):
         """
         value = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)
-        outfile.write("%s=%s\n"%(fullname, repr(value)))
+        print >> outfile, "%s=%s"%(fullname, repr(value))
     
     def toDict(self, instance):
         """
@@ -507,6 +500,10 @@ class Config(object):
         self._rename(root)
         try:
             outfile = open(filename, 'w')
+            configType = type(self)
+            typeString = configType.__module__+"."+configType.__name__
+            print >> outfile, "import %s"%(configType.__module__) 
+            print >> outfile, "assert(type(%s)==%s)"%(root, typeString) 
             self._save(outfile)
             outfile.close()
         finally:
@@ -516,8 +513,6 @@ class Config(object):
         """
         Internal use only. Save this Config to file
         """
-        configType = type(self)
-        typeString = configType.__module__+"."+configType.__name__
         for field in self._fields.itervalues():
             field.save(outfile, self)
         
@@ -939,7 +934,8 @@ class ConfigChoiceField(Field):
     def __set__(self, instance, value):        
         instanceDict = self.__get__(instance)
         if isinstance(value, self.instanceDictClass):
-            instanceDict.update(value)
+            for k in value:                    
+                instanceDict[k] = value[k]
             instanceDict._setSelection(value._selection)
         else:
             instanceDict._setSelection(value)
@@ -985,7 +981,7 @@ class ConfigChoiceField(Field):
         for v in instanceDict.itervalues():
             v._save(outfile)
         if self.multi:
-            outfile.write("%s.names=%s\n"%(fullname, repr(instanceDict.names)))
+            print >> outfile, "%s.names=%s"%(fullname, repr(instanceDict.names))
         else:
-            outfile.write("%s.name=%s\n"%(fullname, repr(instanceDict.name)))
+            print >> outfile, "%s.name=%s\n"%(fullname, repr(instanceDict.name))
 
