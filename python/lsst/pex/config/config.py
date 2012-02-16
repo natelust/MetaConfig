@@ -939,7 +939,6 @@ class ConfigChoiceField(Field):
     def __set__(self, instance, value):        
         instanceDict = self.__get__(instance)
         if isinstance(value, self.instanceDictClass):
-            for
             instanceDict.update(value)
             instanceDict._setSelection(value._selection)
         else:
