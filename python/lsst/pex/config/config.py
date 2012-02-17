@@ -724,7 +724,7 @@ class ListField(Field):
         if value is not None:
             instance._storage[self.name] = List(self.itemType, value, history)
         else:
-            Field.__set__(instance, None)
+            Field.__set__(self, instance, None)
 
     
     def toDict(self, instance):        
