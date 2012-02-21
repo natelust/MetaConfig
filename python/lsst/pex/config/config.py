@@ -463,19 +463,30 @@ class Config(object):
     def __contains__(self, name):
         return self._storage.__contains__(name)
 
+    def __new__(cls, *args, **kw):
+        instance = object.__new__(cls, *args, **kw)
+        instance._name="root"
+        instance._storage = {}
+        instance._history = {}
+        # load up defaults
+        for field in instance._fields.itervalues():
+            field.__set__(instance, field.default)
+        return instance
+
     def __init__(self, **kw):
         """Initialize the Config.
 
-        Keyword arguments will be used to set field values.
+        Keyword arguments will be used to override field values.
         """
-        self._name="root"
-
-        self._storage = {}
-        self._history = {}
-        # load up defaults
-        for field in self._fields.itervalues():
-            field.__set__(self, field.default)
+        self.setDefaults()
         self.update(**kw)
+
+    def setDefaults(self):
+        """
+        Derived config classes that must compute defaults rather than using the 
+        Field defaults should do so here.
+        """
+        pass
             
     def update(self, **kw):
         for name, value in kw.iteritems():            
