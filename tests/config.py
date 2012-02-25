@@ -52,7 +52,7 @@ class OuterConfig(InnerConfig, pexConfig.Config):
     i = pexConfig.ConfigField("Outer.i", InnerConfig)   
     def __init__(self):
         pexConfig.Config.__init__(self)
-        self.i.f = 5
+        self.i.f = 5.0
 
     def validate(self):
         pexConfig.Config.validate(self)
@@ -104,7 +104,7 @@ class ConfigTest(unittest.TestCase):
 
         self.inner.validate()
         self.assertRaises(ValueError, setattr, self.outer.i, "f",-5)
-        self.outer.i.f=10
+        self.outer.i.f=10.
         self.outer.validate()
 
         self.simple.d["failKey"]= "failValue"
@@ -126,7 +126,7 @@ class ConfigTest(unittest.TestCase):
     def testSave(self):
         self.comp.r="BBB"
         self.comp.p="AAA"
-        self.comp.c.f=5
+        self.comp.c.f=5.
         self.comp.save("roundtrip.test")
         roundTrip = Complex()
 
@@ -175,7 +175,7 @@ class ConfigTest(unittest.TestCase):
 
         #test inheritance from non Config objects
         class GGG(object):
-            a = pexConfig.Field("AAA.a", float, default=10)
+            a = pexConfig.Field("AAA.a", float, default=10.)
         class HHH(GGG, AAA):
             pass
         h = HHH()
