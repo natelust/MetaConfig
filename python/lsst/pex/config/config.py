@@ -18,126 +18,107 @@ def _joinNamePath(prefix=None, name=None, index=None):
         name = prefix + "." + name
 
     if index is not None:
-        return "%s[%s]"%(name, repr(index))
+        return "%s[%r]"%(name, index)
     else:
         return name
 
 class List(collections.MutableSequence):
-    def __init__(self, dtype, value, history):
-        self.dtype= dtype
-        if value is not None:            
-            self.value = list(value)
-            for xi in self.value:
-                self._checkItemType(xi)
+    def __appendHistory(self):
+        traceStack = traceback.extract_stack()[:-2]
+        self.__history.append((list(self.__value), traceStack))
+
+    def __init__(self, config, field, value):
+        self.__field = field
+        self.__config = config
+        if value is not None:
+            self.__value = list(value)
         else:
-            self.value = []
-        self._history = history if history is not None else []
-        self.__appendHistory()
+            self.__value = []
+
+        self.__history = self.__config._history.setdefault(self.__field.name, [])
+        #self.__appendHistory()
+
     """
     Read-only history
     """
     history = property(lambda x: x._history)   
 
-    def _checkItemType(self, x):
-        if type(x) != self.dtype:
-            raise TypeError("Value %s is of type %s, expected type %s"%(x, type(x), self.dtype))
-
-    def __appendHistory(self):
-        traceStack = traceback.extract_stack()[:-2]
-        self._history.append((list(self.value), traceStack))
-
-    def __contains__(self, x):
-        return self.value.__contains__(x)
+    def __contains__(self, x): return x in self.__value
 
     def __len__(self):
-        return len(self.value)
+        return len(self.__value)
 
     def __setitem__(self, i, x):
         if isinstance(i, slice):
+            k, stop, step = i.indices(len(self))
             for xi in x:
-                self._checkItemType(xi)
+                self.__field.validateItem(k, xi)
+                k += step
         else:
-            self._checkItemType(x)
+            self.__field.validateItem(i, x)
             
-        self.value[i]=x
+        self.__value[i]=x
         self.__appendHistory()
         
-    def __getitem__(self, i):
-        return self.value[i]
+    def __getitem__(self, i): return self.__value[i]
     
     def __delitem__(self, i):
-        del self.value[i]
+        del self.__value[i]
         self.__appendHistory()
 
-    def __iter__(self):
-        return self.value.__iter__()
+    def __iter__(self): return iter(self.__value)
 
-    def insert(self, i, x):
-        self[i:i+1]=x
+    def insert(self, i, x): self[i:i+1]=x
 
-    def __repr__(self):
-        return repr(self.value)
+    def __repr__(self): return repr(self.__value)
 
-    def __str__(self):
-        return str(self.value)
+    def __str__(self): return str(self.__value)
 
 
 class Dict(collections.MutableMapping):
-    def _checkItemType(self, k, x):
-        if type(k) != self.keytype:
-            raise TypeError("Key %s is of type %s, expected type %s"%\
-                    (k, type(k), self.keytype))
-        if type(x) != self.itemtype:
-            raise TypeError("Value %s at key %s is of type %s, expected type %s"%\
-                    (x, k, type(x), self.itemtype))
     def __appendHistory(self):
         traceStack = traceback.extract_stack()[:-2]
-        self._history.append((dict(self.value), traceStack))
+        self.__history.append((dict(self.__value), traceStack))
 
-    def __init__(self, keytype, itemtype, value, history):
-        self.keytype = keytype
-        self.itemtype = itemtype
-        self.value = {}
+    def __init__(self, config, field, value):
+        self.__field = field
+        self.__config = config
+        self.__value = {}
         if value is not None:
-            for k, x in value.iteritems():                
-                self._checkItemType(k, x)
-            self.value.update(value)
-        self._history = history if history is not None else []
-        self.__appendHistory()
+            self.__value.update(value)
+
+        self.__history = self.__config._history.setdefault(self.__field.name, [])
+        #self.__appendHistory()
 
     """
     Read-only history
     """
-    history = property(lambda x: x._history)   
+    history = property(lambda x: x.__history)   
 
+    def __getitem__(self, k): return self.__value[k]
 
-   
-    def __getitem__(self, k):
-        return self.value[k]
+    def __len__(self): return len(self.__value)
 
-    def __len__(self):
-        return len(self.value)
+    def __iter__(self): return iter(self.__value)
 
-    def __iter__(self):
-        return self.value.__iter__()
-
-    def __contains__(self, k):
-        return self.value.__contains__(k)
+    def __contains__(self, k): return k in self.__value
 
     def __setitem__(self, k, x):
-        self._checkItemType(k, x)
-        self.value[k]=x
+        try:
+            self.__field.validateItem(k, x)
+        except BaseException, e:
+            raise FieldValidationError(self.__field, self.__config, e.message)
+
+        self.__value[k]=x
         self.__appendHistory()
 
     def __delitem__(self, k):
-        del self.value[k]
+        del self.__value[k]
         self.__appendHistory()
 
-    def __repr__(self):
-        return repr(self.value)
+    def __repr__(self): return repr(self.__value)
 
-    def __str__(self):
-        return str(self.value)
+    def __str__(self): return str(self.__value)
     
 
 class ConfigInstanceDict(collections.Mapping):
@@ -238,7 +219,7 @@ class ConfigInstanceDict(collections.Mapping):
             try:
                 dtype = self.types[k]
             except:
-                raise KeyError("Unknown key %s in field %s"%(repr(k), self._fullname))
+                raise KeyError("Unknown key %r in field %s"%(k, self._fullname))
             value = self._dict.setdefault(k, dtype())
         return value
 
@@ -247,7 +228,7 @@ class ConfigInstanceDict(collections.Mapping):
         try:
             dtype = self.types[k]
         except:
-            raise KeyError("Unknown key %s in field %s"%(repr(k), self._fullname))
+            raise KeyError("Unknown key %r in field %s"%(k, self._fullname))
 
         if value != dtype and type(value) != dtype:
             raise TypeError("Cannot set ConfigField %s: type(%r) is not %r" % (name, value, dtype))
@@ -403,7 +384,7 @@ class Field(object):
         """
         value = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)
-        print >> outfile, "%s=%s"%(fullname, repr(value))
+        print >> outfile, "%s=%r"%(fullname, value)
     
     def toDict(self, instance):
         """
@@ -697,7 +678,17 @@ class ListField(Field):
         self.length=length
         self.minLength=minLength
         self.maxLength=maxLength
-    
+   
+    def validateItem(self, i, x):
+        if not isinstance(x, self.itemType) and x is not None:
+            msg="Incorrect item type at position %d. Expected '%s', got '%s'"%\
+                    (i, type(x), self.itemType)
+            raise TypeError(msg)
+                
+        if self.itemCheck is not None and not self.itemCheck(x):
+            msg="Item at position %s is not a valid value: %s"%(i, x)
+            raise ValueError(msg)
+
     def validateValue(self, value):
         Field.validateValue(self, value)
         if value is not None:
@@ -715,27 +706,13 @@ class ListField(Field):
                 msg = "%s is not a valid value"%str(value)
                 raise ValueError(msg)
             
-            for i, v in enumerate(value):
-                if not isinstance(v, self.itemType):
-                    msg="Incorrect item type at position %d. Expected '%s', got '%s'"%\
-                            (i, type(v), self.itemType)
-                    raise TypeError(msg)
-                        
-                if self.itemCheck is not None and not self.itemCheck(value[i]):
-                    msg="Item at position %s is not a valid value: %s"%(i, str(v))
-                    raise ValueError(msg)
+            for i, x in enumerate(value):
+                self.validateItem(i,x)
 
     def __set__(self, instance, value):
-        history = instance._history.setdefault(self.name, [])
         if value is not None:
-            value = List(self.itemType, value, history)
-            try:
-                self.validateValue(value)
-            except BaseException, e:
-                raise FieldValidationError(self, instance, e.message)
-            instance._storage[self.name] = value
-        else:
-            Field.__set__(self, instance, None)
+            value = List(instance, self, value)
+        Field.__set__(self, instance, value)
 
     
     def toDict(self, instance):        
@@ -762,32 +739,32 @@ class DictField(Field):
         self.itemtype = itemtype
         self.dictCheck = dictCheck
         self.itemCheck = itemCheck
-    
+   
+    def validateItem(self, k, x):
+        if type(k) != self.keytype:
+            raise TypeError("Key %s is of type %s, expected type %s"%\
+                    (k, type(k), self.keytype))
+        if type(x) != self.itemtype and x is not None:
+            raise TypeError("Value %s at key %s is of type %s, expected type %s"%\
+                    (x, k, type(x), self.itemtype))
+        if self.itemCheck is not None and not self.itemCheck(x):
+                msg="Item at key %s is not a valid value: %s"%(k, x)
+                raise ValueError(msg)
+
     def validateValue(self, value):
         Field.validateValue(self, value)
         if value is not None:
             if self.dictCheck is not None and not self.dictCheck(value):
                 msg = "%s is not a valid value"%str(value)
                 raise ValueError(msg)
-            
-            for k, v in value.iteritems():
-                value._checkItemType(k, v)
-                        
-                if self.itemCheck is not None and not self.itemCheck(v):
-                    msg="Item at key %s is not a valid value: %s"%(k, str(v))
-                    raise ValueError(msg)
+         
+            for k, x in value.iteritems():
+                self.validateItem(k, x)
 
     def __set__(self, instance, value):
-        history = instance._history.setdefault(self.name, [])
         if value is not None:
-            value = Dict(self.keytype, self.itemtype, value, history)
-            try:
-                self.validateValue(value)
-            except BaseException, e:
-                raise FieldValidationError(self, instance, e.message)
-            instance._storage[self.name] = value
-        else:
-            Field.__set__(self, instance, None)
+            value = Dict(instance, self, value)
+        Field.__set__(self, instance, value)
     
     def toDict(self, instance):        
         value = self.__get__(instance)        
@@ -977,7 +954,7 @@ class ConfigChoiceField(Field):
         for v in instanceDict.itervalues():
             v._save(outfile)
         if self.multi:
-            print >> outfile, "%s.names=%s"%(fullname, repr(instanceDict.names))
+            print >> outfile, "%s.names=%r"%(fullname, instanceDict.names)
         else:
-            print >> outfile, "%s.name=%s\n"%(fullname, repr(instanceDict.name))
+            print >> outfile, "%s.name=%r"%(fullname, instanceDict.name)
 
