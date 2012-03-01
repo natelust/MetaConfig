@@ -107,18 +107,22 @@ class RegistryAdaptor(object):
         return self.registry[k].ConfigClass
 
 class RegistryInstanceDict(ConfigInstanceDict):    
-    def __init__(self, fullname, typemap, multi, history=None):
-        ConfigInstanceDict.__init__(self, fullname, typemap, multi, history)
+    def __init__(self, config, field):
+        ConfigInstanceDict.__init__(self, config, field)
 
     def _getTarget(self):
         if self._multi:
-            raise AttributeError("Multi-selection field %s has no attribute 'target'" % self._fullname)
+            msg = "Multi-selection %s has no attribute 'target'"%\
+                    type(self.__field).__name__
+            raise FieldValidationError(self.__field, self.__config, msg)
         return self.types.registry[self._selection]
     target = property(_getTarget)
 
     def _getTargets(self):
         if not self._multi:
-            raise AttributeError("Single-selection field %s has no attribute 'targets'" % self._fullname)
+            msg = "Single-selection %s has no attribute 'targets'"%\
+                    type(self.__field).__name__
+            raise FieldValidationError(self.__field, self.__config, msg)
         return [self.types.registry[c] for c in self._selection]
     targets = property(_getTarget)
 
@@ -131,8 +135,9 @@ class RegistryInstanceDict(ConfigInstanceDict):
         Additional arguments will be passed on to the configurable or configurables.
         """
         if self.active is None:
-            raise RuntimeError("No selection has been made for %s.  Options: %s" % \
-                               (self._fullname, " ".join(self.types.registry.keys())))
+            msg = "No selection has been mad.  Options: %s" % \
+                    (" ".join(self.types.registry.keys()))
+            raise FieldValidationError(self.__field, self.__config, msg)
         if self._multi:
             return [self.types.registry[c](self[c], *args, **kwds) for c in self._selection]
         else:
