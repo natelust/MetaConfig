@@ -31,12 +31,15 @@ class List(collections.MutableSequence):
         self.__field = field
         self.__config = config
         if value is not None:
-            self.__value = list(value)
+            try:
+                self.__value = list(value)
+            except:
+                msg = "Value %s is of incorrect type %r. Expected a sequence"%(value, type(value))
+                raise FieldValidationError(self.__field, self.__config, msg)
         else:
             self.__value = []
 
         self.__history = self.__config._history.setdefault(self.__field.name, [])
-        #self.__appendHistory()
 
     """
     Read-only history
@@ -85,10 +88,13 @@ class Dict(collections.MutableMapping):
         self.__config = config
         self.__value = {}
         if value is not None:
-            self.__value.update(value)
+            try:
+                self.__value.update(value)
+            except TypeError, e:
+                msg = "Value %s is of incorrect type %r. Expected a dict-like value"%(value, type(value))
+                raise FieldValidationError(self.__field, self.__config, msg)
 
         self.__history = self.__config._history.setdefault(self.__field.name, [])
-        #self.__appendHistory()
 
     """
     Read-only history
@@ -127,14 +133,14 @@ class ConfigInstanceDict(collections.Mapping):
     typemap must support the following:
     - typemap[name]: return the config class associated with the given name
     """
-    def __init__(self, fullname, types, multi, history=None):
+    def __init__(self, config, field):
         collections.Mapping.__init__(self)
         self._dict = dict()
-        self._fullname = fullname
         self._selection = None
-        self._multi = multi
-        self.types = types
-        self.history = [] if history is None else history
+        self.__config = config
+        self.__field = field
+        self.__history = config._history.setdefault(field.name, [])
+        self.__doc__ = field.doc
 
     def __contains__(self, k): return k in self._dict
 
@@ -146,8 +152,8 @@ class ConfigInstanceDict(collections.Mapping):
         if value is None:
             self._selection=None
         # JFB:  Changed to ensure selection is present in this instance (and add it if it is not),
-        #       rather than just checking if it is present in self.types.
-        elif self._multi:
+        #       rather than just checking if it is present in self.__field.typemap.
+        elif self.__field.multi:
             for v in value:
                 if v not in self._dict:
                     r = self[v] # just invoke __getitem__ to make sure it's present
@@ -156,32 +162,38 @@ class ConfigInstanceDict(collections.Mapping):
             if value not in self._dict:
                 r = self[value] # just invoke __getitem__ to make sure it's present
             self._selection = value
-        self.history.append((value, traceback.extract_stack()[:-1]))
+        self.__history.append((value, traceback.extract_stack()[:-1]))
     
     def _getNames(self):
-        if not self._multi:
-            raise AttributeError("Single-selection field %s has no attribute 'names'"%self._fullname)
+        if not self.__field.multi:            
+            raise FieldValidationError(self.__field, self.__config, 
+                    "Single-selection %s has no attribute 'names'"%type(self.__field).__name__)
         return self._selection
     def _setNames(self, value):
-        if not self._multi:
-            raise AttributeError("Single-selection field %s has no attribute 'names'"%self._fullname)
+        if not self.__field.multi:
+            raise FieldValidationError(self.__field, self.__config, 
+                    "Single-selection %s has no attribute 'names'"%type(self.__field).__name__)
         self._setSelection(value)
     def _delNames(self):
-        if not self._multi:
-            raise AttributeError("Single-selection field %s has no attribute 'names'"%self._fullname)
+        if not self.__field.multi:
+            raise FieldValidationError(self.__field, self.__config, 
+                    "Single-selection %s has no attribute 'names'"%type(self.__field).__name__)
         self._selection = None
     
     def _getName(self):
-        if self._multi:
-            raise AttributeError("Multi-selection field %s has no attribute 'name'"%self._fullname)
+        if self.__field.multi:
+            raise FieldValidationError(self.__field, self.__config, 
+                    "Multi-selection %s has no attribute 'name'"%type(self.__field).__name__)
         return self._selection
     def _setName(self, value):
-        if self._multi:
-            raise AttributeError("Multi-selection field %s has no attribute 'name'"%self._fullname)
+        if self.__field.multi:
+            raise FieldValidationError(self.__field, self.__config, 
+                    "Multi-selection %s has no attribute 'name'"%type(self.__field).__name__)
         self._setSelection(value)
     def _delName(self):
-        if self._multi:
-            raise AttributeError("Multi-selection field %s has no attribute 'name'"%self._fullname)
+        if self.__field.multi:
+            raise FieldValidationError(self.__field, self.__config, 
+                    "Multi-selection %s has no attribute 'name'"%type(self.__field).__name__)
         self._selection=None
    
     """
@@ -200,7 +212,7 @@ class ConfigInstanceDict(collections.Mapping):
         if self._selection is None:
             return None
 
-        if self._multi:
+        if self.__field.multi:
             return [self[c] for c in self._selection]
         else:
             return self[self._selection]
@@ -217,21 +229,22 @@ class ConfigInstanceDict(collections.Mapping):
             value = self._dict[k]
         except KeyError:
             try:
-                dtype = self.types[k]
+                dtype = self.__field.typemap[k]
             except:
-                raise KeyError("Unknown key %r in field %s"%(k, self._fullname))
+                raise FieldValidationError(self.__field, self.__config, "Unknown key %r"%k)
             value = self._dict.setdefault(k, dtype())
         return value
 
     def __setitem__(self, k, value):
-        name = _joinNamePath(name=self._fullname, index=k)
         try:
-            dtype = self.types[k]
+            dtype = self.__field.typemap[k]
         except:
-            raise KeyError("Unknown key %r in field %s"%(k, self._fullname))
-
+            raise FieldValidationError(self.__field, self.__config, "Unknown key %r"%k)
+        
         if value != dtype and type(value) != dtype:
-            raise TypeError("Cannot set ConfigField %s: type(%r) is not %r" % (name, value, dtype))
+            msg = "Value %s at key %r is of incorrect type %s. Expected type %s"%\
+                    (value, k, type(value), dtype)
+            raise FieldValidationError(self.__field, self.__config, msg)
 
         oldValue = self._dict.get(k, None)
         if oldValue is None:
@@ -246,7 +259,6 @@ class ConfigInstanceDict(collections.Mapping):
             oldValue.update(**value._storage)
 
     def _rename(self, fullname):
-        self._fullname=fullname
         for k, v in self._dict.iteritems():
             v._rename(_joinNamePath(name=fullname, index=k))
 
@@ -360,16 +372,15 @@ class Field(object):
         to re-implement validate
         """
         value = self.__get__(instance)
-        try:
-            self.validateValue(value)
-        except BaseException, e:
-            raise FieldValidationError(self, instance, e.message)
+        if not self.optional and value is None:
+            raise FieldValidationError(self, instance, "Required value cannot be None")
     
     def validateValue(self, value):
-        if not self.optional and value is None:
-            msg = "Required value cannot be None"
-            raise ValueError(msg)
-        if value is not None and not isinstance(value, self.dtype):
+        """Validate a value that is not None"""
+        if value is None:
+            return
+
+        if not isinstance(value, self.dtype):
             msg = "Value %s is of incorrect type %r. Expected type %r"%\
                     (value, type(value), self.dtype)
             raise TypeError(msg)
@@ -480,7 +491,6 @@ class Config(object):
         execfile(filename, {}, local)
  
     def save(self, filename, root="root"):
-        
         """
         Generates a python script, which, when loaded, reproduces this Config
         """
@@ -691,23 +701,25 @@ class ListField(Field):
 
     def validateValue(self, value):
         Field.validateValue(self, value)
-        if value is not None:
-            lenValue =len(value)
-            if self.length is not None and not lenValue == self.length:
-                msg = "Required list length=%d, got length=%d"%(self.length, lenValue)                
-                raise ValueError(msg)
-            elif self.minLength is not None and lenValue < self.minLength:
-                msg = "Minimum allowed list length=%d, got length=%d"%(self.minLength, lenValue)
-                raise ValueError(msg)
-            elif self.maxLength is not None and lenValue > self.maxLength:
-                msg = "Maximum allowed list length=%d, got length=%d"%(self.maxLength, lenValue)
-                raise ValueError(msg)
-            elif self.listCheck is not None and not self.listCheck(value):
-                msg = "%s is not a valid value"%str(value)
-                raise ValueError(msg)
-            
-            for i, x in enumerate(value):
-                self.validateItem(i,x)
+        if value is None:
+            return
+
+        lenValue =len(value)
+        if self.length is not None and not lenValue == self.length:
+            msg = "Required list length=%d, got length=%d"%(self.length, lenValue)                
+            raise ValueError(msg)
+        elif self.minLength is not None and lenValue < self.minLength:
+            msg = "Minimum allowed list length=%d, got length=%d"%(self.minLength, lenValue)
+            raise ValueError(msg)
+        elif self.maxLength is not None and lenValue > self.maxLength:
+            msg = "Maximum allowed list length=%d, got length=%d"%(self.maxLength, lenValue)
+            raise ValueError(msg)
+        elif self.listCheck is not None and not self.listCheck(value):
+            msg = "%s is not a valid value"%str(value)
+            raise ValueError(msg)
+        
+        for i, x in enumerate(value):
+            self.validateItem(i,x)
 
     def __set__(self, instance, value):
         if value is not None:
@@ -753,13 +765,15 @@ class DictField(Field):
 
     def validateValue(self, value):
         Field.validateValue(self, value)
-        if value is not None:
-            if self.dictCheck is not None and not self.dictCheck(value):
-                msg = "%s is not a valid value"%str(value)
-                raise ValueError(msg)
-         
-            for k, x in value.iteritems():
-                self.validateItem(k, x)
+        if value is None:
+            return
+
+        if self.dictCheck is not None and not self.dictCheck(value):
+            msg = "%s is not a valid value"%str(value)
+            raise ValueError(msg)
+     
+        for k, x in value.iteritems():
+            self.validateItem(k, x)
 
     def __set__(self, instance, value):
         if value is not None:
@@ -893,9 +907,7 @@ class ConfigChoiceField(Field):
         instanceDict = instance._storage.get(self.name)
         if instanceDict is None:
             name = _joinNamePath(instance._name, self.name)
-            history = []
-            instance._history[self.name] = history
-            instanceDict = self.dtype(name, self.typemap, self.multi, history)
+            instanceDict = self.dtype(instance, self)
             instanceDict.__doc__ = self.doc
             instance._storage[self.name] = instanceDict
         return instanceDict
@@ -907,7 +919,7 @@ class ConfigChoiceField(Field):
             return self._getOrMake(instance)
 
     def __set__(self, instance, value):        
-        instanceDict = self.__get__(instance)
+        instanceDict = self._getOrMake(instance)
         if isinstance(value, self.instanceDictClass):
             for k in value:                    
                 instanceDict[k] = value[k]
@@ -950,7 +962,7 @@ class ConfigChoiceField(Field):
 
     def save(self, outfile, instance):
         instanceDict = self.__get__(instance)
-        fullname = instanceDict._fullname
+        fullname = _joinNamePath(instance._name, self.name)
         for v in instanceDict.itervalues():
             v._save(outfile)
         if self.multi:
