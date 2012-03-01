@@ -53,6 +53,8 @@ class SubConfigDefaultsTest(unittest.TestCase):
         c1 = Config1()
         self.assertEqual(c1.r1.name, "C1")
         self.assertEqual(list(c1.r2.names), ["C2"])
+        print c1.r1.target
+        print c1.r2.targets
         c1.validate()
         c2 = Config2()
         self.assertEqual(Config2.c.default, Config1)

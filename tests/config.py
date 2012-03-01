@@ -215,6 +215,7 @@ class ConfigTest(unittest.TestCase):
 
         ps = pexConfig.makePropertySet(self.comp)
         self.assertEqual(ps.get("c.f"), self.comp.c.f)
+
 def  suite():
     utilsTests.init()
     suites = []

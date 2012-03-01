@@ -28,18 +28,18 @@ class List(collections.MutableSequence):
         self.__history.append((list(self.__value), traceStack))
 
     def __init__(self, config, field, value):
-        self.__field = field
-        self.__config = config
+        self._field = field
+        self._config = config
         if value is not None:
             try:
                 self.__value = list(value)
             except:
                 msg = "Value %s is of incorrect type %r. Expected a sequence"%(value, type(value))
-                raise FieldValidationError(self.__field, self.__config, msg)
+                raise FieldValidationError(self._field, self._config, msg)
         else:
             self.__value = []
 
-        self.__history = self.__config._history.setdefault(self.__field.name, [])
+        self.__history = self._config._history.setdefault(self._field.name, [])
 
     """
     Read-only history
@@ -55,10 +55,10 @@ class List(collections.MutableSequence):
         if isinstance(i, slice):
             k, stop, step = i.indices(len(self))
             for xi in x:
-                self.__field.validateItem(k, xi)
+                self._field.validateItem(k, xi)
                 k += step
         else:
-            self.__field.validateItem(i, x)
+            self._field.validateItem(i, x)
             
         self.__value[i]=x
         self.__appendHistory()
@@ -84,17 +84,17 @@ class Dict(collections.MutableMapping):
         self.__history.append((dict(self.__value), traceStack))
 
     def __init__(self, config, field, value):
-        self.__field = field
-        self.__config = config
+        self._field = field
+        self._config = config
         self.__value = {}
         if value is not None:
             try:
                 self.__value.update(value)
             except TypeError, e:
                 msg = "Value %s is of incorrect type %r. Expected a dict-like value"%(value, type(value))
-                raise FieldValidationError(self.__field, self.__config, msg)
+                raise FieldValidationError(self._field, self._config, msg)
 
-        self.__history = self.__config._history.setdefault(self.__field.name, [])
+        self.__history = self._config._history.setdefault(self._field.name, [])
 
     """
     Read-only history
@@ -111,9 +111,9 @@ class Dict(collections.MutableMapping):
 
     def __setitem__(self, k, x):
         try:
-            self.__field.validateItem(k, x)
+            self._field.validateItem(k, x)
         except BaseException, e:
-            raise FieldValidationError(self.__field, self.__config, e.message)
+            raise FieldValidationError(self._field, self._config, e.message)
 
         self.__value[k]=x
         self.__appendHistory()
@@ -137,10 +137,12 @@ class ConfigInstanceDict(collections.Mapping):
         collections.Mapping.__init__(self)
         self._dict = dict()
         self._selection = None
-        self.__config = config
-        self.__field = field
+        self._config = config
+        self._field = field
         self.__history = config._history.setdefault(field.name, [])
         self.__doc__ = field.doc
+
+    type = property(lambda x: x._field.typemap)
 
     def __contains__(self, k): return k in self._dict
 
@@ -152,8 +154,8 @@ class ConfigInstanceDict(collections.Mapping):
         if value is None:
             self._selection=None
         # JFB:  Changed to ensure selection is present in this instance (and add it if it is not),
-        #       rather than just checking if it is present in self.__field.typemap.
-        elif self.__field.multi:
+        #       rather than just checking if it is present in self._field.typemap.
+        elif self._field.multi:
             for v in value:
                 if v not in self._dict:
                     r = self[v] # just invoke __getitem__ to make sure it's present
@@ -165,35 +167,35 @@ class ConfigInstanceDict(collections.Mapping):
         self.__history.append((value, traceback.extract_stack()[:-1]))
     
     def _getNames(self):
-        if not self.__field.multi:            
-            raise FieldValidationError(self.__field, self.__config, 
-                    "Single-selection %s has no attribute 'names'"%type(self.__field).__name__)
+        if not self._field.multi:            
+            raise FieldValidationError(self._field, self._config, 
+                    "Single-selection field has no attribute 'names'")
         return self._selection
     def _setNames(self, value):
-        if not self.__field.multi:
-            raise FieldValidationError(self.__field, self.__config, 
-                    "Single-selection %s has no attribute 'names'"%type(self.__field).__name__)
+        if not self._field.multi:
+            raise FieldValidationError(self._field, self._config, 
+                    "Single-selection field has no attribute 'names'")
         self._setSelection(value)
     def _delNames(self):
-        if not self.__field.multi:
-            raise FieldValidationError(self.__field, self.__config, 
-                    "Single-selection %s has no attribute 'names'"%type(self.__field).__name__)
+        if not self._field.multi:
+            raise FieldValidationError(self._field, self._config, 
+                    "Single-selection field has no attribute 'names'")
         self._selection = None
     
     def _getName(self):
-        if self.__field.multi:
-            raise FieldValidationError(self.__field, self.__config, 
-                    "Multi-selection %s has no attribute 'name'"%type(self.__field).__name__)
+        if self._field.multi:
+            raise FieldValidationError(self._field, self._config, 
+                    "Multi-selection field has no attribute 'name'")
         return self._selection
     def _setName(self, value):
-        if self.__field.multi:
-            raise FieldValidationError(self.__field, self.__config, 
-                    "Multi-selection %s has no attribute 'name'"%type(self.__field).__name__)
+        if self._field.multi:
+            raise FieldValidationError(self._field, self._config, 
+                    "Multi-selection field has no attribute 'name'")
         self._setSelection(value)
     def _delName(self):
-        if self.__field.multi:
-            raise FieldValidationError(self.__field, self.__config, 
-                    "Multi-selection %s has no attribute 'name'"%type(self.__field).__name__)
+        if self._field.multi:
+            raise FieldValidationError(self._field, self._config, 
+                    "Multi-selection field has no attribute 'name'")
         self._selection=None
    
     """
@@ -212,7 +214,7 @@ class ConfigInstanceDict(collections.Mapping):
         if self._selection is None:
             return None
 
-        if self.__field.multi:
+        if self._field.multi:
             return [self[c] for c in self._selection]
         else:
             return self[self._selection]
@@ -229,22 +231,22 @@ class ConfigInstanceDict(collections.Mapping):
             value = self._dict[k]
         except KeyError:
             try:
-                dtype = self.__field.typemap[k]
+                dtype = self._field.typemap[k]
             except:
-                raise FieldValidationError(self.__field, self.__config, "Unknown key %r"%k)
+                raise FieldValidationError(self._field, self._config, "Unknown key %r"%k)
             value = self._dict.setdefault(k, dtype())
         return value
 
     def __setitem__(self, k, value):
         try:
-            dtype = self.__field.typemap[k]
+            dtype = self._field.typemap[k]
         except:
-            raise FieldValidationError(self.__field, self.__config, "Unknown key %r"%k)
+            raise FieldValidationError(self._field, self._config, "Unknown key %r"%k)
         
         if value != dtype and type(value) != dtype:
             msg = "Value %s at key %r is of incorrect type %s. Expected type %s"%\
                     (value, k, type(value), dtype)
-            raise FieldValidationError(self.__field, self.__config, msg)
+            raise FieldValidationError(self._field, self._config, msg)
 
         oldValue = self._dict.get(k, None)
         if oldValue is None:

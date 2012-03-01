@@ -111,20 +111,18 @@ class RegistryInstanceDict(ConfigInstanceDict):
         ConfigInstanceDict.__init__(self, config, field)
 
     def _getTarget(self):
-        if self._multi:
-            msg = "Multi-selection %s has no attribute 'target'"%\
-                    type(self.__field).__name__
-            raise FieldValidationError(self.__field, self.__config, msg)
-        return self.types.registry[self._selection]
+        if self._field.multi:
+            raise FieldValidationError(self._field, self._config, 
+                    "Multi-selection field has no attribute 'target'")
+        return self._field.typemap.registry[self._selection]
     target = property(_getTarget)
 
     def _getTargets(self):
-        if not self._multi:
-            msg = "Single-selection %s has no attribute 'targets'"%\
-                    type(self.__field).__name__
-            raise FieldValidationError(self.__field, self.__config, msg)
-        return [self.types.registry[c] for c in self._selection]
-    targets = property(_getTarget)
+        if not self._field.multi:
+            raise FieldValidationError(self._field, self._config,
+                    "Single-selection field has no attribute 'targets'")
+        return [self._field.typemap.registry[c] for c in self._selection]
+    targets = property(_getTargets)
 
     def apply(self, *args, **kwds):
         """Call the active target with the active config as the first argument.
@@ -136,12 +134,12 @@ class RegistryInstanceDict(ConfigInstanceDict):
         """
         if self.active is None:
             msg = "No selection has been mad.  Options: %s" % \
-                    (" ".join(self.types.registry.keys()))
-            raise FieldValidationError(self.__field, self.__config, msg)
-        if self._multi:
-            return [self.types.registry[c](self[c], *args, **kwds) for c in self._selection]
+                    (" ".join(self._field.typemap.registry.keys()))
+            raise FieldValidationError(self._field, self._config, msg)
+        if self._field.multi:
+            return [self._field.typemap.registry[c](self[c], *args, **kwds) for c in self._selection]
         else:
-            return self.types.registry[self.name](self[self.name], *args, **kwds)
+            return self._field.typemap.registry[self.name](self[self.name], *args, **kwds)
 
 class RegistryField(ConfigChoiceField):
     instanceDictClass = RegistryInstanceDict
