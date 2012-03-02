@@ -692,7 +692,23 @@ class ListField(Field):
     def __init__(self, doc, dtype, default=None, optional=False,
             listCheck=None, itemCheck=None, length=None, minLength=None, maxLength=None):
         if dtype not in Field.supportedTypes:
-            raise ValueError("Unsuported Field dtype '%s'"%dtype)
+            raise ValueError("Unsuported dtype %s"%dtype)
+        if length is not None:
+            if length <= 0:
+                raise ValueError("length (%d) must be positive"%length)
+            minLength=None
+            maxLength=None
+        else:
+            if maxLength is not None and maxLength <= 0:
+                raise ValueError("maxLength (%d) must be positive"%maxLength)
+            if minLength is not None and maxLength is not None and minLength >=maxLength:
+                raise ValueError("maxLength (%d) must be greater than minLength (%d)"%(maxLength, minLegth))
+        
+        if listCheck is not None and not hasattr(listCheck, "__call__"):
+            raise ValueError("listCheck must be callable")
+        if itemCheck is not None and not hasattr(itemCheck, "__call__"):
+            raise ValueError("itemCheck must be callable")
+
         source = traceback.extract_stack(limit=2)[0]
         self._setup( doc=doc, dtype=List, default=default, check=None, optional=optional, source=source)
         self.listCheck = listCheck
