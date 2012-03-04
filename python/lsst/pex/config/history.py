@@ -1,20 +1,20 @@
 import os
 import re
+import sys
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-colors = dict(
-    value = "yellow",
-    file = "green",
-    text = "red",
-    functionName = "blue",
-    )
 
+class Color(object):
+    categories = dict(
+        NAME = "blue",
+        VALUE = "yellow",
+        FILE = "green",
+        TEXT = "red",
+        FUNCTION_NAME = "blue",
+        )
 
-def _colorize(text, color):
-    """Return a string that should display as coloured on a conformant terminal"""
-    base = "\033["
-    colorKeys = {
+    colors = {
         "black"  : 0,
         "red"    : 1,
         "green"  : 2,
@@ -25,25 +25,69 @@ def _colorize(text, color):
         "white"  : 7,
         }
 
-    x = color.lower().split(";")
-    color, bold = x.pop(0), False
-    if x:
-        props = x.pop(0)
-        if props in ("bold",):
-            bold = True
+    _colorize = True
 
-    try:
-        _code = "%s" % (30 + colorKeys[color])
-    except KeyError:
-        raise RuntimeError("Unknown colour: %s" % color)
+    def __init__(self, text, category):
+        """Return a string that should display as coloured on a conformant terminal"""
+        try:
+            color = Color.categories[category]
+        except KeyError:
+            raise RuntimeError("Unknown category: %s" % category)
 
-    if bold:
-        _code += ";1"
+        self.rawText = str(text)
+        x = color.lower().split(";")
+        self.color, bold = x.pop(0), False
+        if x:
+            props = x.pop(0)
+            if props in ("bold",):
+                bold = True
 
-    prefix = base + _code + "m"
-    suffix = base + "m"
+        try:
+            self._code = "%s" % (30 + Color.colors[self.color])
+        except KeyError:
+            raise RuntimeError("Unknown colour: %s" % self.color)
 
-    return prefix + str(text) + suffix
+        if bold:
+            self._code += ";1"
+
+    @staticmethod
+    def colorize(val=None):
+        """Should I colour strings?  With an argument, set the value"""
+
+        if val is not None:
+            Color._colorize = val
+
+            if isinstance(val, dict):
+                unknown = []
+                for k in val.keys():
+                    if Color.categories.has_key(k):
+                        if Color.colors.has_key(val[k]):
+                            Color.categories[k] = val[k]
+                        else:
+                            print >> sys.stderr, "Unknown colour %s for category %s" % (val[k], k)
+                    else:
+                        unknown.append(k)
+
+                if unknown:
+                    print >> sys.stderr, "Unknown colourizing category: %s" % " ".join(unknown)
+
+        return Color._colorize
+
+    def __str__(self):
+        if not self.colorize():
+            return self.rawText
+
+        base = "\033["
+
+        prefix = base + self._code + "m"
+        suffix = base + "m"
+
+        return prefix + self.rawText + suffix
+
+
+def _colorize(text, category):
+    text = Color(text, category)
+    return str(text)
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -72,11 +116,11 @@ def format(config, name, writeSourceLine=True, prefix="", verbose=False):
 
             line = []
             if writeSourceLine:
-                line.append(["%s" % ("%s:%d" % (frame.fileName, frame.lineNumber)), "file",])
+                line.append(["%s" % ("%s:%d" % (frame.fileName, frame.lineNumber)), "FILE",])
 
-            line.append([frame.text, "text",])
+            line.append([frame.text, "TEXT",])
             if False:
-                line.append([frame.functionName, "functionName",])
+                line.append([frame.functionName, "FUNCTION_NAME",])
 
             output.append(line)
 
@@ -95,14 +139,14 @@ def format(config, name, writeSourceLine=True, prefix="", verbose=False):
     # actually generate the config history
     #
     msg = []
-    msg.append("%s.%s:" % (re.sub(r"^root\.", "", config._name), name))
+    msg.append(_colorize("%s.%s:" % (re.sub(r"^root\.", "", config._name), name), "NAME"))
     for value, output in outputs:
-        line = prefix + _colorize("%-*s" % (valueLength, value), colors["value"]) + " "
+        line = prefix + _colorize("%-*s" % (valueLength, value), "VALUE") + " "
         for i, vt in enumerate(output):
             if writeSourceLine:
                 vt[0][0] = "%-*s" % (sourceLength, vt[0][0])
             
-            output[i] = " ".join([_colorize(v, colors[t]) for v, t in vt])
+            output[i] = " ".join([_colorize(v, t) for v, t in vt])
 
         line += ("\n%*s" % (valueLength + 1, "")).join(output)
         msg.append(line)
