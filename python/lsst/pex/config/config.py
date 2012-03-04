@@ -560,9 +560,9 @@ class Config(object):
         for field in self._fields.itervalues():
             field.validate(self)
    
-    def formatHistory(self, name):
+    def formatHistory(self, name, **kwargs):
         import lsst.pex.config.history as pexHist
-        return pexHist.format(self, name)
+        return pexHist.format(self, name, **kwargs)
 
     """
     Read-only history property
