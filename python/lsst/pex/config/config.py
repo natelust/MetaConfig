@@ -562,7 +562,7 @@ class Config(object):
    
     def formatHistory(self, name):
         import lsst.pex.config.history as pexHist
-        print pexHist.format(self, name)
+        return pexHist.format(self, name)
 
     """
     Read-only history property
