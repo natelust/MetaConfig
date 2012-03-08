@@ -1,5 +1,6 @@
 from .config import *
 import collections
+import copy
 
 __all__ = ("Registry", "makeRegistry", "RegistryField", "registerConfig", "registerConfigurable")
 
@@ -109,6 +110,7 @@ class RegistryAdaptor(object):
 class RegistryInstanceDict(ConfigInstanceDict):    
     def __init__(self, config, field):
         ConfigInstanceDict.__init__(self, config, field)
+        self.registry = field.registry
 
     def _getTarget(self):
         if self._field.multi:
@@ -143,9 +145,19 @@ class RegistryInstanceDict(ConfigInstanceDict):
 
 class RegistryField(ConfigChoiceField):
     instanceDictClass = RegistryInstanceDict
+
     def __init__(self, doc, registry, default=None, optional=False, multi=False):
         types = RegistryAdaptor(registry)
+        self.registry = registry
         ConfigChoiceField.__init__(self, doc, types, default, optional, multi)
+
+    def __deepcopy__(self, memo):
+        """Customize deep-copying, because we always want a reference to the original registry.
+
+        WARNING: this must be overridden by subclasses if they change the constructor signature!
+        """
+        return type(self)(doc=self.doc, registry=self.registry, default=copy.deepcopy(self.default),
+                          optional=self.optional, multi=self.multi)
 
 def makeRegistry(doc, configBaseType=Config):
     """A convenience function to create a new registry.

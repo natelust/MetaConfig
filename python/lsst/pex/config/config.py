@@ -1060,3 +1060,10 @@ class ConfigChoiceField(Field):
         else:
             print >> outfile, "%s.name=%r"%(fullname, instanceDict.name)
 
+    def __deepcopy__(self, memo):
+        """Customize deep-copying, because we always want a reference to the original typemap.
+
+        WARNING: this must be overridden by subclasses if they change the constructor signature!
+        """
+        return type(self)(doc=self.doc, typemap=self.typemap, default=copy.deepcopy(self.default),
+                          optional=self.optional, multi=self.multi)

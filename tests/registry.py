@@ -97,6 +97,18 @@ class ConfigTest(unittest.TestCase):
         self.assertRaises(Exception, self.registry.register, "foo1", self.fooAlg2Class)
         self.assertEqual(self.registry["foo1"], self.fooAlg1Class)
 
+    def testNesting(self):
+        """Make sure nesting a config with a RegistryField doesn't deep-copy the registry."""
+        class MidConfig(pexConfig.Config):
+            field = self.registry.makeField("docs for registry field")
+        class TopConfig(pexConfig.Config):
+            middle = pexConfig.ConfigField(dtype=MidConfig, doc="docs for middle")
+        self.assert_(MidConfig.field.registry is self.registry)
+        middle = MidConfig()
+        top = TopConfig()
+        self.assert_(middle.field.registry is self.registry)
+        self.assert_(top.middle.field.registry is self.registry)
+
 def  suite():
     utilsTests.init()
     suites = []
