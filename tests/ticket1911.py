@@ -42,8 +42,7 @@ class SubConfigDefaultsTest(unittest.TestCase):
         class Config1(pexConf.Config):
             r1 = self.registry.makeField("single-item registry field")
             r2 = self.registry.makeField("single-item registry field", multi=True)
-            def __init__(self):
-                pexConf.Config.__init__(self)
+            def setDefaults(self):
                 self.r1.name = "C1"
                 self.r2.names = ["C2"]
         typemap = {"B": Config1}
