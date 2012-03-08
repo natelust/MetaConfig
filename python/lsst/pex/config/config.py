@@ -496,25 +496,20 @@ class Config(object):
         at=kw.pop("__at", traceback.extract_stack()[:-1])
         label=kw.pop("__label", "default")
 
-        instance = object.__new__(cls, *args, **kw)
+        instance = object.__new__(cls)
         instance._name=name
         instance._storage = {}
         instance._history = {}
         # load up defaults
         for field in instance._fields.itervalues():            
             field.__set__(instance, field.default, at=at+[field.source], label="default")
+        # set custom default-overides
         instance.setDefaults()
+        # set constructor overides 
         instance.update(__at=at, **kw)
         return instance
 
 
-    def __init__(self, **kw):
-        """Initialize the Config.
-
-        Keyword arguments will be used to override field values.
-        """
-        pass
-    
     def setDefaults(self):
         """
         Derived config classes that must compute defaults rather than using the 
