@@ -106,7 +106,7 @@ def format(config, name, writeSourceLine=True, prefix="", verbose=False):
     """Format the history record for config.name"""
 
     outputs = []
-    for value, tb in config.history[name]:
+    for value, tb, label in config.history[name]:
         output = []
         for frame in [StackFrame(t) for t in tb]:
             if frame.functionName in ("__new__", "__set__", "__setattr__", "execfile", "wrapper") or \
@@ -139,7 +139,8 @@ def format(config, name, writeSourceLine=True, prefix="", verbose=False):
     # actually generate the config history
     #
     msg = []
-    msg.append(_colorize("%s.%s:" % (re.sub(r"^root\.", "", config._name), name), "NAME"))
+    fullname = "%s.%s" %(config._name, name) if config._name is not None else name 
+    msg.append(_colorize(re.sub(r"^root\.", "", fullname), "NAME"))
     for value, output in outputs:
         line = prefix + _colorize("%-*s" % (valueLength, value), "VALUE") + " "
         for i, vt in enumerate(output):
