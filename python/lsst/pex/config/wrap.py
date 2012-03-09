@@ -134,7 +134,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
         super(cls, self).validate()
         r = self.makeControl()
         r.validate()
-    def __init__(self, **kw):
+    def setDefaults(self):
         """Initialize the config object, using the Control objects default ctor
         to provide defaults."""
         defaults = {}
@@ -142,16 +142,22 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
             r = self.Control()
             for k in fields:
                 value = getattr(r, k)
-                defaults[k] = value
+                defaults[k] = getattr(r, k)
+            # Wipe out bogus history from initializing the class.
+            self._history = {}
+            # Make up something for C++ until we can get C++ source info.
+            self.update(
+                    __at=[(ctrl.__name__ + " C++", 0, "setDefaults", "")],
+                    __label="default",
+                    **defaults)
         except:
             pass # if we can't instantiate the Control, don't set defaults
-        super(cls, self).__init__(**defaults)
-        self.update(**kw)
+
     ctrl.ConfigClass = cls
     cls.Control = ctrl
     cls.makeControl = makeControl
     cls.readControl = readControl
-    cls.__init__ = __init__
+    cls.setDefaults = setDefaults
     if hasattr(ctrl, "validate"):
         cls.validate = validate
     for k, field in fields.iteritems():
