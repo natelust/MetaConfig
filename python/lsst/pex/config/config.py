@@ -68,13 +68,20 @@ class List(collections.MutableSequence):
     def __setitem__(self, i, x):
         if isinstance(i, slice):
             k, stop, step = i.indices(len(self))
-            for xi in x:
-                xi=_autocast(xi, self._field.itemtype)
-                self._field.validateItem(k, xi)
+            for j, xj in enumerate(x):
+                xj=_autocast(xj, self._field.itemtype)
+                try:
+                    self._field.validateItem(k, xj)
+                except BaseException, e:
+                    raise FieldValidationError(self._field, self._config, e.message)
+                x[j]=xj
                 k += step
         else:
             x = _autocast(x, self._field.itemtype)
-            self._field.validateItem(i, x)
+            try:
+                self._field.validateItem(i, x)
+            except BaseException, e:
+                raise FieldValidationError(self._field, self._config, e.message)
             
         self.__value[i]=x
         self.__appendHistory()
@@ -93,6 +100,16 @@ class List(collections.MutableSequence):
 
     def __str__(self): return str(self.__value)
 
+    def __eq__(self, other):
+        try:
+            if len(self) != len(other):
+                return False
+
+            for i,j in zip(self, other):
+                if i != j: return False
+            return True
+        except:
+            False
 
 class Dict(collections.MutableMapping):
     def __appendHistory(self):
@@ -109,7 +126,7 @@ class Dict(collections.MutableMapping):
                     k = _autocast(k,self._field.keytype)
                     v = _autocast(v,self._field.itemtype)
                     self.__value[k]=v
-            except TypeError, e:
+            except BaseException, e:
                 msg = "Value %s is of incorrect type %s. Expected a dict-like value"%(value, _typeStr(value))
                 raise FieldValidationError(self._field, self._config, msg)
 
@@ -822,6 +839,10 @@ class DictField(Field):
             raise ValueError("key type %s is not a supported type"%_typeStr(keytype))
         elif itemtype not in self.supportedTypes:
             raise ValueError("item type %s is not a supported type"%_typeStr(itemtype))
+        if dictCheck is not None and not hasattr(dictCheck, "__call__"):
+            raise ValueError("dictCheck must be callable")
+        if itemCheck is not None and not hasattr(itemCheck, "__call__"):
+            raise ValueError("itemCheck must be callable")
 
         self.keytype = keytype
         self.itemtype = itemtype

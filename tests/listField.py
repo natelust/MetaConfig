@@ -38,10 +38,14 @@ def isSorted(l):
     return True
 
 class Config1(pexConf.Config):
-    l1 = pexConf.ListField("li", int, minLength=2, maxLength=5, default=[1,2,3], itemCheck=lambda x: x > 0)
-    l2 = pexConf.ListField("li", int, length = 3, default=[1,2,3], listCheck=isSorted)
-    l3 = pexConf.ListField("li", int, length = 3, default=None, optional=True, itemCheck=lambda x: x > 0)
-    l4 = pexConf.ListField("li", int, length = 3, default=None, itemCheck=lambda x: x > 0)
+    l1 = pexConf.ListField("l1", int, minLength=2, maxLength=5, default=[1,2,3], itemCheck=lambda x: x > 0)
+    l2 = pexConf.ListField("l2", int, length = 3, default=[1,2,3], listCheck=isSorted)
+    l3 = pexConf.ListField("l3", int, length = 3, default=None, optional=True, itemCheck=lambda x: x > 0)
+    l4 = pexConf.ListField("l4", int, length = 3, default=None, itemCheck=lambda x: x > 0)
+
+class Config2(pexConf.Config):
+    lf= pexConf.ListField("lf", float, default=[1,2,3])
+    ls = pexConf.ListField("ls", str, default=["hi"])
 
 class ListFieldTest(unittest.TestCase):
     def testConstructor(self):
@@ -112,6 +116,31 @@ class ListFieldTest(unittest.TestCase):
 
         c.l4 = [1,2,3]
         c.validate()
+
+    def testInPlaceModification(self):
+        c= Config1()
+        self.assertRaises(pexConf.FieldValidationError, c.l1.__setitem__, 2, 0)
+        c.l1[2]=10
+        self.assertEqual(c.l1, [1,2,10])
+        self.assertEqual((1,2, 10), c.l1)
+
+        c.l1.insert(2, 20)
+        self.assertEqual(c.l1, [1,2, 20, 10])
+        c.l1.append(30)
+        self.assertEqual(c.l1, [1,2, 20, 10, 30])
+        c.l1.extend([4,5,6])
+        self.assertEqual(c.l1, [1,2, 20, 10, 30, 4,5,6])
+
+    def testCastAndTypes(self):
+        c = Config2()
+        self.assertEqual(c.lf, [1., 2., 3.])
+
+        c.lf[2]=10
+        self.assertEqual(c.lf, [1.,2.,10.])
+
+
+        c.ls.append("foo")
+        self.assertEqual(c.ls, ["hi", "foo"])
 
 def  suite():
     utilsTests.init()
