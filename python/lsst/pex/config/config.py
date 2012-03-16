@@ -66,6 +66,9 @@ class List(collections.MutableSequence):
     def __len__(self): return len(self.__value)
 
     def __setitem__(self, i, x):
+        if self._config._frozen:
+            raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
+
         if isinstance(i, slice):
             k, stop, step = i.indices(len(self))
             for j, xj in enumerate(x):
@@ -89,6 +92,8 @@ class List(collections.MutableSequence):
     def __getitem__(self, i): return self.__value[i]
     
     def __delitem__(self, i):
+        if self._config._frozen:
+            raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
         del self.__value[i]
         self.__appendHistory()
 
@@ -146,6 +151,8 @@ class Dict(collections.MutableMapping):
     def __contains__(self, k): return k in self.__value
 
     def __setitem__(self, k, x):
+        if self._config._frozen:
+            raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
         k = _autocast(k, self._field.keytype)
         x = _autocast(x, self._field.itemtype)
         try:
@@ -157,6 +164,9 @@ class Dict(collections.MutableMapping):
         self.__appendHistory()
 
     def __delitem__(self, k):
+        if self._config._frozen:
+            raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
+        
         del self.__value[k]
         self.__appendHistory()
 
@@ -182,13 +192,16 @@ class ConfigInstanceDict(collections.Mapping):
 
     types = property(lambda x: x._field.typemap)
 
-    def __contains__(self, k): return k in self._dict
+    def __contains__(self, k): return k in self._field.typemap
 
-    def __len__(self): return len(self._dict)
+    def __len__(self): return len(self._field.typemap)
 
-    def __iter__(self): return iter(self._dict)
+    def __iter__(self): return iter(self._field.typemap)
 
     def _setSelection(self,value, at=None, label="assignment"):
+        if self._config._frozen:
+            raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
+
         if at is None:
             at = traceback.extract_stack()[:-2]
 
@@ -282,6 +295,9 @@ class ConfigInstanceDict(collections.Mapping):
         return value
 
     def __setitem__(self, k, value, at=None, label="assignment"):
+        if self._config._frozen:
+            raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
+
         try:
             dtype = self._field.typemap[k]
         except:
@@ -390,7 +406,7 @@ class Field(object):
             raise ValueError("Unsuported Field dtype %s"%_typeStr(dtype))
         source = traceback.extract_stack(limit=2)[0]
         self._setup(doc=doc, dtype=dtype, default=default, check=check, optional=optional, source=source)
-
+        
 
     def _setup(self, doc, dtype, default, check, optional, source):
         self.dtype = dtype
@@ -422,7 +438,10 @@ class Field(object):
         value = self.__get__(instance)
         if not self.optional and value is None:
             raise FieldValidationError(self, instance, "Required value cannot be None")
-    
+   
+    def freeze(self, instance):
+        pass
+
     def validateValue(self, value):
         """Validate a value that is not None"""
         if value is None:
@@ -458,6 +477,9 @@ class Field(object):
             return instance._storage[self.name]
 
     def __set__(self, instance, value, at=None, label='assignment'):
+        if instance._frozen:
+            raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
+
         history = instance._history.setdefault(self.name, [])
         if value is not None:
             value = _autocast(value, self.dtype)
@@ -514,6 +536,7 @@ class Config(object):
         label=kw.pop("__label", "default")
 
         instance = object.__new__(cls)
+        instance._frozen=False
         instance._name=name
         instance._storage = {}
         instance._history = {}
@@ -544,8 +567,8 @@ class Config(object):
             try:
                 field = self._fields[name]
                 field.__set__(self, value, at=at, label=label)
-            except KeyError:
-                pass
+            except KeyError, e:
+                raise KeyError("No field of name %s exists in config type %s"%(name, _typestr(self)))
 
     def load(self, filename, root="root"):
         """
@@ -577,6 +600,11 @@ class Config(object):
         finally:
             self._rename(tmp)
     
+    def freeze(self):
+        self._frozen=True
+        for field in self._fields.itervalues():
+            field.freeze(self)
+
     def _save(self, outfile):
         """
         Internal use only. Save this Config to file
@@ -634,7 +662,7 @@ class Config(object):
         elif hasattr(getattr(self.__class__, attr, None), '__set__'):
             # This allows properties and other non-Field descriptors to work.
             return object.__setattr__(self, attr, value)
-        elif attr in self.__dict__ or attr == "_name" or attr == "_history" or attr=="_storage":
+        elif attr in self.__dict__ or attr == "_name" or attr == "_history" or attr=="_storage" or attr=="_frozen":
             # This allows specific private attributes to work.
             self.__dict__[attr] = value
         else:
@@ -813,6 +841,8 @@ class ListField(Field):
             self.validateItem(i,x)
 
     def __set__(self, instance, value, at=None, label="assignment"):
+        if instance._frozen:
+            raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
         if at is None:
             at = traceback.extract_stack()[:-1]
         if value is not None:
@@ -873,6 +903,8 @@ class DictField(Field):
             self.validateItem(k, x)
 
     def __set__(self, instance, value, at=None, label="assignment"):
+        if instance._frozen:
+            raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
         if at is None:
             at = traceback.extract_stack()[:-1]
         if value is not None:
@@ -921,7 +953,10 @@ class ConfigField(Field):
             return value
 
     def __set__(self, instance, value, at=None, label="assignment"):
+        if instance._frozen:
+            raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
         name = _joinNamePath(prefix=instance._name, name=self.name)
+
         if value != self.dtype and type(value) != self.dtype:
             msg = "Value %s if of incorrect type %s. Expected %s" %\
                     (value, _typeStr(value), _typeStr(self.dtype))
@@ -949,6 +984,10 @@ class ConfigField(Field):
         fullname = _joinNamePath(instance._name, self.name)
         value = self.__get__(instance)
         value._save(outfile)
+
+    def freeze(self, instance):
+        value = self.__get__(instance)
+        value.freeze()
 
     def toDict(self, instance):
         value = self.__get__(instance)
@@ -1023,6 +1062,8 @@ class ConfigChoiceField(Field):
             return self._getOrMake(instance)
 
     def __set__(self, instance, value, at=None, label="assignment"):       
+        if instance._frozen:
+            raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
         if at is None: 
             at = traceback.extract_stack()[:-1]
         instanceDict = self._getOrMake(instance)
@@ -1065,6 +1106,11 @@ class ConfigChoiceField(Field):
         dict_["values"]=values
 
         return dict_
+    
+    def freeze(self, instance):
+        instanceDict = self.__get__(instance)
+        for v in instanceDict.itervalues():
+            v.freeze()
 
     def save(self, outfile, instance):
         instanceDict = self.__get__(instance)

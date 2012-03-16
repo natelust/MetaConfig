@@ -215,6 +215,14 @@ class ConfigTest(unittest.TestCase):
 
         ps = pexConfig.makePropertySet(self.comp)
         self.assertEqual(ps.get("c.f"), self.comp.c.f)
+    def testFreeze(self):
+        self.comp.freeze()
+
+        self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp.c, "f", 10.0)
+        self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp, "r", "AAA")
+        self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp, "p", "AAA")
+        self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp.p["AAA"], "f", 5.0) 
+
 
 def  suite():
     utilsTests.init()
