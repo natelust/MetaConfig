@@ -568,7 +568,7 @@ class Config(object):
                 field = self._fields[name]
                 field.__set__(self, value, at=at, label=label)
             except KeyError, e:
-                raise KeyError("No field of name %s exists in config type %s"%(name, _typestr(self)))
+                raise KeyError("No field of name %s exists in config type %s"%(name, _typeStr(self)))
 
     def load(self, filename, root="root"):
         """
