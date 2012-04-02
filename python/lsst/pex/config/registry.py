@@ -102,6 +102,12 @@ class RegistryAdaptor(object):
     def __len__(self): return len(self.registry)
     def __contains__(self, k): return k in self.registry
 
+    def __iter__(self):
+        return self.registry.__iter__()
+
+    def __len__(self):
+        return len(self.registry)
+
 class RegistryInstanceDict(ConfigInstanceDict):    
     def __init__(self, config, field):
         ConfigInstanceDict.__init__(self, config, field)

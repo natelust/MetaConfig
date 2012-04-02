@@ -37,21 +37,22 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     To use makeConfigClass, in C++, write a control object, using the LSST_CONTROL_FIELD macro in
     lsst/pex/config.h (note that it must have sensible default constructor):
 
+    @code
     struct FooControl {
         LSST_CONTROL_FIELD(bar, int, "documentation for field 'bar'");
         LSST_CONTROL_FIELD(baz, double, "documentation for field 'baz'");
 
         FooControl() : bar(0), baz(0.0) {}
     };
+    @endcode
 
     Swig that control object.  Now, in Python, do this:
 
+    @code
     import mySwigLib
     import lsst.pex.config
-    FooConfig = lsst.pex.config.makeConfigClass(
-    @lsst.pex.config.wrap(mySwigLib.FooControl)
-    class FooConfig:
-        pass
+    FooConfig = lsst.pex.config.makeConfigClass(mySwigLib.FooControl)
+    @endcode
 
     This will add fully-fledged "bar" and "baz" fields to FooConfig, set
     FooConfig.Control = FooControl, and inject makeControl and readControl
@@ -174,7 +175,8 @@ def wrap(ctrl):
     class MyConfigClass(Config):
         pass
 
-    See makeConfigClass for more information.
+    See makeConfigClass for more information; this is equivalent to calling makeConfigClass
+    with the decorated class as the 'cls' argument.
     """
     def decorate(cls):
         return makeConfigClass(ctrl, cls=cls)
