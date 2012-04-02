@@ -3,7 +3,8 @@ import sys
 import collections
 import copy
 
-__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "DictField", "ConfigField",
+__all__ = ["Config", "Field", "RangeField", "ChoiceField", "ListField", "DictField", "ConfigField", 
+           "ConfigurableField", "ConfigurableInstance",
            "ConfigInstanceDict", "ConfigChoiceField", "FieldValidationError"]
 
 def _joinNamePath(prefix=None, name=None, index=None):
@@ -470,7 +471,7 @@ class Field(object):
         """
         return self.__get__(instance)
 
-    def __get__(self, instance, owner=None):
+    def __get__(self, instance, owner=None, at=None, label="default"):
         if instance is None or not isinstance(instance, Config):
             return self
         else:
@@ -568,7 +569,7 @@ class Config(object):
                 field = self._fields[name]
                 field.__set__(self, value, at=at, label=label)
             except KeyError, e:
-                raise KeyError("No field of name %s exists in config type %s"%(name, _typestr(self)))
+                raise KeyError("No field of name %s exists in config type %s"%(name, _typeStr(self)))
 
     def load(self, filename, root="root"):
         """
@@ -654,11 +655,12 @@ class Config(object):
     """
     history = property(lambda x: x._history)
 
-    def __setattr__(self, attr, value):
+    def __setattr__(self, attr, value, at=None, label="assignment"):
         if attr in self._fields:
-            at=traceback.extract_stack()[:-1]
+            if at is None:
+                at=traceback.extract_stack()[:-1]
             # This allows Field descriptors to work.
-            self._fields[attr].__set__(self, value, at=at)
+            self._fields[attr].__set__(self, value, at=at, label=label)
         elif hasattr(getattr(self.__class__, attr, None), '__set__'):
             # This allows properties and other non-Field descriptors to work.
             return object.__setattr__(self, attr, value)
@@ -669,6 +671,14 @@ class Config(object):
             # We throw everything else.
             raise AttributeError("%s has no attribute %s"%(_typeStr(self), attr))
 
+    def __delattr__(self, attr, at=None, label="deletion"):
+        if attr in self._fields:
+            if at is None:
+                at=traceback.extract_stack()[:-1]
+            self._fields[attr].__delete__(self, at=at, label=label)
+        else:
+            object.__delattr__(self, attr)
+            
     def __eq__(self, other):
         if type(other) == type(self):
             for name in self._fields:
@@ -1129,3 +1139,205 @@ class ConfigChoiceField(Field):
         """
         return type(self)(doc=self.doc, typemap=self.typemap, default=copy.deepcopy(self.default),
                           optional=self.optional, multi=self.multi)
+
+class ConfigurableInstance(object):
+    def __initValue(self, at, label):
+        """
+        if field.default is an instance of ConfigClass, custom construct
+        _value with the correct values from default.
+        otherwise call ConfigClass constructor
+        """    
+        if self._value is None:
+            name=_joinNamePath(self._config._name, self._field.name)
+            if type(self._field.default)==self._ConfigClass:
+                storage = self._field.default._storage
+            else:
+                storage = {}
+            value = self._ConfigClass(__name=name, __at=at, __label=label, **storage)
+            object.__setattr__(self, "_value", value)
+        return self._value
+
+    def __init__(self, config, field, at=None, label="default"):
+        object.__setattr__(self, "_config", config)
+        object.__setattr__(self, "_field", field)
+        object.__setattr__(self, "__doc__", config)
+        object.__setattr__(self, "_target", field.target)
+        object.__setattr__(self, "_ConfigClass",field.ConfigClass)
+        object.__setattr__(self, "_value", None)
+ 
+        if at is None:
+            at = traceback.extract_stack()[:-1]
+        at += [self._field.source]
+        self.__initValue(at, label)
+
+        history = config._history.setdefault(field.name, [])
+        history.append(("Targeted and initialized from defaults", at, label))
+
+    target = property(lambda x: x._target)
+    value = property(lambda x: x._value)
+
+    def apply(self):        
+        return self._target(self._value)
+
+    def retarget(self, target, ConfigClass=None):
+        if self._config._frozen:
+            raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
+        if not hasattr(target, '__call__'):
+            raise FieldValidationError(self._field, self._config, "target must be callable")
+
+            
+        if ConfigClass is None:
+            try:
+                ConfigClass = target.ConfigClass
+            except:
+                raise FieldValidationError(self._field, self._config,
+                        "target has no attribute ConfigClass.")
+        if not issubclass(ConfigClass, Config):
+            raise FieldValidationError(self._field, self._config,
+                    "ConfigClass if of incorrect type %s. ConfigClass must be a subclass of Config"%\
+                    _typeStr(ConfigClass))
+        if hasattr(ConfigClass, 'apply') or hasattr(ConfigClass, 'retarget') or \
+                hasattr(ConfigClass, 'target'):
+            raise FieldValidationError(self._field, self._config, 
+                    "ConfigClass must not have attributes 'apply', 'target', or 'retarget'")
+        at = traceback.extract_stack()[:-1]
+        label="retarget"
+        self._target = target
+        if ConfigClass != self._ConfigClass:
+            self._ConfigClass=ConfigClass
+            self.__initValue(at, label)
+
+        history = self._config._history.setdefault(self._field.name, [])
+        history.append(("Retargeted", at, label))
+
+    def __getattr__(self, name, at=None, label="default"):
+        if at is None:
+            at = traceback.extract_stack()[:-1]
+            
+        return getattr(self._value, name)
+
+    def __setattr__(self, name, value, at=None, label="assignment"):
+        if self._config._frozen:
+            raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
+        
+        if name in self.__dict__: 
+            #attribute exists in the ConfigurableInstance wrapper 
+            object.__setattr__(self, name, value)
+        else:
+            if at is None:
+                at = traceback.extract_stack()[:-1]
+            self._value.__setattr__(name, value, at=at, label=label)
+
+    def __delattr__(self, name, at=None, label="delete"):
+        if self._config._frozen:
+            raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
+        
+        try:
+            #attribute exists in the ConfigurableInstance wrapper 
+            object.__delattr__(self, name)
+        except AttributeError:
+            if at is None:
+                at = traceback.extract_stack()[:-1]
+            self._value.__delattr__(name, at=at, label=label)
+
+
+class ConfigurableField(Field):
+    def __init__(self, doc, target, ConfigClass=None, default=None, check=None):
+        if ConfigClass is None:
+            try:
+                ConfigClass=target.ConfigClass
+            except:
+                raise AttributeError("ConfigurableField constructor argument 'target' must define attribute"\
+                        "'ConfigClass' when 'configClass' is None")
+        if not issubclass(ConfigClass, Config):
+            raise TypeError("ConfigClass if of incorrect type %s. ConfigClass must be a subclass of Config"%\
+                    _typeStr(ConfigClass))
+        if not hasattr(target, '__call__'):
+            raise ValueError ("target must be callable")
+        if default is None: 
+            default=ConfigClass
+        if default != ConfigClass and type(default) != ConfigClass:
+            raise TypeError("default argument is of incorrect type %s. Expected %s"%\
+                    (_typeStr(default), _typeStr(ConfigClass)))
+
+        source = traceback.extract_stack(limit=2)[0]
+        self._setup(doc=doc, dtype=ConfigurableInstance, default=default, \
+                check=check, optional=False, source=source)
+        self.target = target
+        self.ConfigClass = ConfigClass
+
+    def __getOrMake(self, instance, at=None, label="default"):
+        value = instance._storage.get(self.name, None)
+        if value is None:
+            if at is None:
+                at = traceback.extract_stack()[:-2]
+            value = ConfigurableInstance(instance, self, at=at, label=label)
+            instance._storage[self.name]=value
+        return value
+
+    def __get__(self, instance, owner=None, at=None, label="default"):
+        if instance is None or not isinstance(instance, Config):
+            return self
+        else:
+            return self.__getOrMake(instance, at=at, label=label)
+
+    def __set__(self, instance, value, at=None, label="assignment"):
+        if instance._frozen:
+            raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
+        if at is None: 
+            at = traceback.extract_stack()[:-1]
+        oldValue = self.__getOrMake(instance, at=at)
+
+        if isinstance(value, ConfigurableInstance):
+            oldValue._target = value._target
+            storage = value._value._storage 
+            if value._ConfigClass != oldValue._ConfigClass:
+                oldValue._value = value._ConfigClass(
+                    __name=_joinNamePath(instance._name, self.name),
+                    __at=at, __label=label, 
+                    **storage)
+            else:
+                oldValue._value.update(__at=at, __label=label, **storage)
+            oldValue._ConfigClass = value._ConfigClass
+        elif type(value)==oldValue._ConfigClass:
+            oldValue._value.update(__at=at, __label=label, **value._storage)
+        elif value == oldValue._ConfigClass:
+            value = oldValue._ConfigClass()
+            oldValue._value.update(__at=at, __label=label, **value._storage)
+        else:
+            msg = "Value %s if of incorrect type %s. Expected %s" %\
+                    (value, _typeStr(value), _typeStr(oldValue._ConfigClass))
+            raise FieldValidationError(self, instance, msg)
+    
+    def rename(self, instance):
+        fullname = _joinNamePath(instance._name, self.name)
+        value = self.__getOrMake(instance)._value
+        value._rename(fullname)
+        
+    def save(self, outfile, instance):
+        value = self.__getOrMake(instance)._value
+        value._save(outfile)
+
+    def freeze(self, instance):
+        value = self.__getOrMake(instance)._value
+        value.freeze()
+
+    def toDict(self, instance):
+        value = self.__get__(instance)._value
+        return value.toDict()
+    
+    def validate(self, instance):
+        value = self.__get__(instance)._value
+        value.validate()
+
+        if self.check is not None and not self.check(value):
+            msg = "%s is not a valid value"%str(value)
+            raise FieldValidationError(self, instance, msg)
+
+    def __deepcopy__(self, memo):
+        """Customize deep-copying, because we always want a reference to the original typemap.
+
+        WARNING: this must be overridden by subclasses if they change the constructor signature!
+        """
+        return type(self)(doc=self.doc, target=self.target, ConfigClass=self.ConfigClass, 
+                default=copy.deepcopy(self.default))

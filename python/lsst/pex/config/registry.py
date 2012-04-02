@@ -83,17 +83,10 @@ class Registry(collections.Mapping):
             raise TypeError("ConfigClass=%r is not a subclass of %r" % (self._configBaseType,))
         self._dict[name] = wrapper
     
-    def __getitem__(self, key):
-        return self._dict[key]
-    
-    def __len__(self):
-        return len(self._dict)
-    
-    def __iter__(self):
-        return iter(self._dict)
-
-    def __contains__(self, key):
-        return key in self._dict
+    def __getitem__(self, key): return self._dict[key]
+    def __len__(self): return len(self._dict)    
+    def __iter__(self): return iter(self._dict)
+    def __contains__(self, key): return key in self._dict
 
     def makeField(self, doc, default=None, optional=False, multi=False):
         return RegistryField(doc, self, default, optional, multi)
@@ -104,8 +97,10 @@ class RegistryAdaptor(object):
     def __init__(self, registry):
         self.registry = registry
 
-    def __getitem__(self, k):
-        return self.registry[k].ConfigClass
+    def __getitem__(self, k): return self.registry[k].ConfigClass
+    def __iter__(self): return iter(self.registry)
+    def __len__(self): return len(self.registry)
+    def __contains__(self, k): return k in self.registry
 
 class RegistryInstanceDict(ConfigInstanceDict):    
     def __init__(self, config, field):
