@@ -98,6 +98,19 @@ class ConfigurableFieldTest(unittest.TestCase):
         self.assertRaises(pexConf.FieldValidationError, setattr, c.c1, "f", 0)
 
         c.validate()
+    
+    def testPersistence(self):
+        c= Config2()
+        c.c2.retarget(Target1)
+        c.c2.f=10
+        c.save("test.py")
+
+        r = Config2()
+        r.load("test.py")
+        os.remove("test.py")
+
+        self.assertEqual(c.c2.f, r.c2.f)
+        self.assertEqual(c.c2.target, r.c2.target)
 
 def  suite():
     utilsTests.init()

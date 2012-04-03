@@ -53,4 +53,4 @@ def run(exit=False):
     utilsTests.run(suite(), exit)
 
 if __name__=='__main__':
-    run()
+    run(True)

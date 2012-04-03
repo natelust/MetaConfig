@@ -134,7 +134,7 @@ class ConfigTest(unittest.TestCase):
         roundTrip = Complex()
 
         roundTrip.load("roundtrip.test")
-        #os.remove("roundtrip.test")
+        os.remove("roundtrip.test")
 
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
         self.assertEqual(self.comp.r.name, roundTrip.r.name)

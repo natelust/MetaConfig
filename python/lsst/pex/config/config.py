@@ -27,7 +27,7 @@ def _autocast(x, dtype):
     return x
 
 def _typeStr(x):
-    if isinstance(x, type):
+    if hasattr(x, '__module__') and hasattr(x, '__name__'):
         xtype = x
     else:
         xtype = type(x)

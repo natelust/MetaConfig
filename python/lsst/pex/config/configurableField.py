@@ -8,15 +8,13 @@ class ConfigurableInstance(object):
         _value with the correct values from default.
         otherwise call ConfigClass constructor
         """    
-        if self._value is None:
-            name=_joinNamePath(self._config._name, self._field.name)
-            if type(self._field.default)==self._ConfigClass:
-                storage = self._field.default._storage
-            else:
-                storage = {}
-            value = self._ConfigClass(__name=name, __at=at, __label=label, **storage)
-            object.__setattr__(self, "_value", value)
-        return self._value
+        name=_joinNamePath(self._config._name, self._field.name)
+        if type(self._field.default)==self.ConfigClass:
+            storage = self._field.default._storage
+        else:
+            storage = {}
+        value = self._ConfigClass(__name=name, __at=at, __label=label, **storage)
+        object.__setattr__(self, "_value", value)
 
     def __init__(self, config, field, at=None, label="default"):
         object.__setattr__(self, "_config", config)
@@ -38,9 +36,18 @@ class ConfigurableInstance(object):
     Read-only access to the targeted configurable
     """
     target = property(lambda x: x._target)
+    """
+    Read-only access to the ConfigClass
+    """
+    ConfigClass = property(lambda x: x._ConfigClass)
+
+    """
+    Read-only access to the ConfigClass instance
+    """
+    value = property(lambda x: x._value)
 
     def apply(self):        
-        return self._target(self._value)
+        return self.target(self.value)
     
     """
     Target a new configurable and ConfigClass
@@ -48,43 +55,26 @@ class ConfigurableInstance(object):
     def retarget(self, target, ConfigClass=None):
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
-        if not hasattr(target, '__call__'):
-            raise FieldValidationError(self._field, self._config, "target must be callable")
-
-            
-        if ConfigClass is None:
-            try:
-                ConfigClass = target.ConfigClass
-            except:
-                raise FieldValidationError(self._field, self._config,
-                        "target has no attribute ConfigClass.")
-        if not issubclass(ConfigClass, Config):
-            raise FieldValidationError(self._field, self._config,
-                    "ConfigClass if of incorrect type %s. ConfigClass must be a subclass of Config"%\
-                    _typeStr(ConfigClass))
-        if hasattr(ConfigClass, 'apply') or hasattr(ConfigClass, 'retarget') or \
-                hasattr(ConfigClass, 'target'):
-            raise FieldValidationError(self._field, self._config, 
-                    "ConfigClass must not have attributes 'apply', 'target', or 'retarget'")
+        
+        try:
+            ConfigClass = self._field.validateTarget(target,ConfigClass)
+        except BaseException, e:
+            raise FieldValidationError(self._field, self._config, e.message)
+        
         at = traceback.extract_stack()[:-1]
         label="retarget"
-        self._target = target
-        if ConfigClass != self._ConfigClass:
-            self._ConfigClass=ConfigClass
+        object.__setattr__(self, "_target", target)
+        if ConfigClass != self.ConfigClass:
+            object.__setattr__(self, "_ConfigClass",ConfigClass)
             self.__initValue(at, label)
 
         history = self._config._history.setdefault(self._field.name, [])
-        history.append(("Retargeted", at, label))
+        msg = "retarget(target=%s, ConfigClass=%s)"%(_typeStr(target), _typeStr(ConfigClass))        
+        history.append((msg, at, label))
 
-    def __getattr__(self, name, at=None, label="default"):
-        """
-        Pretend to be an isntance of  ConfigClass. 
-        Attributes defiend by ConfigurableInstance will shadow those defined in ConfigClass
-        """
-        if at is None:
-            at = traceback.extract_stack()[:-1]
-            
+    def __getattr__(self, name):
         return getattr(self._value, name)
+
 
     def __setattr__(self, name, value, at=None, label="assignment"):
         """
@@ -130,6 +120,22 @@ class ConfigurableField(Field):
 
     """
 
+    def validateTarget(self, target, ConfigClass):
+        if ConfigClass is None:
+            try:
+                ConfigClass=target.ConfigClass
+            except:
+                raise AttributeError("target must define attribute 'ConfigClass'")
+        if not issubclass(ConfigClass, Config):
+            raise TypeError("ConfigClass if of incorrect type %s."\
+                    "ConfigClass must be a subclass of Config"%_typeStr(ConfigClass))
+        if not hasattr(target, '__call__'):
+            raise ValueError ("target must be callable")
+        if not hasattr(target, '__module__') or not hasattr(target, '__name__'):
+            raise ValueError("target must be statically defined." \
+                    "(must have '__module__' and '__name__' attributes)")
+        return ConfigClass
+
     def __init__(self, doc, target, ConfigClass=None, default=None, check=None):
         """
         @param target is the configurable target. Must be callable, and the first
@@ -137,17 +143,8 @@ class ConfigurableField(Field):
         @param ConfigClass is the class of Config object expected by the target.
                 If not provided by target.ConfigClass it must be provided explicitly in this argument
         """
-        if ConfigClass is None:
-            try:
-                ConfigClass=target.ConfigClass
-            except:
-                raise AttributeError("ConfigurableField constructor argument 'target' must define attribute"\
-                        "'ConfigClass' when 'configClass' is None")
-        if not issubclass(ConfigClass, Config):
-            raise TypeError("ConfigClass if of incorrect type %s. ConfigClass must be a subclass of Config"%\
-                    _typeStr(ConfigClass))
-        if not hasattr(target, '__call__'):
-            raise ValueError ("target must be callable")
+        ConfigClass = self.validateTarget(target, ConfigClass)
+        
         if default is None: 
             default=ConfigClass
         if default != ConfigClass and type(default) != ConfigClass:
@@ -183,46 +180,49 @@ class ConfigurableField(Field):
         oldValue = self.__getOrMake(instance, at=at)
 
         if isinstance(value, ConfigurableInstance):
-            oldValue._target = value._target
-            storage = value._value._storage 
-            if value._ConfigClass != oldValue._ConfigClass:
-                oldValue._value = value._ConfigClass(
-                    __name=_joinNamePath(instance._name, self.name),
-                    __at=at, __label=label, 
-                    **storage)
-            else:
-                oldValue._value.update(__at=at, __label=label, **storage)
-            oldValue._ConfigClass = value._ConfigClass
-            history.append(("ConfigurableField retargeted", at, label))
+            oldValue.retarget(value.target, value.ConfigClass)
+            oldValue.update(__at=at, __label=label, **value._storage)
+            msg = "retarget(target=%s, ConfigClass=%s)"%(_typeStr(target), _typeStr(ConfigClass))        
+            history.append((msg, at, label))
         elif type(value)==oldValue._ConfigClass:
-            oldValue._value.update(__at=at, __label=label, **value._storage)
-        elif value == oldValue._ConfigClass:
-            value = oldValue._ConfigClass()
-            oldValue._value.update(__at=at, __label=label, **value._storage)
+            oldValue.update(__at=at, __label=label, **value._storage)
+        elif value == oldValue.ConfigClass:
+            value = oldValue.ConfigClass()
+            oldValue.update(__at=at, __label=label, **value._storage)
         else:
             msg = "Value %s if of incorrect type %s. Expected %s" %\
-                    (value, _typeStr(value), _typeStr(oldValue._ConfigClass))
+                    (value, _typeStr(value), _typeStr(oldValue.ConfigClass))
             raise FieldValidationError(self, instance, msg)
     
     def rename(self, instance):
         fullname = _joinNamePath(instance._name, self.name)
-        value = self.__getOrMake(instance)._value
+        value = self.__getOrMake(instance)
         value._rename(fullname)
         
-    def save(self, outfile, instance):
-        value = self.__getOrMake(instance)._value
+    def save(self, outfile, instance):        
+        fullname = _joinNamePath(instance._name, self.name)
+        value = self.__getOrMake(instance)
+        target= value.target
+
+        if target != self.target:
+            #not targeting the field-default target. 
+            #save target information
+            ConfigClass = value.ConfigClass
+            print >> outfile, "%s.retarget(target=%s, ConfigClass=%s)"%\
+                    (fullname, _typeStr(target), _typeStr(ConfigClass))
+        #save field values
         value._save(outfile)
 
     def freeze(self, instance):
-        value = self.__getOrMake(instance)._value
+        value = self.__getOrMake(instance)
         value.freeze()
 
     def toDict(self, instance):
-        value = self.__get__(instance)._value
+        value = self.__get__(instance)
         return value.toDict()
     
     def validate(self, instance):
-        value = self.__get__(instance)._value
+        value = self.__get__(instance)
         value.validate()
 
         if self.check is not None and not self.check(value):
