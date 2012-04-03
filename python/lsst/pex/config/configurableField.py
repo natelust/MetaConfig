@@ -46,8 +46,8 @@ class ConfigurableInstance(object):
     """
     value = property(lambda x: x._value)
 
-    def apply(self):        
-        return self.target(self.value)
+    def apply(self, *args, **kw):        
+        return self.target(self.value, *args, **kw)
     
     """
     Target a new configurable and ConfigClass
