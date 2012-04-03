@@ -1,4 +1,4 @@
-from .config import Config, Field, FieldValidationError, _typeStr, _joinNamePath
+from .config import Config, Field, FieldValidationError, _typeStr
 from .configChoiceField import ConfigInstanceDict, ConfigChoiceField
 import collections
 import copy
@@ -8,7 +8,7 @@ __all__ = ("Registry", "makeRegistry", "RegistryField", "registerConfig", "regis
 class ConfigurableWrapper(object):
     """A wrapper for configurables
     
-    Used for configurables that don't contain a ConfigClass attribute,
+    U sed for configurables that don't contain a ConfigClass attribute,
     or contain one that is being overridden.
     """
     def __init__(self, target, ConfigClass):
@@ -57,7 +57,7 @@ class Registry(collections.Mapping):
         @param configBaseType: base class for config classes in registry
         """
         if not issubclass(configBaseType, Config):
-            raise TypeError("configBaseType=%r must be a subclass of Config" % (configBaseType,))
+            raise TypeError("configBaseType=%s must be a subclass of Config" % _typeStr(configBaseType,))
         self._configBaseType = configBaseType
         self._dict = {}
 
@@ -75,13 +75,14 @@ class Registry(collections.Mapping):
         @raise AttributeError if ConfigClass is None and target does not have attribute ConfigClass
         """
         if name in self._dict:
-            raise RuntimeError("An item with name %r already exists" % (name,))
+            raise RuntimeError("An item with name %r already exists" % name)
         if ConfigClass is None:
             wrapper = target
         else:
             wrapper = ConfigurableWrapper(target, ConfigClass)
         if not issubclass(wrapper.ConfigClass, self._configBaseType):
-            raise TypeError("ConfigClass=%r is not a subclass of %r" % (self._configBaseType,))
+            raise TypeError("ConfigClass=%s is not a subclass of %r" % \
+                    (_typeStr(wrapper.ConfigClass), _typeStr(self._configBaseType)))
         self._dict[name] = wrapper
     
     def __getitem__(self, key): return self._dict[key]
@@ -102,12 +103,6 @@ class RegistryAdaptor(object):
     def __iter__(self): return iter(self.registry)
     def __len__(self): return len(self.registry)
     def __contains__(self, k): return k in self.registry
-
-    def __iter__(self):
-        return self.registry.__iter__()
-
-    def __len__(self):
-        return len(self.registry)
 
 class RegistryInstanceDict(ConfigInstanceDict):    
     def __init__(self, config, field):

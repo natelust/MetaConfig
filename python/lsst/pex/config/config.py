@@ -3,7 +3,7 @@ import sys
 import collections
 import copy
 
-__all__ = ["Config", "Field", "FieldValidationError"]
+__all__ = ("Config", "Field", "FieldValidationError")
 
 def _joinNamePath(prefix=None, name=None, index=None):
     """
