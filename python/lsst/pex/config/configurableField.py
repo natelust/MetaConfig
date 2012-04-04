@@ -180,7 +180,8 @@ class ConfigurableField(Field):
         oldValue = self.__getOrMake(instance, at=at)
 
         if isinstance(value, ConfigurableInstance):
-            oldValue.retarget(value.target, value.ConfigClass)
+            target=value.target
+            oldValue.retarget(target, value.ConfigClass)
             oldValue.update(__at=at, __label=label, **value._storage)
             msg = "retarget(target=%s, ConfigClass=%s)"%(_typeStr(target), _typeStr(ConfigClass))        
             history.append((msg, at, label))
