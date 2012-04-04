@@ -93,6 +93,13 @@ class ConfigurableFieldTest(unittest.TestCase):
     
         c.c1 = Config1
         self.assertEqual(c.c1.f, 5)
+
+        f= Config2(**dict(c.items()))
+        self.assertEqual(f.c1.f, c.c1.f)
+        self.assertEqual(f.c1.target, c.c1.target)
+        self.assertEqual(f.c2.target, c.c2.target)
+        self.assertEqual(f.c2.f, c.c2.f)
+
     def testValidate(self):
         c = Config2()
         self.assertRaises(pexConf.FieldValidationError, setattr, c.c1, "f", 0)

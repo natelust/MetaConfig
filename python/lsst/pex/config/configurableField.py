@@ -52,7 +52,7 @@ class ConfigurableInstance(object):
     """
     Target a new configurable and ConfigClass
     """
-    def retarget(self, target, ConfigClass=None):
+    def retarget(self, target, ConfigClass=None, at=None, label="retarget"):
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
         
@@ -60,9 +60,9 @@ class ConfigurableInstance(object):
             ConfigClass = self._field.validateTarget(target,ConfigClass)
         except BaseException, e:
             raise FieldValidationError(self._field, self._config, e.message)
-        
-        at = traceback.extract_stack()[:-1]
-        label="retarget"
+       
+        if at is None:
+            at = traceback.extract_stack()[:-1]
         object.__setattr__(self, "_target", target)
         if ConfigClass != self.ConfigClass:
             object.__setattr__(self, "_ConfigClass",ConfigClass)
@@ -180,11 +180,8 @@ class ConfigurableField(Field):
         oldValue = self.__getOrMake(instance, at=at)
 
         if isinstance(value, ConfigurableInstance):
-            target=value.target
-            oldValue.retarget(target, value.ConfigClass)
+            oldValue.retarget(value.target, value.ConfigClass, at, label)
             oldValue.update(__at=at, __label=label, **value._storage)
-            msg = "retarget(target=%s, ConfigClass=%s)"%(_typeStr(target), _typeStr(ConfigClass))        
-            history.append((msg, at, label))
         elif type(value)==oldValue._ConfigClass:
             oldValue.update(__at=at, __label=label, **value._storage)
         elif value == oldValue.ConfigClass:
