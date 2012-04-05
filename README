@@ -218,6 +218,33 @@ Examples of ``ChoiceField`` and ``ConfigField`` and the use of ``Config``'s ``se
             if self.doComputeApCorr and not self.doPsf:
                 raise ValueError("Cannot compute aperture correction without doing PSF determination")
 
+Example of a ``RegistryField`` created from a ``Registry`` object and use of
+both the ``Registry.register()`` method and the ``@registerConfigurable``
+decorator:
+
+    psfDeterminerRegistry = pexConfig.makeRegistry("""A registry of PSF determiner factories""")
+
+    class PcaPsfDeterminerConfig(pexConfig.Config):
+        spatialOrder = pexConfig.Field(
+                "spatial order for PSF kernel creation", int, 2)
+        [...]
+
+    @pexConfig.registerConfigurable("pca", psfDeterminerRegistry)
+    class PcaPsfDeterminer(object):
+        ConfigClass = PcaPsfDeterminerConfig
+            # associate this Configurable class with its Config class for use
+            # by the registry
+        def __init__(self, config, schema=None):
+            [...]
+        def determinePsf(self, exposure, psfCandidateList, metadata=None):
+            [...]
+
+    psfDeterminerRegistry.register("shapelet", ShapeletPsfDeterminer)
+
+    class MeasurePsfConfig(pexConfig.Config):
+        psfDeterminer = measAlg.psfDeterminerRegistry.makeField("PSF determination algorithm", default="pca")
+
+
 Inspecting a ``Config`` Object
 ------------------------------
 
