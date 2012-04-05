@@ -49,7 +49,7 @@ class ConfigField(Field):
         name = _joinNamePath(prefix=instance._name, name=self.name)
 
         if value != self.dtype and type(value) != self.dtype:
-            msg = "Value %s if of incorrect type %s. Expected %s" %\
+            msg = "Value %s is of incorrect type %s. Expected %s" %\
                     (value, _typeStr(value), _typeStr(self.dtype))
             raise FieldValidationError(self, instance, msg)
         

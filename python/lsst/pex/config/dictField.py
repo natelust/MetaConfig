@@ -80,15 +80,15 @@ class DictField(Field):
         self._setup( doc=doc, dtype=Dict, default=default, check=None, 
                 optional=optional, source=source)
         if keytype not in self.supportedTypes:
-            raise ValueError("key type %s is not a supported type"%\
+            raise ValueError("'keytype' %s is not a supported type"%\
                     _typeStr(keytype))
         elif itemtype not in self.supportedTypes:
-            raise ValueError("item type %s is not a supported type"%\
+            raise ValueError("'itemtype' %s is not a supported type"%\
                     _typeStr(itemtype))
         if dictCheck is not None and not hasattr(dictCheck, "__call__"):
-            raise ValueError("dictCheck must be callable")
+            raise ValueError("'dictCheck' must be callable")
         if itemCheck is not None and not hasattr(itemCheck, "__call__"):
-            raise ValueError("itemCheck must be callable")
+            raise ValueError("'itemCheck' must be callable")
 
         self.keytype = keytype
         self.itemtype = itemtype

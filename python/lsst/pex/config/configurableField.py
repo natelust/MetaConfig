@@ -46,8 +46,12 @@ class ConfigurableInstance(object):
     """
     value = property(lambda x: x._value)
 
-    def apply(self, *args, **kw):        
-        return self.target(self.value, *args, **kw)
+    def apply(self, *args, **kw):       
+        """
+        Call the confirurable.
+        With argument config=self.value along with any positional and kw args
+        """
+        return self.target(*args, config=self.value, **kw)
     
     """
     Target a new configurable and ConfigClass
@@ -125,14 +129,14 @@ class ConfigurableField(Field):
             try:
                 ConfigClass=target.ConfigClass
             except:
-                raise AttributeError("target must define attribute 'ConfigClass'")
+                raise AttributeError("'target' must define attribute 'ConfigClass'")
         if not issubclass(ConfigClass, Config):
-            raise TypeError("ConfigClass if of incorrect type %s."\
-                    "ConfigClass must be a subclass of Config"%_typeStr(ConfigClass))
+            raise TypeError("'ConfigClass' is of incorrect type %s."\
+                    "'ConfigClass' must be a subclass of Config"%_typeStr(ConfigClass))
         if not hasattr(target, '__call__'):
-            raise ValueError ("target must be callable")
+            raise ValueError ("'target' must be callable")
         if not hasattr(target, '__module__') or not hasattr(target, '__name__'):
-            raise ValueError("target must be statically defined." \
+            raise ValueError("'target' must be statically defined" \
                     "(must have '__module__' and '__name__' attributes)")
         return ConfigClass
 
@@ -148,7 +152,7 @@ class ConfigurableField(Field):
         if default is None: 
             default=ConfigClass
         if default != ConfigClass and type(default) != ConfigClass:
-            raise TypeError("default argument is of incorrect type %s. Expected %s"%\
+            raise TypeError("'default' is of incorrect type %s. Expected %s"%\
                     (_typeStr(default), _typeStr(ConfigClass)))
 
         source = traceback.extract_stack(limit=2)[0]
@@ -188,7 +192,7 @@ class ConfigurableField(Field):
             value = oldValue.ConfigClass()
             oldValue.update(__at=at, __label=label, **value._storage)
         else:
-            msg = "Value %s if of incorrect type %s. Expected %s" %\
+            msg = "Value %s is of incorrect type %s. Expected %s" %\
                     (value, _typeStr(value), _typeStr(oldValue.ConfigClass))
             raise FieldValidationError(self, instance, msg)
     

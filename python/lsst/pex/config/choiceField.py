@@ -25,12 +25,17 @@ class ChoiceField(Field):
                         (choice, _typeStr(choice), _typeStr(dtype)))
             doc += "\t%s\t%s\n"%(str(choice), choiceDoc)
 
-        Field.__init__(self, doc=doc, dtype=dtype, default=default, check=None, optional=optional)
+        Field.__init__(self, doc=doc, dtype=dtype, default=default, 
+                check=None, optional=optional)
         self.source = traceback.extract_stack(limit=2)[0]
 
     def validateValue(self, value):
         Field.validateValue(self, value)
         if value not in self.allowed:
-            msg = "Value %s is not in the set of allowed values"%value
-            raise ValueError(msg) 
-
+            allowedStr = "{%s"%self.allowed.keys()[0]
+            for x in self.allowed:
+                allowedStr += ", %s"%x
+            allowedStr+="}"
+            msg = "Value %s is not allowed.\n\tAllowed values: %s"%\
+                    (value, allowedStr)
+            raise ValueError(msg)

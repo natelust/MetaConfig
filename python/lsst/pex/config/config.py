@@ -10,7 +10,7 @@ def _joinNamePath(prefix=None, name=None, index=None):
     Utility function for generating nested configuration names
     """
     if not prefix and not name:
-        raise ValueError("invalid name. cannot be None")
+        raise ValueError("Invalid name: cannot be None")
     elif not name:
         name = prefix
     elif prefix and name:
@@ -82,7 +82,7 @@ class FieldValidationError(ValueError):
         self.configSource = config._source
         error="%s '%s' failed validation: %s\n"\
                 "For more information read the Field definition at:\n%s"\
-                "And the Config defition at:\n%s"%\
+                "And the Config definition at:\n%s"%\
               (self.fieldType.__name__, self.fullname, msg, 
                       traceback.format_list([self.fieldSource])[0],
                       traceback.format_list([self.configSource])[0])
@@ -113,7 +113,7 @@ class Field(object):
         optional --- When False, Config validate() will fail if value is None
         """
         if dtype not in self.supportedTypes:
-            raise ValueError("Unsuported Field dtype %s"%_typeStr(dtype))
+            raise ValueError("Unsupported Field dtype %s"%_typeStr(dtype))
         source = traceback.extract_stack(limit=2)[0]
         self._setup(doc=doc, dtype=dtype, default=default, check=check, optional=optional, source=source)
         

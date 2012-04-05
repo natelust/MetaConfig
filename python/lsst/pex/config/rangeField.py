@@ -17,7 +17,7 @@ class RangeField(Field):
     def __init__(self, doc, dtype, default=None, optional=False, 
             min=None, max=None, inclusiveMin=True, inclusiveMax=False):
         if dtype not in self.supportedTypes:
-            raise ValueError("Unsuported RangeField dtype %s"%(_typeStr(dtype)))
+            raise ValueError("Unsupported RangeField dtype %s"%(_typeStr(dtype)))
         source = traceback.extract_stack(limit=2)[0]
         if min is None and max is None:
             raise ValueError("min and max cannot both be None")

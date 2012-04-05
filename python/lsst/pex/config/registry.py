@@ -123,22 +123,25 @@ class RegistryInstanceDict(ConfigInstanceDict):
         return [self._field.typemap.registry[c] for c in self._selection]
     targets = property(_getTargets)
 
-    def apply(self, *args, **kwds):
-        """Call the active target with the active config as the first argument.
+    def apply(self, *args, **kw):
+        """Call the active target(s) with the active config as a keyword arg
 
-        If this is a multi-selection field, return a list obtained by calling each active
-        target with its corresponding active config as its first argument.
+        If this is a multi-selection field, return a list obtained by calling 
+        each active target with its corresponding active config.
 
-        Additional arguments will be passed on to the configurable or configurables.
+        Additional arguments will be passed on to the configurable target(s)
         """
         if self.active is None:
-            msg = "No selection has been mad.  Options: %s" % \
+            msg = "No selection has been made.  Options: %s" % \
                     (" ".join(self._field.typemap.registry.keys()))
             raise FieldValidationError(self._field, self._config, msg)
         if self._field.multi:
-            return [self._field.typemap.registry[c](self[c], *args, **kwds) for c in self._selection]
+            retvals = []
+            for c in self._selection:
+                revals += self._field.typemap.registry[c](*args, config=self[c], **kw)
+            return retvals
         else:
-            return self._field.typemap.registry[self.name](self[self.name], *args, **kwds)
+            return self._field.typemap.registry[self.name](*args, config=self[self.name], **kw)
 
 class RegistryField(ConfigChoiceField):
     instanceDictClass = RegistryInstanceDict
@@ -149,12 +152,13 @@ class RegistryField(ConfigChoiceField):
         ConfigChoiceField.__init__(self, doc, types, default, optional, multi)
 
     def __deepcopy__(self, memo):
-        """Customize deep-copying, because we always want a reference to the original registry.
-
-        WARNING: this must be overridden by subclasses if they change the constructor signature!
+        """Customize deep-copying, want a reference to the original registry.
+        WARNING: this must be overridden by subclasses if they change the 
+            constructor signature!
         """
-        return type(self)(doc=self.doc, registry=self.registry, default=copy.deepcopy(self.default),
-                          optional=self.optional, multi=self.multi)
+        return type(self)(doc=self.doc, registry=self.registry, 
+                default=copy.deepcopy(self.default),
+                optional=self.optional, multi=self.multi)
 
 def makeRegistry(doc, configBaseType=Config):
     """A convenience function to create a new registry.
