@@ -138,7 +138,7 @@ class RegistryInstanceDict(ConfigInstanceDict):
         if self._field.multi:
             retvals = []
             for c in self._selection:
-                retvals += self._field.typemap.registry[c](*args, config=self[c], **kw)
+                retvals.append(self._field.typemap.registry[c](*args, config=self[c], **kw))
             return retvals
         else:
             return self._field.typemap.registry[self.name](*args, config=self[self.name], **kw)
