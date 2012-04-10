@@ -60,7 +60,7 @@ class ListFieldTest(unittest.TestCase):
         try:
             class BadLengths(pexConf.Config):
                 l = pexConf.ListField("...", int, minLength=4, maxLength=2)
-        except:
+        except ValueError, e:
             pass
         else:
             raise SyntaxError("minLnegth <= maxLength should not be allowed")

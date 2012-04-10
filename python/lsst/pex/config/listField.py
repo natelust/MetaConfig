@@ -115,8 +115,8 @@ class ListField(Field):
             if maxLength is not None and maxLength <= 0:
                 raise ValueError("'maxLength' (%d) must be positive"%maxLength)
             if minLength is not None and maxLength is not None \
-                    and minLength >=maxLength:
-                raise ValueError("'maxLength' (%d) must be greater than 'minLength' (%d)"%(maxLength, minLegth))
+                    and minLength > maxLength:
+                raise ValueError("'maxLength' (%d) must be at least as large as 'minLength' (%d)"%(maxLength, minLength))
         
         if listCheck is not None and not hasattr(listCheck, "__call__"):
             raise ValueError("'listCheck' must be callable")

@@ -116,6 +116,10 @@ class ConfigTest(unittest.TestCase):
         for t in C1.r.typemap:
             self.assertEqual(C1.r.typemap[t], self.registry[t].ConfigClass)
 
+        c=  C1()
+        c.r = "foo2"
+        c.r.apply()
+
 def  suite():
     utilsTests.init()
     suites = []
