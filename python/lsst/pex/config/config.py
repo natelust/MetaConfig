@@ -305,7 +305,7 @@ class Config(object):
             if destination.closed:
                 raise ValueError("Cannot save a Config instance to a closed file")
             outfile = destination
-        elif isinstance(destination, str):
+        else:
             outfile = open(destination, 'w')
 
         tmp = self._name
