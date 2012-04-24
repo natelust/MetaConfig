@@ -104,8 +104,8 @@ class DictField(Field):
                     "Expected type %s"%\
                     (x, k, _typeStr(x), _typeStr(self.itemtype)))
         if self.itemCheck is not None and not self.itemCheck(x):
-                msg="Item at key %r is not a valid value: %s"%(k, x)
-                raise ValueError(msg)
+            msg="Item at key %r is not a valid value: %s"%(k, x)
+            raise ValueError(msg)
 
     def validateValue(self, value):
         Field.validateValue(self, value)

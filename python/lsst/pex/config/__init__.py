@@ -27,6 +27,7 @@ from .dictField import *
 from .configField import *
 from .configChoiceField import * 
 from .configurableField import * 
+from .configDictField import *
 from .convert import *
 from .wrap import *
 from .registry import *
