@@ -294,14 +294,23 @@ class Config(object):
         local = {root:self}
         execfile(filename, {}, local)
  
-    def save(self, filename, root="root"):
+    def save(self, destination, root="root"):
         """
         Generates a python script, which, when loaded, reproduces this Config
+
+        @param destination may be either a filename or an open file object
         """
+
+        if isinstance(destination, file):
+            if destination.closed:
+                raise ValueError("Cannot save a Config instance to a closed file")
+            outfile = destination
+        else:
+            outfile = open(destination, 'w')
+
         tmp = self._name
         self._rename(root)
         try:
-            outfile = open(filename, 'w')
             configType = type(self)
             typeString = _typeStr(configType)
             print >> outfile, "import %s"%(configType.__module__) 
