@@ -102,8 +102,14 @@ class StackFrame(object):
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-def format(config, name, writeSourceLine=True, prefix="", verbose=False):
+def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
     """Format the history record for config.name"""
+
+    if name is None:
+        for i, name in enumerate(config.history.keys()):
+            if i > 0:
+                print
+            print format(config, name)
 
     outputs = []
     for value, tb, label in config.history[name]:
