@@ -1,3 +1,25 @@
+# 
+# LSST Data Management System
+# Copyright 2008, 2009, 2010 LSST Corporation.
+# 
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the LSST License Statement and 
+# the GNU General Public License along with this program.  If not, 
+# see <http://www.lsstcorp.org/LegalNotices/>.
+#
+
 from .config import Config, Field, FieldValidationError, _typeStr, _autocast 
 import traceback, copy
 import collections
@@ -5,65 +27,88 @@ import collections
 __all__=["DictField"]
 
 class Dict(collections.MutableMapping):
-    def __appendHistory(self):
-        traceStack = traceback.extract_stack()[:-2]
-        self.__history.append((dict(self.__value), traceStack))
+    """
+    Config-Internal mapping container
+    Emulates a dict, but adds validation and provenance.
+    """
 
-    def __init__(self, config, field, value):
+    def __init__(self, config, field, value, at, label, setHistory=True):
         self._field = field
         self._config = config
-        self.__value = {}
+        self._dict = {}
+        self.__history = self._config._history.setdefault(self._field.name, [])
         if value is not None:
             try:
-                for k,v in value.iteritems():
-                    k = _autocast(k,self._field.keytype)
-                    v = _autocast(v,self._field.itemtype)
-                    self.__value[k]=v
-            except BaseException, e:
-                msg = "Value %s is of incorrect type %s." \
-                        " Expected a dict-like value"%(value, _typeStr(value))
+                for k in value:
+                    #do not set history per-item
+                    self.__setitem__(k, value[k], at=at, label=label, setHistory=False)
+            except TypeError, e:
+                msg = "Value %s is of incorrect type %s. Mapping type expected."%\
+                        (value, _typeStr(value))
                 raise FieldValidationError(self._field, self._config, msg)
+        if setHistory:
+            self.__history.append((dict(self._dict), at, label))
 
-        self.__history = self._config._history.setdefault(self._field.name, [])
 
     """
     Read-only history
     """
     history = property(lambda x: x.__history)   
 
-    def __getitem__(self, k): return self.__value[k]
+    def __getitem__(self, k): return self._dict[k]
 
-    def __len__(self): return len(self.__value)
+    def __len__(self): return len(self._dict)
 
-    def __iter__(self): return iter(self.__value)
+    def __iter__(self): return iter(self._dict)
 
-    def __contains__(self, k): return k in self.__value
+    def __contains__(self, k): return k in self._dict
 
-    def __setitem__(self, k, x):
+    def __setitem__(self, k, x, at=None, label="setitem", setHistory=True):
         if self._config._frozen:
-            raise FieldValidationError(self._field, self._config, \
-                    "Cannot modify a frozen Config")
+            msg = "Cannot modify a frozen Config. "\
+                    "Attempting to set item at key %r to value %s"%(k, x)
+            raise FieldValidationError(self._field, self._config, msg)
+
+        #validate keytype
         k = _autocast(k, self._field.keytype)
+        if type(k) != self._field.keytype:
+            msg = "Key %r is of type %s, expected type %s"%\
+                    (k, _typeStr(k), _typeStr(self._field.keytype))
+            raise FieldValidationError(self._field, self._config, msg)   
+
+        #validate itemtype
         x = _autocast(x, self._field.itemtype)
-        try:
-            self._field.validateItem(k, x)
-        except BaseException, e:
-            raise FieldValidationError(self._field, self._config, e.message)
+        if type(x) != self._field.itemtype and x is not None:
+            msg ="Value %s at key %r is of incorrect type %s. Expected type %s"%\
+                    (x, k, _typeStr(x), _typeStr(self._field.itemtype))
+            raise FieldValidationError(self._field, self._config, msg)
 
-        self.__value[k]=x
-        self.__appendHistory()
+        #validate item using itemcheck
+        if self._field.itemCheck is not None and not self._field.itemCheck(x):
+            msg="Item at key %r is not a valid value: %s"%(k, x)
+            raise FieldValidationError(self._field, self._config, msg)
 
-    def __delitem__(self, k):
+        if at is None:
+            at = traceback.extract_stack()[:-1]
+            
+        self._dict[k]=x
+        if setHistory:
+            self.__history.append((dict(self._dict), at, label))
+
+    def __delitem__(self, k, at=None, label="delitem", setHistory=True):
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, 
                     "Cannot modify a frozen Config")
         
-        del self.__value[k]
-        self.__appendHistory()
+        del self._dict[k]
+        if setHistory:
+            if at is None:
+                at = traceback.extract_stack()[:-1]
+            self.__history.append((dict(self._dict), at, label))
 
-    def __repr__(self): return repr(self.__value)
+    def __repr__(self): return repr(self._dict)
 
-    def __str__(self): return str(self.__value)
+    def __str__(self): return str(self._dict)
 
 
 
@@ -71,10 +116,23 @@ class DictField(Field):
     """
     Defines a field which is a mapping of values
 
+    Both key and item types are restricted to builtin POD types:
+        (int, float, complex, bool, str)
+    
     Users can provide two check functions:
-    dictCheck - used to validate the dict as a whole, and
-    itemCheck - used to validate each item individually    
+        dictCheck: used to validate the dict as a whole, and
+        itemCheck: used to validate each item individually
+
+    For example to define a field which is a mapping from names to int values:
+
+    class MyConfig(Config):
+        field = DictField(
+                doc="example string-to-int mapping field", 
+                keytype=str, itemtype=int, 
+                default= {})
     """
+    DictClass = Dict
+
     def __init__(self, doc, keytype, itemtype, default=None, optional=False, dictCheck=None, itemCheck=None):
         source = traceback.extract_stack(limit=2)[0]
         self._setup( doc=doc, dtype=Dict, default=default, check=None, 
@@ -95,39 +153,35 @@ class DictField(Field):
         self.dictCheck = dictCheck
         self.itemCheck = itemCheck
    
-    def validateItem(self, k, x):
-        if type(k) != self.keytype:
-            raise TypeError("Key %r is of type %s, expected type %s"%\
-                    (k, _typeStr(k), _typeStr(self.keytype)))
-        if type(x) != self.itemtype and x is not None:
-            raise TypeError("Value %s at key %r is of incorrect type %s."
-                    "Expected type %s"%\
-                    (x, k, _typeStr(x), _typeStr(self.itemtype)))
-        if self.itemCheck is not None and not self.itemCheck(x):
-            msg="Item at key %r is not a valid value: %s"%(k, x)
-            raise ValueError(msg)
-
-    def validateValue(self, value):
-        Field.validateValue(self, value)
-        if value is None:
-            return
-
-        if self.dictCheck is not None and not self.dictCheck(value):
+    def validate(self, instance):
+        """
+        DictField validation ensures that non-optional fields are not None,
+            and that non-None values comply with dictCheck.
+        Individual Item checks are applied at set time and are not re-checked.
+        """
+        Field.validate(self, instance)
+        value = self.__get__(instance)
+        if value is not None and self.dictCheck is not None \
+                and not self.dictCheck(value):
             msg = "%s is not a valid value"%str(value)
-            raise ValueError(msg)
-     
-        for k, x in value.iteritems():
-            self.validateItem(k, x)
+            raise FieldValidationError(self, instance, msg)
+            
 
     def __set__(self, instance, value, at=None, label="assignment"):
         if instance._frozen:
-            raise FieldValidationError(self, instance, 
-                    "Cannot modify a frozen Config")
+            msg = "Cannot modify a frozen Config. "\
+                  "Attempting to set field to value %s"%value
+            raise FieldValidationError(self, instance, msg)
+
         if at is None:
             at = traceback.extract_stack()[:-1]
         if value is not None:
-            value = Dict(instance, self, value)
-        Field.__set__(self, instance, value, at=at,label=label)
+            value = self.DictClass(instance, self, value, at=at, label=label)
+        else:
+            history = instance._history.setdefault(self.name, [])
+            history.append((value, at, label))
+
+        instance._storage[self.name] = value
     
     def toDict(self, instance):        
         value = self.__get__(instance)        

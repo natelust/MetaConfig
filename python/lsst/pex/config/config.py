@@ -1,3 +1,25 @@
+# 
+# LSST Data Management System
+# Copyright 2008, 2009, 2010 LSST Corporation.
+# 
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the LSST License Statement and 
+# the GNU General Public License along with this program.  If not, 
+# see <http://www.lsstcorp.org/LegalNotices/>.
+#
+
 import traceback
 import sys
 import collections
@@ -93,7 +115,7 @@ class Field(object):
     """A field in a a Config.
 
     Instances of Field should be class attributes of Config subclasses:
-    Field only supports basic data types (int, float, bool, str)
+    Field only supports basic data types (int, float, complex, bool, str)
 
     class Example(Config):
         myInt = Field(int, "an integer field!", default=0)
@@ -152,8 +174,14 @@ class Field(object):
     def freeze(self, instance):
         pass
 
-    def validateValue(self, value):
-        """Validate a value that is not None"""
+    def _validateValue(self, value):
+        """
+        Validate a value that is not None
+    
+        This is called from __set__
+        This is not part of the Field API. However, simple derived field types
+            may benifit from implementing _validateValue
+        """
         if value is None:
             return
 
@@ -194,7 +222,7 @@ class Field(object):
         if value is not None:
             value = _autocast(value, self.dtype)
             try:
-                self.validateValue(value)
+                self._validateValue(value)
             except BaseException, e:
                 raise FieldValidationError(self, instance, e.message)
         

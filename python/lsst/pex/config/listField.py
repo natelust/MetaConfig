@@ -1,3 +1,24 @@
+# 
+# LSST Data Management System
+# Copyright 2008, 2009, 2010 LSST Corporation.
+# 
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the LSST License Statement and 
+# the GNU General Public License along with this program.  If not, 
+# see <http://www.lsstcorp.org/LegalNotices/>.
+#
 from .config import Field, FieldValidationError, _typeStr, _autocast
 import traceback, copy
 import collections
@@ -5,74 +26,87 @@ import collections
 __all__ = ["ListField"]
 
 class List(collections.MutableSequence):
-    def __appendHistory(self):
-        traceStack = traceback.extract_stack()[:-2]
-        self.__history.append((list(self.__value), traceStack))
-
-    def __init__(self, config, field, value):
+    def __init__(self, config, field, value, at, label, setHistory=True):
         self._field = field
         self._config = config
+        self.__history = self._config._history.setdefault(self._field.name, [])
+        self._list = []
         if value is not None:
             try:
-                self.__value = [_autocast(xi, self._field.itemtype) for xi in value]
-            except:
-                msg = "Value %s is of incorrect type %s. Expected a sequence"%(value, _typeStr(value))
+                for i, x in enumerate(value):
+                    self.insert(i, x, setHistory=False)
+            except TypeError, e:
+                print e
+                msg = "Value %s is of incorrect type %s. Sequence type expected"%(value, _typeStr(value))
                 raise FieldValidationError(self._field, self._config, msg)
-        else:
-            self.__value = []
+        if setHistory:
+            self.history.append((list(self._list), at, label))
 
-        self.__history = self._config._history.setdefault(self._field.name, [])
+    def validateItem(self, i, x):
+
+        if not isinstance(x, self._field.itemtype) and x is not None:
+            msg="Item at position %d with value %s is of incorrect type %s. Expected %s"%\
+                    (i, x, _typeStr(x), _typeStr(self._field.itemtype))
+            raise FieldValidationError(self._field, self._config, msg)
+                
+        if self._field.itemCheck is not None and not self._field.itemCheck(x):
+            msg="Item at position %d is not a valid value: %s"%(i, x)
+            raise FieldValidationError(self._field, self._config, msg)
+
 
     """
     Read-only history
     """
-    history = property(lambda x: x._history)   
+    history = property(lambda x: x.__history)   
 
-    def __contains__(self, x): return x in self.__value
+    def __contains__(self, x): return x in self._list
 
-    def __len__(self): return len(self.__value)
+    def __len__(self): return len(self._list)
 
-    def __setitem__(self, i, x):
+    def __setitem__(self, i, x, at=None, label="setitem", setHistory=True):
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, \
                     "Cannot modify a frozen Config")
-
         if isinstance(i, slice):
             k, stop, step = i.indices(len(self))
             for j, xj in enumerate(x):
                 xj=_autocast(xj, self._field.itemtype)
-                try:
-                    self._field.validateItem(k, xj)
-                except BaseException, e:
-                    raise FieldValidationError(self._field, self._config, e.message)
+                self.validateItem(k, xj)
                 x[j]=xj
                 k += step
         else:
             x = _autocast(x, self._field.itemtype)
-            try:
-                self._field.validateItem(i, x)
-            except BaseException, e:
-                raise FieldValidationError(self._field, self._config, e.message)
+            self.validateItem(i, x)
             
-        self.__value[i]=x
-        self.__appendHistory()
+        self._list[i]=x
+        if setHistory:
+            if at is None:
+                at = traceback.extract_stack()[:-1]
+            self.history.append((list(self._list), at, label))
+
         
-    def __getitem__(self, i): return self.__value[i]
+    def __getitem__(self, i): return self._list[i]
     
-    def __delitem__(self, i):
+    def __delitem__(self, i, at =None, label="delitem", setHistory=True):
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, \
                     "Cannot modify a frozen Config")
-        del self.__value[i]
-        self.__appendHistory()
+        del self._list[i]
+        if setHistory:
+            if at is None:
+                at = traceback.extract_stack()[:-1]
+            self.history.append((list(self._list), at, label))
 
-    def __iter__(self): return iter(self.__value)
+    def __iter__(self): return iter(self._list)
 
-    def insert(self, i, x): self[i:i]=[x]
+    def insert(self, i, x, at=None, label="insert", setHistory=True): 
+        if at is None:
+            at = traceback.extract_stack()[:-1]
+        self.__setitem__(slice(i,i), [x], at=at, label=label, setHistory=setHistory)
 
-    def __repr__(self): return repr(self.__value)
+    def __repr__(self): return repr(self._list)
 
-    def __str__(self): return str(self.__value)
+    def __str__(self): return str(self._list)
 
     def __eq__(self, other):
         try:
@@ -132,46 +166,45 @@ class ListField(Field):
         self.minLength=minLength
         self.maxLength=maxLength
    
-    def validateItem(self, i, x):
-        if not isinstance(x, self.itemtype) and x is not None:
-            msg="Item at position %d with value %s is of incorrect type %s. Expected %s"%\
-                    (i, x, _typeStr(x), _typeStr(self.itemtype))
-            raise TypeError(msg)
-                
-        if self.itemCheck is not None and not self.itemCheck(x):
-            msg="Item at position %d is not a valid value: %s"%(i, x)
-            raise ValueError(msg)
 
-    def validateValue(self, value):
-        Field.validateValue(self, value)
-        if value is None:
-            return
-
-        lenValue =len(value)
-        if self.length is not None and not lenValue == self.length:
-            msg = "Required list length=%d, got length=%d"%(self.length, lenValue)                
-            raise ValueError(msg)
-        elif self.minLength is not None and lenValue < self.minLength:
-            msg = "Minimum allowed list length=%d, got length=%d"%(self.minLength, lenValue)
-            raise ValueError(msg)
-        elif self.maxLength is not None and lenValue > self.maxLength:
-            msg = "Maximum allowed list length=%d, got length=%d"%(self.maxLength, lenValue)
-            raise ValueError(msg)
-        elif self.listCheck is not None and not self.listCheck(value):
-            msg = "%s is not a valid value"%str(value)
-            raise ValueError(msg)
-        
-        for i, x in enumerate(value):
-            self.validateItem(i,x)
+    def validate(self, instance):
+        """
+        ListField validation ensures that non-optional fields are not None,
+            and that non-None values comply with length requirements and
+            that the list passes listCheck if supplied by the user.
+        Individual Item checks are applied at set time and are not re-checked.
+        """
+        Field.validate(self, instance)
+        value = self.__get__(instance)
+        if value is not None:
+            lenValue =len(value)
+            if self.length is not None and not lenValue == self.length:
+                msg = "Required list length=%d, got length=%d"%(self.length, lenValue)                
+                raise FieldValidationError(self, instance, msg)
+            elif self.minLength is not None and lenValue < self.minLength:
+                msg = "Minimum allowed list length=%d, got length=%d"%(self.minLength, lenValue)
+                raise FieldValidationError(self, instance, msg)
+            elif self.maxLength is not None and lenValue > self.maxLength:
+                msg = "Maximum allowed list length=%d, got length=%d"%(self.maxLength, lenValue)
+                raise FieldValidationError(self, instance, msg)
+            elif self.listCheck is not None and not self.listCheck(value):
+                msg = "%s is not a valid value"%str(value)
+                raise FieldValidationError(self, instance, msg)
 
     def __set__(self, instance, value, at=None, label="assignment"):
         if instance._frozen:
             raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
+
         if at is None:
             at = traceback.extract_stack()[:-1]
+
         if value is not None:
-            value = List(instance, self, value)
-        Field.__set__(self, instance, value, at=at, label=label)
+            value = List(instance, self, value, at, label)
+        else:
+            history = instance._history.setdefault(self.name, [])
+            history.append((value, at, label))
+
+        instance._storage[self.name] = value
 
     
     def toDict(self, instance):        
