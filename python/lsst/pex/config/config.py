@@ -1,5 +1,6 @@
 import traceback
 import sys
+import math
 import collections
 import copy
 
@@ -172,7 +173,11 @@ class Field(object):
         """
         value = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)
-        print >> outfile, "%s=%r"%(fullname, value)
+        if isinstance(value, float) and (math.isinf(value) or math.isnan(value)):
+            # non-finite numbers need special care
+            print >> outfile, "%s=float('%r')"%(fullname, value)
+        else:
+            print >> outfile, "%s=%r"%(fullname, value)
     
     def toDict(self, instance):
         """
