@@ -302,7 +302,11 @@ class Config(object):
     def save(self, filename, root="root"):
         """
         Generates a python script at the given filename, which, when loaded,
-        reproduces this Config
+        reproduces this Config.
+
+        @param filename [in] name of file to write to
+        @param root [in] name to use for the root config variable
+            If not "root", must match what is used in load())
         """
         with open(filename, 'w') as outfile:
             self.saveToStream(outfile, root)
@@ -310,11 +314,12 @@ class Config(object):
     def saveToStream(self, outfile, root="root"):
         """
         Generates a python script to the given open file object, which, when
-        loaded, reproduces this Config
-        """
+        loaded, reproduces this Config.
 
-        if outfile.closed:
-            raise ValueError("Cannot save a Config instance to a closed file")
+        @param outfile [inout] open file object to write to
+        @param root [in] name to use for the root config variable
+            If not "root", must match what is used in load())
+        """
         tmp = self._name
         self._rename(root)
         try:
@@ -333,7 +338,7 @@ class Config(object):
 
     def _save(self, outfile):
         """
-        Internal use only. Save this Config to file
+        Internal use only. Save this Config to file object
         """
         for field in self._fields.itervalues():
             field.save(outfile, self)
