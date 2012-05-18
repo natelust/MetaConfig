@@ -299,20 +299,22 @@ class Config(object):
         local = {root:self}
         execfile(filename, {}, local)
  
-    def save(self, destination, root="root"):
+    def save(self, filename, root="root"):
         """
-        Generates a python script, which, when loaded, reproduces this Config
+        Generates a python script at the given filename, which, when loaded,
+        reproduces this Config
+        """
+        with open(filename, 'w') as outfile:
+            self.saveToStream(outfile, root)
 
-        @param destination may be either a filename or an open file object
+    def saveToStream(self, outfile, root="root"):
+        """
+        Generates a python script to the given open file object, which, when
+        loaded, reproduces this Config
         """
 
-        if isinstance(destination, file):
-            if destination.closed:
-                raise ValueError("Cannot save a Config instance to a closed file")
-            outfile = destination
-        else:
-            outfile = open(destination, 'w')
-
+        if outfile.closed:
+            raise ValueError("Cannot save a Config instance to a closed file")
         tmp = self._name
         self._rename(root)
         try:
@@ -321,10 +323,9 @@ class Config(object):
             print >> outfile, "import %s"%(configType.__module__) 
             print >> outfile, "assert(type(%s)==%s)"%(root, typeString) 
             self._save(outfile)
-            outfile.close()
         finally:
             self._rename(tmp)
-    
+
     def freeze(self):
         self._frozen=True
         for field in self._fields.itervalues():
@@ -336,7 +337,7 @@ class Config(object):
         """
         for field in self._fields.itervalues():
             field.save(outfile, self)
-        
+
     def toDict(self):
         dict_ = {}
         for name, field in self._fields.iteritems():
