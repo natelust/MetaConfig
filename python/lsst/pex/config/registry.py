@@ -164,6 +164,11 @@ class RegistryInstanceDict(ConfigInstanceDict):
             return retvals
         else:
             return self._field.typemap.registry[self.name](*args, config=self[self.name], **kw)
+    def __setattr__(self, attr, value):
+        if attr =="registry":
+            object.__setattr__(self, attr, value)
+        else:
+            ConfigInstanceDict.__setattr__(self, attr, value)
 
 class RegistryField(ConfigChoiceField):
     instanceDictClass = RegistryInstanceDict

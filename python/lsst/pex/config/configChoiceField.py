@@ -22,6 +22,7 @@
 
 from .config import Config, Field, FieldValidationError, _typeStr, _joinNamePath
 import traceback, copy, collections
+import sys
 
 __all__ = ["ConfigChoiceField"]
 
@@ -37,7 +38,7 @@ class ConfigInstanceDict(collections.Mapping):
         self._selection = None
         self._config = config
         self._field = field
-        self.__history = config._history.setdefault(field.name, [])
+        self._history = config._history.setdefault(field.name, [])
         self.__doc__ = field.doc
 
     types = property(lambda x: x._field.typemap)
@@ -68,7 +69,7 @@ class ConfigInstanceDict(collections.Mapping):
             if value not in self._dict:
                 r = self.__getitem__(value, at=at) # just invoke __getitem__ to make sure it's present
             self._selection = value
-        self.__history.append((value, at, label))
+        self._history.append((value, at, label))
     
     def _getNames(self):
         if not self._field.multi:            
@@ -175,6 +176,21 @@ class ConfigInstanceDict(collections.Mapping):
     def _rename(self, fullname):
         for k, v in self._dict.iteritems():
             v._rename(_joinNamePath(name=fullname, index=k))
+
+    def __setattr__(self, attr, value, at=None, label="assignment"):
+        if hasattr(getattr(self.__class__, attr, None), '__set__'):
+            # This allows properties to work.
+            object.__setattr__(self, attr, value)
+        elif attr in self.__dict__ or attr in ["_history", "_field", "_config", "_dict", "_selection", "__doc__"]:
+            # This allows specific private attributes to work.
+            object.__setattr__(self, attr, value)
+        else:
+            # We throw everything else.
+            print >> sys.stderr, attr
+            msg = "%s has no attribute %s"%(_typeStr(self._field), attr)
+            raise FieldValidationError(self._field, self._config, msg)
+
+
 
 
 class ConfigChoiceField(Field):
