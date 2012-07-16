@@ -278,10 +278,10 @@ class ConfigChoiceField(Field):
 
     def validate(self, instance):
         instanceDict = self.__get__(instance)
-        if not instanceDict.active and not self.optional:
+        if instanceDict.active is None and not self.optional:
             msg = "Required field cannot be None"
             raise FieldValidationError(self, instance, msg)
-        elif instanceDict.active:
+        elif instanceDict.active is not None:
             if self.multi:
                 for a in instanceDict.active:
                     a.validate()
