@@ -142,7 +142,8 @@ class ConfigTest(unittest.TestCase):
         del roundTrip
         #test saving to an open file
         outfile = open("roundtrip.test", "w")
-        self.comp.save(outfile)
+        self.comp.saveToStream(outfile)
+        outfile.close()
 
         roundTrip = Complex()
         roundTrip.load("roundtrip.test")

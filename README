@@ -46,13 +46,16 @@ Defining a configuration subclass::
             "fields to remove from the metadata of the assembled ccd.",
             dtype=str, default=[])
 
-A configuration file to be read with ``IsrTaskConfig``::
+Here is a sample configuration override file to be used with the partial
+``IsrTaskConfig`` above.  Note that all field names are prefixed with "root"
+and that overrides should never be used to set already-existing default
+values::
 
-    root.doWrite = True
-    root.fwhm = 1.0
-    root.saturatedMaskName = 'SAT'
-    root.flatScalingType = 'USER'
-    root.keysToRemoveFromAssembledCcd = []
+    root.doWrite = False
+    root.fwhm = 0.8
+    root.saturatedMaskName = 'SATUR'
+    root.flatScalingType = 'MEAN'
+    root.keysToRemoveFromAssembledCcd = ['AMPNAME']
 
 Typical usage::
 
@@ -95,10 +98,10 @@ configuration parameter.  Another rule of thumb is that configuration
 parameters should generally not be set in algorithmic code, only in
 initialization or user interface code.
 
-A `Config`\ subclass is instantiated to create a configuration object.  If any
+A `Config` subclass is instantiated to create a configuration object.  If any
 default `Field` values need to be overridden, they can be set by assignment
 to the object's `Field` attributes (e.g. `config.param1 = 3.14`), often in
-a parent `Config`'s ` setDefaults()` method, or by loading from an external
+a parent `Config`'s `setDefaults()` method, or by loading from an external
 file.  The code then uses the configuration values by accessing the object's
 `Field` attributes (e.g., `x = config.param1`).
 
@@ -196,7 +199,7 @@ Example of `ListField` and `Config` inheritance::
             optional = None,
         )
 
-Examples of `ChoiceField` and `ConfigField` and the use of `Config`'s ` setDefaults()` and `validate()` methods::
+Examples of `ChoiceField` and `ConfigField` and the use of `Config`'s `setDefaults()` and `validate()` methods::
 
     class InitialPsfConfig(pexConfig.Config):
         """Describes the initial PSF used for detection and measurement before

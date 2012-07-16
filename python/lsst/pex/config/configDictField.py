@@ -31,6 +31,9 @@ __all__=["ConfigDictField"]
 class ConfigDict(Dict):
     """
     Config-Insternal representation of a dict of config classes
+
+    Much like Dict, ConfigDict is a custom MutableMapper which tracks the
+    history of changes to any of its items.    
     """
     def __init__(self, config, field, value, at, label):
         Dict.__init__(self, config, field, value, at, label, setHistory=False)
@@ -85,7 +88,12 @@ class ConfigDictField(DictField):
     Defines a field which is a mapping between a POD and a config class.
 
     This behaves exactly like a DictField with the slight difference that
-        itemtype must be an subclass of Config
+        itemtype must be an subclass of Config.
+
+    This allows config writters to create name-to-config mappings. One use case
+    is for configuring mappings for dataset types in a butler. In this case,
+    the dataset type names are arbitrary and user-selected; the mapping 
+    configurations are known and fixed.
     """
 
     DictClass = ConfigDict
