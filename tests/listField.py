@@ -37,11 +37,14 @@ def isSorted(l):
         p=x
     return True
 
+def isPositive(x):
+    return x>0
+
 class Config1(pexConf.Config):
-    l1 = pexConf.ListField("l1", int, minLength=2, maxLength=5, default=[1,2,3], itemCheck=lambda x: x > 0)
-    l2 = pexConf.ListField("l2", int, length = 3, default=[1,2,3], listCheck=isSorted)
-    l3 = pexConf.ListField("l3", int, length = 3, default=None, optional=True, itemCheck=lambda x: x > 0)
-    l4 = pexConf.ListField("l4", int, length = 3, default=None, itemCheck=lambda x: x > 0)
+    l1 = pexConf.ListField("l1", int, minLength=2, maxLength=5, default=[1,2,3], itemCheck=isPositive)
+    l2 = pexConf.ListField("l2", int, length = 3, default=[1,2,3], listCheck=isSorted, itemCheck=isPositive)
+    l3 = pexConf.ListField("l3", int, length = 3, default=None, optional=True, itemCheck=isPositive)
+    l4 = pexConf.ListField("l4", int, length = 3, default=None, itemCheck=isPositive)
 
 class Config2(pexConf.Config):
     lf= pexConf.ListField("lf", float, default=[1,2,3])
@@ -84,28 +87,19 @@ class ListFieldTest(unittest.TestCase):
     def testAssignment(self):
         c = Config1()
         self.assertRaises(pexConf.FieldValidationError, setattr, c, "l1", [1.2, 3, 4])
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l1", [])
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l1", [1,2,3,4,5,6])
         self.assertRaises(pexConf.FieldValidationError, setattr, c, "l1", [-1, -2, -3])
         self.assertRaises(pexConf.FieldValidationError, setattr, c, "l1", [1, 2, 0])
         self.assertRaises(pexConf.FieldValidationError, setattr, c, "l1", [1, 2, None])
         c.l1 = None; c.l1 = [1, 1]; c.l1 = [1,1,1]; c.l1 = [1,1,1,1]; c.l1= [1,1,1,1,1]
         
 
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l2", [])
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l2", range(10))
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l2", [1,3,2])
         self.assertRaises(pexConf.FieldValidationError, setattr, c, "l2", [1, 2, None])
-        c.l2 = None; c.l2 = [0,0,0]; c.l2 = [-1,1,2]
+        c.l2 = None; c.l2 = [1,2,3];
         
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l3", [])
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l3", range(10))
         self.assertRaises(pexConf.FieldValidationError, setattr, c, "l3", [0,3,2])
         self.assertRaises(pexConf.FieldValidationError, setattr, c, "l3", [1, 2, None])
         c.l3 = None; c.l3 = [1,1,1]
 
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l4", [])
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l4", range(10))
         self.assertRaises(pexConf.FieldValidationError, setattr, c, "l4", [0,3,2])
         self.assertRaises(pexConf.FieldValidationError, setattr, c, "l4", [1, 2, None])
         c.l4 = None; c.l4 = [1,1,1]
