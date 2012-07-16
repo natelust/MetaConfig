@@ -186,7 +186,6 @@ class ConfigInstanceDict(collections.Mapping):
             object.__setattr__(self, attr, value)
         else:
             # We throw everything else.
-            print >> sys.stderr, attr
             msg = "%s has no attribute %s"%(_typeStr(self._field), attr)
             raise FieldValidationError(self._field, self._config, msg)
 
