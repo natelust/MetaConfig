@@ -24,7 +24,7 @@
 import os
 import unittest
 import lsst.utils.tests as utilsTests
-import lsst.pex.config as pexConf
+import lsst.pex.config as pexConfig
 
 def isSorted(l):
     if len(l)<=1:
@@ -40,45 +40,45 @@ def isSorted(l):
 def isPositive(x):
     return x>0
 
-class Config1(pexConf.Config):
-    l1 = pexConf.ListField("l1", int, minLength=2, maxLength=5, default=[1,2,3], itemCheck=isPositive)
-    l2 = pexConf.ListField("l2", int, length = 3, default=[1,2,3], listCheck=isSorted, itemCheck=isPositive)
-    l3 = pexConf.ListField("l3", int, length = 3, default=None, optional=True, itemCheck=isPositive)
-    l4 = pexConf.ListField("l4", int, length = 3, default=None, itemCheck=isPositive)
+class Config1(pexConfig.Config):
+    l1 = pexConfig.ListField("l1", int, minLength=2, maxLength=5, default=[1,2,3], itemCheck=isPositive)
+    l2 = pexConfig.ListField("l2", int, length = 3, default=[1,2,3], listCheck=isSorted, itemCheck=isPositive)
+    l3 = pexConfig.ListField("l3", int, length = 3, default=None, optional=True, itemCheck=isPositive)
+    l4 = pexConfig.ListField("l4", int, length = 3, default=None, itemCheck=isPositive)
 
-class Config2(pexConf.Config):
-    lf= pexConf.ListField("lf", float, default=[1,2,3])
-    ls = pexConf.ListField("ls", str, default=["hi"])
+class Config2(pexConfig.Config):
+    lf= pexConfig.ListField("lf", float, default=[1,2,3])
+    ls = pexConfig.ListField("ls", str, default=["hi"])
 
 class ListFieldTest(unittest.TestCase):
     def testConstructor(self):
         try:
-            class BadDtype(pexConf.Config):
-                l = pexConf.ListField("...", list)
+            class BadDtype(pexConfig.Config):
+                l = pexConfig.ListField("...", list)
         except:
             pass
         else:
             raise SyntaxError("Unsupported dtype ListFields should not be allowed")
 
         try:
-            class BadLengths(pexConf.Config):
-                l = pexConf.ListField("...", int, minLength=4, maxLength=2)
+            class BadLengths(pexConfig.Config):
+                l = pexConfig.ListField("...", int, minLength=4, maxLength=2)
         except ValueError, e:
             pass
         else:
             raise SyntaxError("minLnegth <= maxLength should not be allowed")
         
         try:
-            class BadLength(pexConf.Config):
-                l = pexConf.ListField("...", int, length=-1)
+            class BadLength(pexConfig.Config):
+                l = pexConfig.ListField("...", int, length=-1)
         except:
             pass
         else:
             raise SyntaxError("negative length should not be allowed")
         
         try:
-            class BadLength(pexConf.Config):
-                l = pexConf.ListField("...", int, maxLength=-1)
+            class BadLength(pexConfig.Config):
+                l = pexConfig.ListField("...", int, maxLength=-1)
         except:
             pass
         else:
@@ -86,34 +86,34 @@ class ListFieldTest(unittest.TestCase):
 
     def testAssignment(self):
         c = Config1()
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l1", [1.2, 3, 4])
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l1", [-1, -2, -3])
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l1", [1, 2, 0])
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l1", [1, 2, None])
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l1", [1.2, 3, 4])
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l1", [-1, -2, -3])
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l1", [1, 2, 0])
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l1", [1, 2, None])
         c.l1 = None; c.l1 = [1, 1]; c.l1 = [1,1,1]; c.l1 = [1,1,1,1]; c.l1= [1,1,1,1,1]
         
 
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l2", [1, 2, None])
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l2", [1, 2, None])
         c.l2 = None; c.l2 = [1,2,3];
         
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l3", [0,3,2])
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l3", [1, 2, None])
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l3", [0,3,2])
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l3", [1, 2, None])
         c.l3 = None; c.l3 = [1,1,1]
 
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l4", [0,3,2])
-        self.assertRaises(pexConf.FieldValidationError, setattr, c, "l4", [1, 2, None])
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l4", [0,3,2])
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l4", [1, 2, None])
         c.l4 = None; c.l4 = [1,1,1]
        
     def testValidate(self):
         c = Config1()
-        self.assertRaises(pexConf.FieldValidationError, Config1.validate, c)
+        self.assertRaises(pexConfig.FieldValidationError, Config1.validate, c)
 
         c.l4 = [1,2,3]
         c.validate()
 
     def testInPlaceModification(self):
         c= Config1()
-        self.assertRaises(pexConf.FieldValidationError, c.l1.__setitem__, 2, 0)
+        self.assertRaises(pexConfig.FieldValidationError, c.l1.__setitem__, 2, 0)
         c.l1[2]=10
         self.assertEqual(c.l1, [1,2,10])
         self.assertEqual((1,2, 10), c.l1)
@@ -135,6 +135,10 @@ class ListFieldTest(unittest.TestCase):
 
         c.ls.append("foo")
         self.assertEqual(c.ls, ["hi", "foo"])
+
+    def testNoArbitraryAttributes(self):
+        c= Config1()        
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c.l1, "should", "fail")
 
 def  suite():
     utilsTests.init()
