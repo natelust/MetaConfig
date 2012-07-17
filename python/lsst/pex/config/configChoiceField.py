@@ -25,6 +25,66 @@ import traceback, copy, collections
 
 __all__ = ["ConfigChoiceField"]
 
+class SelectionSet(collections.MutableSet):
+    def __init__(self, dict_, value, at=None, label="assignment", setHistory=True):
+        if at is None:
+            at = traceback.extract_stack()[:-1]
+        self._dict = dict_;
+        self._field = self._dict._field
+        self._config = self._dict._config
+        self.__history = self._config._history.setdefault(self._field.name, [])
+        if value is not None:
+            try:
+                for v in value:
+                    if v not in self._dict:
+                        #invoke __getitem__ to ensure it's present
+                        r = self._dict.__getitem__(v, at=at)
+            except TypeError:
+                msg = "Value %s is of incorrect type %s. Sequence type expected"(value, _typeStr(value))
+                raise FieldValidationError(self._field, self._config, msg)
+            self._set=set(value)
+        else:
+            self._set=set()
+
+        if setHistory:
+            self.__history.append(("Set selection to %s"%self, at, label))
+
+    def add(self, value, at= None):
+        if self._config._frozen:
+            raise FieldValidationError(self._field, self._config, 
+                    "Cannot modify a frozen Config")
+
+        if at is None:
+            at = traceback.extract_stack()[:-1]
+        
+        if value not in self._dict:
+            #invoke __getitem__ to make sure it's present
+            r = self.__getitem__(value, at=at)
+
+        self.__history.append(("added %s to selection"%value, at, "selection"))
+        self._set.add(value)
+
+    def discard(self, value, at=None): 
+        if self._config._frozen:
+            raise FieldValidationError(self._field, self._config, 
+                    "Cannot modify a frozen Config")
+
+        if value not in self._dict:
+            return 
+
+        if at is None:
+            at = traceback.extract_stack()[:-1]
+
+        self.__history.append(("removed %s from selection"%value, at, "selection"))
+        self._set.discard(value)
+
+    def __len__(self): return len(self._set)
+    def __iter__(self): return iter(self._set)
+    def __contains__(self, value): return value in self._set
+    def repr(self): return repr(list(self._set))
+    def str(self): return str(list(self._set))
+
+
 class ConfigInstanceDict(collections.Mapping):
     """A dict of instantiated configs, used to populate a ConfigChoiceField.
     
@@ -57,13 +117,8 @@ class ConfigInstanceDict(collections.Mapping):
 
         if value is None:
             self._selection=None
-        # JFB:  Changed to ensure selection is present in this instance (and add it if it is not),
-        #       rather than just checking if it is present in self._field.typemap.
         elif self._field.multi:
-            for v in value:
-                if v not in self._dict:
-                    r = self.__getitem__(v, at=at)  # just invoke __getitem__ to make sure it's present
-            self._selection = tuple(value)
+            self._selection=SelectionSet(self, value, setHistory=False)
         else:
             if value not in self._dict:
                 r = self.__getitem__(value, at=at) # just invoke __getitem__ to make sure it's present

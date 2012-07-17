@@ -115,7 +115,7 @@ class Registry(collections.Mapping):
     def makeField(self, doc, default=None, optional=False, multi=False):
         return RegistryField(doc, self, default, optional, multi)
 
-class RegistryAdaptor(object):
+class RegistryAdaptor(collections.Mapping):
     """Private class that makes a Registry behave like the thing a ConfigChoiceField expects."""
 
     def __init__(self, registry):
