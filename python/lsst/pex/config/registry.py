@@ -178,9 +178,11 @@ class RegistryField(ConfigChoiceField):
         WARNING: this must be overridden by subclasses if they change the 
             constructor signature!
         """
-        return type(self)(doc=self.doc, registry=self.registry, 
+        other = type(self)(doc=self.doc, registry=self.registry, 
                 default=copy.deepcopy(self.default),
                 optional=self.optional, multi=self.multi)
+        other.source=self.source
+        return other
 
 def makeRegistry(doc, configBaseType=Config):
     """A convenience function to create a new registry.

@@ -40,7 +40,7 @@ class SelectionSet(collections.MutableSet):
                         #invoke __getitem__ to ensure it's present
                         r = self._dict.__getitem__(v, at=at)
             except TypeError:
-                msg = "Value %s is of incorrect type %s. Sequence type expected"%(value, _typeStr(value))
+                msg = "Value %s is of incorrect type %s. Sequence type expected"(value, _typeStr(value))
                 raise FieldValidationError(self._field, self._config, msg)
             self._set=set(value)
         else:
@@ -363,5 +363,7 @@ class ConfigChoiceField(Field):
 
         WARNING: this must be overridden by subclasses if they change the constructor signature!
         """
-        return type(self)(doc=self.doc, typemap=self.typemap, default=copy.deepcopy(self.default),
+        other = type(self)(doc=self.doc, typemap=self.typemap, default=copy.deepcopy(self.default),
                           optional=self.optional, multi=self.multi)
+        other.source = self.source
+        return other

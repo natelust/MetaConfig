@@ -28,7 +28,7 @@ import lsst.utils.tests as utilsTests
 import lsst.pex.config as pexConfig
 
 class Config1(pexConfig.Config):
-    pass
+    f= pexConfig.Field(doc="f", dtype=float, default=0.)
 
 class Config2(pexConfig.Config):
     c = pexConfig.ConfigChoiceField(
@@ -52,7 +52,6 @@ class MutableSelectionSetTest(unittest.TestCase):
                 pexConfig.FieldValidationError, 
                 setattr, config.c, "names", "AAA")
         config.c.names=["AAA"]
-        print config.history["c"]
 
 
 def suite():
