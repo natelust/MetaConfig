@@ -237,7 +237,6 @@ class ConfigTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp, "p", "AAA")
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp.p["AAA"], "f", 5.0) 
 
-
 def  suite():
     utilsTests.init()
     suites = []

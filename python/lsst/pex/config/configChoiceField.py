@@ -22,6 +22,7 @@
 
 from .config import Config, Field, FieldValidationError, _typeStr, _joinNamePath
 import traceback, copy, collections
+import sys
 
 __all__ = ["ConfigChoiceField"]
 
@@ -89,8 +90,8 @@ class SelectionSet(collections.MutableSet):
     def __len__(self): return len(self._set)
     def __iter__(self): return iter(self._set)
     def __contains__(self, value): return value in self._set
-    def repr(self): return repr(list(self._set))
-    def str(self): return str(list(self._set))
+    def __repr__(self): return repr(list(self._set))
+    def __str__(self): return str(list(self._set))
 
 
 class ConfigInstanceDict(collections.Mapping):
@@ -105,7 +106,7 @@ class ConfigInstanceDict(collections.Mapping):
         self._selection = None
         self._config = config
         self._field = field
-        self.__history = config._history.setdefault(field.name, [])
+        self._history = config._history.setdefault(field.name, [])
         self.__doc__ = field.doc
 
     types = property(lambda x: x._field.typemap)
@@ -131,7 +132,7 @@ class ConfigInstanceDict(collections.Mapping):
             if value not in self._dict:
                 r = self.__getitem__(value, at=at) # just invoke __getitem__ to make sure it's present
             self._selection = value
-        self.__history.append((value, at, label))
+        self._history.append((value, at, label))
     
     def _getNames(self):
         if not self._field.multi:            
@@ -239,6 +240,20 @@ class ConfigInstanceDict(collections.Mapping):
         for k, v in self._dict.iteritems():
             v._rename(_joinNamePath(name=fullname, index=k))
 
+    def __setattr__(self, attr, value, at=None, label="assignment"):
+        if hasattr(getattr(self.__class__, attr, None), '__set__'):
+            # This allows properties to work.
+            object.__setattr__(self, attr, value)
+        elif attr in self.__dict__ or attr in ["_history", "_field", "_config", "_dict", "_selection", "__doc__"]:
+            # This allows specific private attributes to work.
+            object.__setattr__(self, attr, value)
+        else:
+            # We throw everything else.
+            msg = "%s has no attribute %s"%(_typeStr(self._field), attr)
+            raise FieldValidationError(self._field, self._config, msg)
+
+
+
 
 class ConfigChoiceField(Field):
     """
@@ -325,10 +340,10 @@ class ConfigChoiceField(Field):
 
     def validate(self, instance):
         instanceDict = self.__get__(instance)
-        if not instanceDict.active and not self.optional:
+        if instanceDict.active is None and not self.optional:
             msg = "Required field cannot be None"
             raise FieldValidationError(self, instance, msg)
-        elif instanceDict.active:
+        elif instanceDict.active is not None:
             if self.multi:
                 for a in instanceDict.active:
                     a.validate()
