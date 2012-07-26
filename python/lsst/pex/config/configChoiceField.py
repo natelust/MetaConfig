@@ -26,6 +26,14 @@ import traceback, copy, collections
 __all__ = ["ConfigChoiceField"]
 
 class SelectionSet(collections.MutableSet):
+    """
+    Custom set class used to track the selection of multi-select 
+    ConfigChoiceField.
+
+    This class allows user a multi-select ConfigChoiceField to add/discard
+    items from the set of active configs. Each change to the selection is 
+    tracked in the field's history.
+    """
     def __init__(self, dict_, value, at=None, label="assignment", setHistory=True):
         if at is None:
             at = traceback.extract_stack()[:-1]
