@@ -90,8 +90,8 @@ class SelectionSet(collections.MutableSet):
     def __len__(self): return len(self._set)
     def __iter__(self): return iter(self._set)
     def __contains__(self, value): return value in self._set
-    def repr(self): return repr(list(self._set))
-    def str(self): return str(list(self._set))
+    def __repr__(self): return repr(list(self._set))
+    def __str__(self): return str(list(self._set))
 
 
 class ConfigInstanceDict(collections.Mapping):
