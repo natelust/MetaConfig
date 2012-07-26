@@ -115,7 +115,7 @@ class Registry(collections.Mapping):
     def makeField(self, doc, default=None, optional=False, multi=False):
         return RegistryField(doc, self, default, optional, multi)
 
-class RegistryAdaptor(object):
+class RegistryAdaptor(collections.Mapping):
     """Private class that makes a Registry behave like the thing a ConfigChoiceField expects."""
 
     def __init__(self, registry):
@@ -178,9 +178,11 @@ class RegistryField(ConfigChoiceField):
         WARNING: this must be overridden by subclasses if they change the 
             constructor signature!
         """
-        return type(self)(doc=self.doc, registry=self.registry, 
+        other = type(self)(doc=self.doc, registry=self.registry, 
                 default=copy.deepcopy(self.default),
                 optional=self.optional, multi=self.multi)
+        other.source=self.source
+        return other
 
 def makeRegistry(doc, configBaseType=Config):
     """A convenience function to create a new registry.

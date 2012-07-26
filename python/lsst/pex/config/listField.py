@@ -35,8 +35,7 @@ class List(collections.MutableSequence):
             try:
                 for i, x in enumerate(value):
                     self.insert(i, x, setHistory=False)
-            except TypeError, e:
-                print e
+            except TypeError:
                 msg = "Value %s is of incorrect type %s. Sequence type expected"%(value, _typeStr(value))
                 raise FieldValidationError(self._field, self._config, msg)
         if setHistory:
