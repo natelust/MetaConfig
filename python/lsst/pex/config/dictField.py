@@ -36,7 +36,8 @@ class Dict(collections.MutableMapping):
         self._field = field
         self._config = config
         self._dict = {}
-        self.__history = self._config._history.setdefault(self._field.name, [])
+        self._history = self._config._history.setdefault(self._field.name, [])
+        self.__doc__=field.doc
         if value is not None:
             try:
                 for k in value:
@@ -47,13 +48,13 @@ class Dict(collections.MutableMapping):
                         (value, _typeStr(value))
                 raise FieldValidationError(self._field, self._config, msg)
         if setHistory:
-            self.__history.append((dict(self._dict), at, label))
+            self._history.append((dict(self._dict), at, label))
 
 
     """
     Read-only history
     """
-    history = property(lambda x: x.__history)   
+    history = property(lambda x: x._history)   
 
     def __getitem__(self, k): return self._dict[k]
 
@@ -93,7 +94,7 @@ class Dict(collections.MutableMapping):
             
         self._dict[k]=x
         if setHistory:
-            self.__history.append((dict(self._dict), at, label))
+            self._history.append((dict(self._dict), at, label))
 
     def __delitem__(self, k, at=None, label="delitem", setHistory=True):
         if self._config._frozen:
@@ -104,12 +105,23 @@ class Dict(collections.MutableMapping):
         if setHistory:
             if at is None:
                 at = traceback.extract_stack()[:-1]
-            self.__history.append((dict(self._dict), at, label))
+            self._history.append((dict(self._dict), at, label))
 
     def __repr__(self): return repr(self._dict)
 
     def __str__(self): return str(self._dict)
 
+    def __setattr__(self, attr, value, at=None, label="assignment"):
+        if hasattr(getattr(self.__class__, attr, None), '__set__'):
+            # This allows properties to work.
+            object.__setattr__(self, attr, value)
+        elif attr in self.__dict__ or attr in ["_field", "_config", "_history", "_dict", "__doc__"]:
+            # This allows specific private attributes to work.
+            object.__setattr__(self, attr, value)
+        else:
+            # We throw everything else.
+            msg = "%s has no attribute %s"%(_typeStr(self._field), attr)
+            raise FieldValidationError(self._field, self._config, msg) 
 
 
 class DictField(Field):

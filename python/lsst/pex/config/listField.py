@@ -29,14 +29,14 @@ class List(collections.MutableSequence):
     def __init__(self, config, field, value, at, label, setHistory=True):
         self._field = field
         self._config = config
-        self.__history = self._config._history.setdefault(self._field.name, [])
+        self._history = self._config._history.setdefault(self._field.name, [])
         self._list = []
+        self.__doc__ = field.doc
         if value is not None:
             try:
                 for i, x in enumerate(value):
                     self.insert(i, x, setHistory=False)
-            except TypeError, e:
-                print e
+            except TypeError:
                 msg = "Value %s is of incorrect type %s. Sequence type expected"%(value, _typeStr(value))
                 raise FieldValidationError(self._field, self._config, msg)
         if setHistory:
@@ -57,7 +57,7 @@ class List(collections.MutableSequence):
     """
     Read-only history
     """
-    history = property(lambda x: x.__history)   
+    history = property(lambda x: x._history)   
 
     def __contains__(self, x): return x in self._list
 
@@ -116,12 +116,25 @@ class List(collections.MutableSequence):
             for i,j in zip(self, other):
                 if i != j: return False
             return True
-        except:
-            False
+        except AttributeError:
+            #other is not a sequence type
+            return False
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __setattr__(self, attr, value, at=None, label="assignment"):
+        if hasattr(getattr(self.__class__, attr, None), '__set__'):
+            # This allows properties to work.
+            object.__setattr__(self, attr, value)
+        elif attr in self.__dict__ or attr in ["_field", "_config", "_history", "_list", "__doc__"]:
+            # This allows specific private attributes to work.
+            object.__setattr__(self, attr, value)
+        else:
+            # We throw everything else.
+            msg = "%s has no attribute %s"%(_typeStr(self._field), attr)
+            raise FieldValidationError(self._field, self._config, msg)
+    
 
 class ListField(Field):
     """

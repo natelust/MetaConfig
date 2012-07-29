@@ -22,8 +22,77 @@
 
 from .config import Config, Field, FieldValidationError, _typeStr, _joinNamePath
 import traceback, copy, collections
+import sys
 
 __all__ = ["ConfigChoiceField"]
+
+class SelectionSet(collections.MutableSet):
+    """
+    Custom set class used to track the selection of multi-select 
+    ConfigChoiceField.
+
+    This class allows user a multi-select ConfigChoiceField to add/discard
+    items from the set of active configs. Each change to the selection is 
+    tracked in the field's history.
+    """
+    def __init__(self, dict_, value, at=None, label="assignment", setHistory=True):
+        if at is None:
+            at = traceback.extract_stack()[:-1]
+        self._dict = dict_;
+        self._field = self._dict._field
+        self._config = self._dict._config
+        self.__history = self._config._history.setdefault(self._field.name, [])
+        if value is not None:
+            try:
+                for v in value:
+                    if v not in self._dict:
+                        #invoke __getitem__ to ensure it's present
+                        r = self._dict.__getitem__(v, at=at)
+            except TypeError:
+                msg = "Value %s is of incorrect type %s. Sequence type expected"(value, _typeStr(value))
+                raise FieldValidationError(self._field, self._config, msg)
+            self._set=set(value)
+        else:
+            self._set=set()
+
+        if setHistory:
+            self.__history.append(("Set selection to %s"%self, at, label))
+
+    def add(self, value, at= None):
+        if self._config._frozen:
+            raise FieldValidationError(self._field, self._config, 
+                    "Cannot modify a frozen Config")
+
+        if at is None:
+            at = traceback.extract_stack()[:-1]
+        
+        if value not in self._dict:
+            #invoke __getitem__ to make sure it's present
+            r = self.__getitem__(value, at=at)
+
+        self.__history.append(("added %s to selection"%value, at, "selection"))
+        self._set.add(value)
+
+    def discard(self, value, at=None): 
+        if self._config._frozen:
+            raise FieldValidationError(self._field, self._config, 
+                    "Cannot modify a frozen Config")
+
+        if value not in self._dict:
+            return 
+
+        if at is None:
+            at = traceback.extract_stack()[:-1]
+
+        self.__history.append(("removed %s from selection"%value, at, "selection"))
+        self._set.discard(value)
+
+    def __len__(self): return len(self._set)
+    def __iter__(self): return iter(self._set)
+    def __contains__(self, value): return value in self._set
+    def __repr__(self): return repr(list(self._set))
+    def __str__(self): return str(list(self._set))
+
 
 class ConfigInstanceDict(collections.Mapping):
     """A dict of instantiated configs, used to populate a ConfigChoiceField.
@@ -37,7 +106,7 @@ class ConfigInstanceDict(collections.Mapping):
         self._selection = None
         self._config = config
         self._field = field
-        self.__history = config._history.setdefault(field.name, [])
+        self._history = config._history.setdefault(field.name, [])
         self.__doc__ = field.doc
 
     types = property(lambda x: x._field.typemap)
@@ -57,18 +126,13 @@ class ConfigInstanceDict(collections.Mapping):
 
         if value is None:
             self._selection=None
-        # JFB:  Changed to ensure selection is present in this instance (and add it if it is not),
-        #       rather than just checking if it is present in self._field.typemap.
         elif self._field.multi:
-            for v in value:
-                if v not in self._dict:
-                    r = self.__getitem__(v, at=at)  # just invoke __getitem__ to make sure it's present
-            self._selection = tuple(value)
+            self._selection=SelectionSet(self, value, setHistory=False)
         else:
             if value not in self._dict:
                 r = self.__getitem__(value, at=at) # just invoke __getitem__ to make sure it's present
             self._selection = value
-        self.__history.append((value, at, label))
+        self._history.append((value, at, label))
     
     def _getNames(self):
         if not self._field.multi:            
@@ -176,6 +240,20 @@ class ConfigInstanceDict(collections.Mapping):
         for k, v in self._dict.iteritems():
             v._rename(_joinNamePath(name=fullname, index=k))
 
+    def __setattr__(self, attr, value, at=None, label="assignment"):
+        if hasattr(getattr(self.__class__, attr, None), '__set__'):
+            # This allows properties to work.
+            object.__setattr__(self, attr, value)
+        elif attr in self.__dict__ or attr in ["_history", "_field", "_config", "_dict", "_selection", "__doc__"]:
+            # This allows specific private attributes to work.
+            object.__setattr__(self, attr, value)
+        else:
+            # We throw everything else.
+            msg = "%s has no attribute %s"%(_typeStr(self._field), attr)
+            raise FieldValidationError(self._field, self._config, msg)
+
+
+
 
 class ConfigChoiceField(Field):
     """
@@ -262,10 +340,10 @@ class ConfigChoiceField(Field):
 
     def validate(self, instance):
         instanceDict = self.__get__(instance)
-        if not instanceDict.active and not self.optional:
+        if instanceDict.active is None and not self.optional:
             msg = "Required field cannot be None"
             raise FieldValidationError(self, instance, msg)
-        elif instanceDict.active:
+        elif instanceDict.active is not None:
             if self.multi:
                 for a in instanceDict.active:
                     a.validate()
@@ -308,5 +386,7 @@ class ConfigChoiceField(Field):
 
         WARNING: this must be overridden by subclasses if they change the constructor signature!
         """
-        return type(self)(doc=self.doc, typemap=self.typemap, default=copy.deepcopy(self.default),
+        other = type(self)(doc=self.doc, typemap=self.typemap, default=copy.deepcopy(self.default),
                           optional=self.optional, multi=self.multi)
+        other.source = self.source
+        return other
