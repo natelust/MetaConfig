@@ -21,6 +21,7 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+import re
 import os
 import unittest
 import lsst.utils.tests as utilsTests
@@ -236,6 +237,32 @@ class ConfigTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp, "r", "AAA")
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp, "p", "AAA")
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp.p["AAA"], "f", 5.0) 
+
+    def testImports(self):
+        self.comp.c.f=5.
+        class ConfigStream(object):
+            """Quacks like a File"""
+            def __init__(self, init=""):
+                self._stream = init
+            def write(self, s):
+                self._stream += s
+            def getStream(self):
+                return self._stream
+
+        # Generate a Config through loading
+        importing = "import lsst.daf.base.citizen\n" # A module not used by anything else, but which exists
+        stream = ConfigStream(importing)
+        self.comp.saveToStream(stream)
+        roundtrip = Complex()
+        roundtrip.loadFromStream(stream.getStream())
+        self.assertEqual(self.comp.c.f, roundtrip.c.f)
+        
+        # Ensure the save stream includes the 'import'
+        stream = ConfigStream()
+        roundtrip.saveToStream(stream)
+        self.assertEqual(self.comp.c.f, roundtrip.c.f)
+        self.assertTrue(re.search(importing, stream.getStream()))       
+        
 
 def  suite():
     utilsTests.init()
