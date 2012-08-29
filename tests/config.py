@@ -21,6 +21,7 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+import io
 import re
 import os
 import unittest
@@ -251,17 +252,18 @@ class ConfigTest(unittest.TestCase):
 
         # Generate a Config through loading
         importing = "import lsst.daf.base.citizen\n" # A module not used by anything else, but which exists
-        stream = ConfigStream(importing)
+        stream = io.BytesIO()
+        stream.write(importing)
         self.comp.saveToStream(stream)
         roundtrip = Complex()
-        roundtrip.loadFromStream(stream.getStream())
+        roundtrip.loadFromStream(stream.getvalue())
         self.assertEqual(self.comp.c.f, roundtrip.c.f)
         
         # Ensure the save stream includes the 'import'
-        stream = ConfigStream()
+        stream = io.BytesIO()
         roundtrip.saveToStream(stream)
         self.assertEqual(self.comp.c.f, roundtrip.c.f)
-        self.assertTrue(re.search(importing, stream.getStream()))       
+        self.assertTrue(re.search(importing, stream.getvalue()))
         
 
 def  suite():
