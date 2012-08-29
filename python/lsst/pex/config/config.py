@@ -20,6 +20,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
+import io
 import traceback
 import sys
 import math
@@ -321,6 +322,15 @@ class Config(object):
         instance.update(__at=at, **kw)
         return instance
 
+    def __reduce__(self):
+        """Reduction for pickling (function with arguments to reproduce).
+
+        We need to condense and reconstitute the Config, since it may contain lambdas
+        (as the 'check' elements) that cannot be pickled.
+        """
+        stream = io.BytesIO()
+        self.saveToStream(stream)
+        return (unreduceConfig, (self.__class__, stream.getvalue()))
 
     def setDefaults(self):
         """
@@ -505,4 +515,8 @@ class Config(object):
             )
 
 
+def unreduceConfig(cls, stream):
+    config = cls()
+    config.loadFromStream(stream)
+    return config
 

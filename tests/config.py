@@ -28,6 +28,7 @@ import unittest
 import lsst.utils.tests as utilsTests
 import lsst.pex.config as pexConfig
 import sys
+import pickle
 
 GLOBAL_REGISTRY = {}
 
@@ -265,6 +266,17 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.comp.c.f, roundtrip.c.f)
         self.assertTrue(re.search(importing, stream.getvalue()))
         
+    def testPickle(self):
+        self.simple.f = 5
+        simple = pickle.loads(pickle.dumps(self.simple))
+        self.assertTrue(isinstance(simple, Simple))
+        self.assertEqual(self.simple.f, simple.f)
+
+        self.comp.c.f = 5
+        comp = pickle.loads(pickle.dumps(self.comp))
+        self.assertTrue(isinstance(comp, Complex))
+        self.assertEqual(self.comp.c.f, comp.c.f)
+
 
 def  suite():
     utilsTests.init()
