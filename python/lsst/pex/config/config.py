@@ -244,15 +244,25 @@ class Field(object):
    
 
 class RecordingImporter(object):
-    """An Importer (for sys.meta_path) that records which modules are being imported
+    """An Importer (for sys.meta_path) that records which modules are being imported.
+    Also acts as a Context Manager, so you can: "with RecordingImporter() as importer";
+    this ensures it is properly uninstalled when done.
 
     This class makes no effort to do any importing itself.
     """
     def __init__(self):
         """Create and install the Importer"""
         self._modules = set()
+
+    def __enter__(self):
+
         self.origMetaPath = sys.meta_path
         sys.meta_path = sys.meta_path + [self]
+        return self
+
+    def __exit__(self, *args):
+        self.uninstall()
+        return False # Don't suppress exceptions
 
     def uninstall(self):
         """Uninstall the Importer"""
@@ -362,11 +372,10 @@ class Config(object):
         For example:
             root.myField = 5
         """
-        importer = RecordingImporter()
-        local = {root:self}
-        execfile(filename, {}, local)
+        with RecordingImporter() as importer:
+            local = {root: self}
+            execfile(filename, {}, local)
         self._imports.update(importer.getModules())
-        importer.uninstall()
  
     def loadFromStream(self, stream, root="root"):
         """
@@ -375,11 +384,10 @@ class Config(object):
 
         The stream should modify a Config named 'root', e.g.: root.myField = 5
         """
-        importer = RecordingImporter()
-        local = {root: self}
-        exec stream in {}, local
+        with RecordingImporter() as importer:
+            local = {root: self}
+            exec stream in {}, local
         self._imports.update(importer.getModules())
-        importer.uninstall()
 
     def save(self, filename, root="root"):
         """
