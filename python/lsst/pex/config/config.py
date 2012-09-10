@@ -245,8 +245,12 @@ class Field(object):
 
 class RecordingImporter(object):
     """An Importer (for sys.meta_path) that records which modules are being imported.
-    Also acts as a Context Manager, so you can: "with RecordingImporter() as importer";
-    this ensures it is properly uninstalled when done.
+
+    Objects also act as Context Managers, so you can: 
+        with RecordingImporter() as importer:
+            import stuff
+        print "Imported: " + importer.getModules()
+    This ensures it is properly uninstalled when done.
 
     This class makes no effort to do any importing itself.
     """
