@@ -242,14 +242,6 @@ class ConfigTest(unittest.TestCase):
 
     def testImports(self):
         self.comp.c.f=5.
-        class ConfigStream(object):
-            """Quacks like a File"""
-            def __init__(self, init=""):
-                self._stream = init
-            def write(self, s):
-                self._stream += s
-            def getStream(self):
-                return self._stream
 
         # Generate a Config through loading
         importing = "import lsst.daf.base.citizen\n" # A module not used by anything else, but which exists
