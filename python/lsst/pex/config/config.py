@@ -20,6 +20,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
+import io
 import traceback
 import sys
 import math
@@ -242,6 +243,47 @@ class Field(object):
         self.__set__(instance, None, at=at, label=label)
    
 
+class RecordingImporter(object):
+    """An Importer (for sys.meta_path) that records which modules are being imported.
+
+    Objects also act as Context Managers, so you can:
+        with RecordingImporter() as importer:
+            import stuff
+        print "Imported: " + importer.getModules()
+    This ensures it is properly uninstalled when done.
+
+    This class makes no effort to do any importing itself.
+    """
+    def __init__(self):
+        """Create and install the Importer"""
+        self._modules = set()
+
+    def __enter__(self):
+
+        self.origMetaPath = sys.meta_path
+        sys.meta_path = [self] + sys.meta_path
+        return self
+
+    def __exit__(self, *args):
+        self.uninstall()
+        return False # Don't suppress exceptions
+
+    def uninstall(self):
+        """Uninstall the Importer"""
+        sys.meta_path = self.origMetaPath
+
+    def find_module(self, fullname, path=None):
+        """Called as part of the 'import' chain of events.
+
+        We return None because we don't do any importing.
+        """
+        self._modules.add(fullname)
+        return None
+
+    def getModules(self):
+        """Return the set of modules that were imported."""
+        return self._modules
+
 class Config(object):
     """Base class for control objects.
 
@@ -283,6 +325,7 @@ class Config(object):
         instance._name=name
         instance._storage = {}
         instance._history = {}
+        instance._imports = set()
         # load up defaults
         for field in instance._fields.itervalues():           
             instance._history[field.name]=[]
@@ -293,6 +336,15 @@ class Config(object):
         instance.update(__at=at, **kw)
         return instance
 
+    def __reduce__(self):
+        """Reduction for pickling (function with arguments to reproduce).
+
+        We need to condense and reconstitute the Config, since it may contain lambdas
+        (as the 'check' elements) that cannot be pickled.
+        """
+        stream = io.BytesIO()
+        self.saveToStream(stream)
+        return (unreduceConfig, (self.__class__, stream.getvalue()))
 
     def setDefaults(self):
         """
@@ -324,9 +376,23 @@ class Config(object):
         For example:
             root.myField = 5
         """
-        local = {root:self}
-        execfile(filename, {}, local)
- 
+        with RecordingImporter() as importer:
+            local = {root: self}
+            execfile(filename, {}, local)
+        self._imports.update(importer.getModules())
+
+    def loadFromStream(self, stream, root="root"):
+        """
+        Modify this config in place by executign the python code in the
+        provided stream.
+
+        The stream should modify a Config named 'root', e.g.: root.myField = 5
+        """
+        with RecordingImporter() as importer:
+            local = {root: self}
+            exec stream in {}, local
+        self._imports.update(importer.getModules())
+
     def save(self, filename, root="root"):
         """
         Generates a python script at the given filename, which, when loaded,
@@ -368,6 +434,9 @@ class Config(object):
         """
         Internal use only. Save this Config to file object
         """
+        for imp in self._imports:
+            if sys.modules[imp] is not None:
+                print >> outfile, "import %s" % imp
         for field in self._fields.itervalues():
             field.save(outfile, self)
 
@@ -422,7 +491,7 @@ class Config(object):
         elif hasattr(getattr(self.__class__, attr, None), '__set__'):
             # This allows properties and other non-Field descriptors to work.
             return object.__setattr__(self, attr, value)
-        elif attr in self.__dict__ or attr == "_name" or attr == "_history" or attr=="_storage" or attr=="_frozen":
+        elif attr in self.__dict__ or attr in ("_name", "_history", "_storage", "_frozen", "_imports"):
             # This allows specific private attributes to work.
             self.__dict__[attr] = value
         else:
@@ -458,4 +527,8 @@ class Config(object):
             )
 
 
+def unreduceConfig(cls, stream):
+    config = cls()
+    config.loadFromStream(stream)
+    return config
 

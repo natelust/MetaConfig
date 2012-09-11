@@ -21,11 +21,14 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+import io
+import re
 import os
 import unittest
 import lsst.utils.tests as utilsTests
 import lsst.pex.config as pexConfig
 import sys
+import pickle
 
 GLOBAL_REGISTRY = {}
 
@@ -236,6 +239,36 @@ class ConfigTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp, "r", "AAA")
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp, "p", "AAA")
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp.p["AAA"], "f", 5.0) 
+
+    def testImports(self):
+        self.comp.c.f=5.
+
+        # Generate a Config through loading
+        importing = "import lsst.daf.base.citizen\n" # A module not used by anything else, but which exists
+        stream = io.BytesIO()
+        stream.write(importing)
+        self.comp.saveToStream(stream)
+        roundtrip = Complex()
+        roundtrip.loadFromStream(stream.getvalue())
+        self.assertEqual(self.comp.c.f, roundtrip.c.f)
+        
+        # Ensure the save stream includes the 'import'
+        stream = io.BytesIO()
+        roundtrip.saveToStream(stream)
+        self.assertEqual(self.comp.c.f, roundtrip.c.f)
+        self.assertTrue(re.search(importing, stream.getvalue()))
+        
+    def testPickle(self):
+        self.simple.f = 5
+        simple = pickle.loads(pickle.dumps(self.simple))
+        self.assertTrue(isinstance(simple, Simple))
+        self.assertEqual(self.simple.f, simple.f)
+
+        self.comp.c.f = 5
+        comp = pickle.loads(pickle.dumps(self.comp))
+        self.assertTrue(isinstance(comp, Complex))
+        self.assertEqual(self.comp.c.f, comp.c.f)
+
 
 def  suite():
     utilsTests.init()
