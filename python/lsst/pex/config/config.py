@@ -246,7 +246,7 @@ class Field(object):
 class RecordingImporter(object):
     """An Importer (for sys.meta_path) that records which modules are being imported.
 
-    Objects also act as Context Managers, so you can: 
+    Objects also act as Context Managers, so you can:
         with RecordingImporter() as importer:
             import stuff
         print "Imported: " + importer.getModules()
@@ -261,7 +261,7 @@ class RecordingImporter(object):
     def __enter__(self):
 
         self.origMetaPath = sys.meta_path
-        sys.meta_path = sys.meta_path + [self]
+        sys.meta_path = [self] + sys.meta_path
         return self
 
     def __exit__(self, *args):
@@ -380,7 +380,7 @@ class Config(object):
             local = {root: self}
             execfile(filename, {}, local)
         self._imports.update(importer.getModules())
- 
+
     def loadFromStream(self, stream, root="root"):
         """
         Modify this config in place by executign the python code in the
