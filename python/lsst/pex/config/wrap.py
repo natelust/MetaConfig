@@ -186,6 +186,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     def setDefaults(self):
         """Initialize the config object, using the Control objects default ctor
         to provide defaults."""
+        super(cls, self).setDefaults()
         defaults = {}
         try:
             r = self.Control()
