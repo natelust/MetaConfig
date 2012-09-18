@@ -1,3 +1,4 @@
+// -*- lsst-c++ -*-
 /* 
  * LSST Data Management System
  * Copyright 2008, 2009, 2010 LSST Corporation.
@@ -23,6 +24,12 @@
 #ifndef LSST_PEX_CONFIG_H
 #define LSST_PEX_CONFIG_H
 
+/**
+ *  A preprocessor macro used to define fields in C++ "control objects" structs.  These objects
+ *  can then be wrapped into full-fledged Config objects by the functions in lsst.pex.config.wrap.
+ *
+ *  @sa lsst.pex.config.wrap.makeConfigClass
+ */
 #define LSST_CONTROL_FIELD(NAME, TYPE, DOC)             \
     static char const * _doc_ ## NAME() {               \
         static char const * doc = DOC;                  \
