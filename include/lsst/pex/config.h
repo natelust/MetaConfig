@@ -25,7 +25,7 @@
 #define LSST_PEX_CONFIG_H
 
 /**
- *  A preprocessor macro used to define fields in C++ "control objects" structs.  These objects
+ *  A preprocessor macro used to define fields in C++ "control object" structs.  These objects
  *  can then be wrapped into full-fledged Config objects by the functions in lsst.pex.config.wrap.
  *
  *  @sa lsst.pex.config.wrap.makeConfigClass
@@ -35,10 +35,34 @@
         static char const * doc = DOC;                  \
         return doc;                                     \
     }                                                   \
-    static char const * _type_ ## NAME() {               \
+    static char const * _type_ ## NAME() {              \
         static char const * type = #TYPE;               \
         return type;                                    \
     }                                                   \
+    TYPE NAME
+
+/**
+ *  A preprocessor macro used to define fields in C++ "control object" structs, for nested control
+ *  objects.  These can be wrapped into Config objects by the functions in lsst.pex.config.wrap.
+ *
+ *  The nested control object class must also be wrapped into a config object, and the Python module
+ *  of the swigged nested control object must be passed as the MODULE argument to the macro.
+ *
+ *  @sa lsst.pex.config.wrap.makeConfigClass
+ */
+#define LSST_NESTED_CONTROL_FIELD(NAME, MODULE, TYPE, DOC)       \
+    static char const * _doc_ ## NAME() {                        \
+        static char const * doc = DOC;                           \
+        return doc;                                              \
+    }                                                            \
+    static char const * _type_ ## NAME() {                       \
+        static char const * type = #TYPE;                        \
+        return type;                                             \
+    }                                                            \
+    static char const * _module_ ## NAME() {                     \
+        static char const * mod = #MODULE;                       \
+        return mod;                                              \
+    }                                                            \
     TYPE NAME
 
 #endif
