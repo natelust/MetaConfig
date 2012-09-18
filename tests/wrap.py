@@ -35,6 +35,7 @@ import testLib
 class WrapTest(unittest.TestCase):
 
     def testMakeControl(self):
+        """Test making a C++ Control object from a Config object."""
         config = testLib.ConfigObject()
         config.foo = 2
         config.bar.append("baz")
@@ -42,6 +43,7 @@ class WrapTest(unittest.TestCase):
         self.assert_(testLib.checkControl(control, config.foo, config.bar))
 
     def testReadControl(self):
+        """Test reading the values from a C++ Control object into a Config object."""
         vec = testLib.StringVec()
         vec.push_back("zot")
         vec.push_back("yox")
@@ -53,6 +55,7 @@ class WrapTest(unittest.TestCase):
         self.assert_(testLib.checkControl(control, config.foo, config.bar))
 
     def testDefaults(self):
+        """Test that C++ Control object defaults are correctly used as defaults for Config objects."""
         config = testLib.ConfigObject()
         control = testLib.ControlObject()
         self.assert_(testLib.checkControl(control, config.foo, config.bar))
