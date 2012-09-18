@@ -110,6 +110,8 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     if cls is None:
         cls = type(name, (base,), {"__doc__":doc})
         if module is not None:
+            # Not only does setting __module__ make Python pretty-printers more useful,
+            # it's also necessary if we want to pickle Config objects.
             if isinstance(module, int):
                 frame = inspect.stack()[module]
                 moduleObj = inspect.getmodule(frame[0])
@@ -125,6 +127,8 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     if doc is None:
         doc = ctrl.__doc__
     fields = {}
+    # loop over all class attributes, looking for the special static methods that indicate a field
+    # defined by one of the macros in pex/config.h.
     for attr in dir(ctrl):
         if attr.startswith("_type_"):
             k = attr[len("_type_"):]
@@ -134,7 +138,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
             if hasattr(ctrl, k) and hasattr(ctrl, getDoc):
                 doc = getattr(ctrl, getDoc)()
                 ctype = getattr(ctrl, getType)()
-                if hasattr(ctrl, getModule):
+                if hasattr(ctrl, getModule):  # if this is present, it's a nested control object
                     nestedModuleName = getattr(ctrl, getModule)()
                     nestedModuleObj = importlib.import_module(nestedModuleName)
                     try:
@@ -155,6 +159,8 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
                     if dtype is None:
                         raise TypeError("Could not parse field type '%s'." % ctype)
                     fields[k] = FieldCls(doc=doc, dtype=dtype, optional=True)
+    # Define a number of methods to put in the new Config class.  Note that these are "closures";
+    # they have access to local variables defined in the makeConfigClass function (like the fields dict).
     def makeControl(self):
         """Construct a C++ Control object from this Config object.
 
@@ -203,7 +209,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
                     **defaults)
         except:
             pass # if we can't instantiate the Control, don't set defaults
-
+    
     ctrl.ConfigClass = cls
     cls.Control = ctrl
     cls.makeControl = makeControl
