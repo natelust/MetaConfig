@@ -28,6 +28,9 @@
  *  A preprocessor macro used to define fields in C++ "control object" structs.  These objects
  *  can then be wrapped into full-fledged Config objects by the functions in lsst.pex.config.wrap.
  *
+ *  The defaults for the config class will be set properly if and only if the control class is
+ *  default-constructable.
+ *
  *  @sa lsst.pex.config.wrap.makeConfigClass
  */
 #define LSST_CONTROL_FIELD(NAME, TYPE, DOC)             \
@@ -44,6 +47,9 @@
 /**
  *  A preprocessor macro used to define fields in C++ "control object" structs, for nested control
  *  objects.  These can be wrapped into Config objects by the functions in lsst.pex.config.wrap.
+ *
+ *  The nested object will be held as a regular, by-value data member (there's currently no way to use
+ *  smart pointers or getters/setters instead).
  *
  *  The nested control object class must also be wrapped into a config object, and the Python module
  *  of the swigged nested control object must be passed as the MODULE argument to the macro.
