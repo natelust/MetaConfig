@@ -22,9 +22,11 @@
 
 from .config import *
 from .listField import *
+from .configField import *
 
 import inspect
 import re
+import importlib
 
 __all__ = ("wrap", "makeConfigClass")
 
@@ -61,27 +63,35 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     lsst/pex/config.h (note that it must have sensible default constructor):
 
     @code
+    struct InnerControl {
+        LSST_CONTROL_FIELD(wim, std::string, "documentation for field 'wim'");
+    };
+
     struct FooControl {
         LSST_CONTROL_FIELD(bar, int, "documentation for field 'bar'");
         LSST_CONTROL_FIELD(baz, double, "documentation for field 'baz'");
+        LSST_NESTED_CONTROL_FIELD(zot, mySwigLib, InnerControl, "documentation for field 'zot'");
 
         FooControl() : bar(0), baz(0.0) {}
     };
     @endcode
 
-    Swig that control object.  Now, in Python, do this:
+    You can use LSST_NESTED_CONTROL_FIELD to nest control objects.  Now, Swig those control objects.  
+    Now, in Python, do this:
 
     @code
     import mySwigLib
     import lsst.pex.config
+    InnerConfig = lsst.pex.config.makeConfigClass(mySwigLib.InnerControl)
     FooConfig = lsst.pex.config.makeConfigClass(mySwigLib.FooControl)
     @endcode
 
-    This will add fully-fledged "bar" and "baz" fields to FooConfig, set
+    This will add fully-fledged "bar", "baz", and "zot" fields to FooConfig, set
     FooConfig.Control = FooControl, and inject makeControl and readControl
     methods to create a FooControl and set the FooConfig from the FooControl,
     respectively.  In addition, if FooControl has a validate() member function,
-    a custom validate() method will be added to FooConfig that uses it.
+    a custom validate() method will be added to FooConfig that uses it.   And,
+    of course, all of the above will be done for InnerControl/InnerConfig too.
     
     Any field that would be injected that would clash with an existing attribute of the
     class will be silently ignored; this allows the user to customize fields and
@@ -91,7 +101,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
 
     While LSST_CONTROL_FIELD will work for any C++ type, automatic Config generation
     only supports bool, int, double, and std::string fields, along with std::list
-    and std::vectors of those types.  Nested control objects are not supported.
+    and std::vectors of those types.
     """
     if name is None:
         if "Control" not in ctrl.__name__:
@@ -100,6 +110,8 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     if cls is None:
         cls = type(name, (base,), {"__doc__":doc})
         if module is not None:
+            # Not only does setting __module__ make Python pretty-printers more useful,
+            # it's also necessary if we want to pickle Config objects.
             if isinstance(module, int):
                 frame = inspect.stack()[module]
                 moduleObj = inspect.getmodule(frame[0])
@@ -115,26 +127,40 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     if doc is None:
         doc = ctrl.__doc__
     fields = {}
+    # loop over all class attributes, looking for the special static methods that indicate a field
+    # defined by one of the macros in pex/config.h.
     for attr in dir(ctrl):
         if attr.startswith("_type_"):
-            k = attr[6:]
+            k = attr[len("_type_"):]
             getDoc = "_doc_" + k
+            getModule = "_module_" + k
             getType = attr
             if hasattr(ctrl, k) and hasattr(ctrl, getDoc):
                 doc = getattr(ctrl, getDoc)()
                 ctype = getattr(ctrl, getType)()
-                try:
-                    dtype = _dtypeMap[ctype]
-                    FieldCls = Field
-                except KeyError:
-                    dtype = None
-                    m = _containerRegex.match(ctype)
-                    if m:
-                        dtype = _dtypeMap.get(m.group("type"), None)
-                        FieldCls = ListField
-                if dtype is None:
-                    raise TypeError("Could not parse field type '%s'." % ctype)
-                fields[k] = FieldCls(doc=doc, dtype=dtype, optional=True)
+                if hasattr(ctrl, getModule):  # if this is present, it's a nested control object
+                    nestedModuleName = getattr(ctrl, getModule)()
+                    nestedModuleObj = importlib.import_module(nestedModuleName)
+                    try:
+                        dtype = getattr(nestedModuleObj, ctype).ConfigClass
+                    except AttributeError:
+                        raise AttributeError("'%s.%s.ConfigClass' does not exist" % (moduleName, ctype))
+                    fields[k] = ConfigField(doc=doc, dtype=dtype)
+                else:
+                    try:
+                        dtype = _dtypeMap[ctype]
+                        FieldCls = Field
+                    except KeyError:
+                        dtype = None
+                        m = _containerRegex.match(ctype)
+                        if m:
+                            dtype = _dtypeMap.get(m.group("type"), None)
+                            FieldCls = ListField
+                    if dtype is None:
+                        raise TypeError("Could not parse field type '%s'." % ctype)
+                    fields[k] = FieldCls(doc=doc, dtype=dtype, optional=True)
+    # Define a number of methods to put in the new Config class.  Note that these are "closures";
+    # they have access to local variables defined in the makeConfigClass function (like the fields dict).
     def makeControl(self):
         """Construct a C++ Control object from this Config object.
 
@@ -142,16 +168,21 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
         Control object's default constructor.
         """
         r = self.Control()
-        for k in fields:
+        for k, f in fields.iteritems():
             value = getattr(self, k)
+            if isinstance(f, ConfigField):
+                value = value.makeControl()
             if value is not None:
                 setattr(r, k, value)
         return r
     def readControl(self, control):
         """Read values from a C++ Control object and assign them to self's fields.
         """
-        for k in fields:
-            setattr(self, k, getattr(control, k))
+        for k, f in fields.iteritems():
+            if isinstance(f, ConfigField):
+                getattr(self, k).readControl(getattr(control, k))
+            else:
+                setattr(self, k, getattr(control, k))
     def validate(self):
         """Validate the config object by constructing a control object and using
         a C++ validate() implementation."""
@@ -161,12 +192,14 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     def setDefaults(self):
         """Initialize the config object, using the Control objects default ctor
         to provide defaults."""
+        super(cls, self).setDefaults()
         defaults = {}
         try:
             r = self.Control()
-            for k in fields:
-                value = getattr(r, k)
-                defaults[k] = getattr(r, k)
+            for k, f in fields.iteritems():
+                if not isinstance(f, ConfigField):
+                    value = getattr(r, k)
+                    defaults[k] = getattr(r, k)
             # Wipe out bogus history from initializing the class.
             self._history = {}
             # Make up something for C++ until we can get C++ source info.
@@ -176,7 +209,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
                     **defaults)
         except:
             pass # if we can't instantiate the Control, don't set defaults
-
+    
     ctrl.ConfigClass = cls
     cls.Control = ctrl
     cls.makeControl = makeControl

@@ -60,10 +60,37 @@ class WrapTest(unittest.TestCase):
         control = testLib.ControlObject()
         self.assert_(testLib.checkControl(control, config.foo, config.bar))
 
+class NestedWrapTest(unittest.TestCase):
+
+    def testMakeControl(self):
+        """Test making a C++ Control object from a Config object."""
+        config = testLib.OuterConfigObject()
+        self.assert_(isinstance(config.a, testLib.InnerConfigObject))
+        config.a.p = 5.0
+        config.b = 2
+        control = config.makeControl()
+        self.assert_(testLib.checkNestedControl(control, config.a.p, config.b))
+
+    def testReadControl(self):
+        """Test reading the values from a C++ Control object into a Config object."""
+        control = testLib.OuterControlObject()
+        control.a.p = 6.0
+        control.b = 3
+        config = testLib.OuterConfigObject()
+        config.readControl(control)
+        self.assert_(testLib.checkNestedControl(control, config.a.p, config.b))
+
+    def testDefaults(self):
+        """Test that C++ Control object defaults are correctly used as defaults for Config objects."""
+        config = testLib.OuterConfigObject()
+        control = testLib.OuterControlObject()
+        self.assert_(testLib.checkNestedControl(control, config.a.p, config.b))
+
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(WrapTest)
+    suites += unittest.makeSuite(NestedWrapTest)
     suites += unittest.makeSuite(utilsTests.MemoryTestCase)
     return unittest.TestSuite(suites)
 
