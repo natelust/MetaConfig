@@ -240,24 +240,41 @@ class ConfigTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp, "p", "AAA")
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp.p["AAA"], "f", 5.0) 
 
-    def testImports(self):
+    def checkImportRoundTrip(self, importStatement, searchString, shouldBeThere):
         self.comp.c.f=5.
 
         # Generate a Config through loading
-        importing = "import lsst.daf.base.citizen\n" # A module not used by anything else, but which exists
         stream = io.BytesIO()
-        stream.write(importing)
+        stream.write(importStatement)
         self.comp.saveToStream(stream)
         roundtrip = Complex()
         roundtrip.loadFromStream(stream.getvalue())
         self.assertEqual(self.comp.c.f, roundtrip.c.f)
         
-        # Ensure the save stream includes the 'import'
+        # Check the save stream
         stream = io.BytesIO()
         roundtrip.saveToStream(stream)
         self.assertEqual(self.comp.c.f, roundtrip.c.f)
-        self.assertTrue(re.search(importing, stream.getvalue()))
-        
+        if shouldBeThere:
+            self.assertTrue(re.search(searchString, stream.getvalue()))
+        else:
+            self.assertFalse(re.search(searchString, stream.getvalue()))
+
+
+    def testImports(self):
+        importing = "import lsst.daf.base.citizen\n" # A module not used by anything else, but which exists
+        self.checkImportRoundTrip(importing, importing, True)
+
+    def testBadImports(self):
+        dummy = "somethingThatDoesntExist"
+        importing = """
+try:
+    import %s
+except ImportError:
+    pass
+""" % dummy
+        self.checkImportRoundTrip(importing, dummy, False)
+
     def testPickle(self):
         self.simple.f = 5
         simple = pickle.loads(pickle.dumps(self.simple))

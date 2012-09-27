@@ -435,7 +435,7 @@ class Config(object):
         Internal use only. Save this Config to file object
         """
         for imp in self._imports:
-            if sys.modules[imp] is not None:
+            if imp in sys.modules and sys.modules[imp] is not None:
                 print >> outfile, "import %s" % imp
         for field in self._fields.itervalues():
             field.save(outfile, self)
