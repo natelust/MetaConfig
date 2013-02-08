@@ -279,7 +279,7 @@ class Field(object):
         This is invoked by the owning config object and should not be called
         directly
 
-        Derived Field classes may need to override the behaviour. When overriding 
+        Derived Field classes may need to override the behavior. When overriding 
         __set__, Field authors should follow the following rules:
         * Do not allow modification of frozen configs
         * Validate the new value *BEFORE* modifying the field. Except if the 
@@ -505,7 +505,7 @@ class Config(object):
         Convert this Config into a dict whose keys are field names, 
         and whose values are field values.
 
-        Correct behaviour is dependant on proper implementation of 
+        Correct behavior is dependent on proper implementation of 
         Field.toDict. If implementing a new Field type, you may need to
         implement your own toDict method.
         """
@@ -520,7 +520,7 @@ class Config(object):
         Rename this Config object to reflect its position in a Config hierarchy
 
         
-        Correct behaviour is dependant on proper implementation of 
+        Correct behavior is dependent on proper implementation of 
         Field.rename. If implementing a new Field type, you may need to
         implement your own rename method.
         """
@@ -566,7 +566,7 @@ class Config(object):
         that no additional attributes nor properties may be added to them
         dynamically. 
 
-        Although this is not the standard Pythong behavior, it helps to 
+        Although this is not the standard Python behavior, it helps to 
         protect users from accidentally mispelling a field name, or
         trying to set a non-existent field.
         """
