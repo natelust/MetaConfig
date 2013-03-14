@@ -22,6 +22,7 @@
 
 from .config import Config, Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
 from .dictField import Dict, DictField
+from .comparison import *
 import traceback, copy
 import collections
 
@@ -164,4 +165,34 @@ class ConfigDictField(DictField):
         if configDict is not None:
             for k in configDict:
                 configDict[k].freeze()
-            
+
+    def _compare(self, instance1, instance2, shortcut, rtol, atol, output):
+        """Helper function for Config.compare; used to compare two fields for equality.
+
+        @param[in] instance1  LHS Config instance to compare.
+        @param[in] instance2  RHS Config instance to compare.
+        @param[in] shortcut   If True, return as soon as an inequality is found.
+        @param[in] rtol       Relative tolerance for floating point comparisons.
+        @param[in] atol       Absolute tolerance for floating point comparisons.
+        @param[in] output     If not None, a callable that takes a string, used (possibly repeatedly)
+                              to report inequalities.
+
+        Floating point comparisons are performed by numpy.allclose; refer to that for details.
+        """
+        d1 = getattr(instance1, self.name)
+        d2 = getattr(instance2, self.name)
+        name = getComparisonName(
+            _joinNamePath(instance1._name, self.name),
+            _joinNamePath(instance2._name, self.name)
+            )
+        if not compareScalars("keys for %s" % name, d1.keys(), d2.keys(), output=output):
+            return False
+        equal = True
+        for k, v1 in d1.iteritems():
+            v2 = d2[k]
+            result = compareConfigs("%s[%r]" % (name, k), v1, v2, shortcut=shortcut,
+                                    rtol=rtol, atol=atol, output=output)
+            if not result and shortcut:
+                return False
+            equal = equal and result
+        return equal
