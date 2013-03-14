@@ -30,7 +30,7 @@ __all__ = ("Registry", "makeRegistry", "RegistryField", "registerConfig", "regis
 class ConfigurableWrapper(object):
     """A wrapper for configurables
     
-    U sed for configurables that don't contain a ConfigClass attribute,
+    Used for configurables that don't contain a ConfigClass attribute,
     or contain one that is being overridden.
     """
     def __init__(self, target, ConfigClass):
