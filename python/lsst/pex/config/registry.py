@@ -19,11 +19,11 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+import collections
+import copy
 
 from .config import Config, Field, FieldValidationError, _typeStr
 from .configChoiceField import ConfigInstanceDict, ConfigChoiceField
-import collections
-import copy
 
 __all__ = ("Registry", "makeRegistry", "RegistryField", "registerConfig", "registerConfigurable")
 

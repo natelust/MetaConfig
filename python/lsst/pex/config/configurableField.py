@@ -19,9 +19,10 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+import traceback, copy
+
 from .config import Config, Field, _joinNamePath, _typeStr
 from .comparison import *
-import traceback, copy
 
 class ConfigurableInstance(object):
     def __initValue(self, at, label):
