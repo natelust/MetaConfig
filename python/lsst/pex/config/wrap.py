@@ -20,13 +20,13 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
-from .config import *
-from .listField import *
-from .configField import *
-
 import inspect
 import re
 import importlib
+
+from .config import *
+from .listField import *
+from .configField import *
 
 __all__ = ("wrap", "makeConfigClass")
 

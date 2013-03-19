@@ -286,8 +286,50 @@ except ImportError:
         self.assertTrue(isinstance(comp, Complex))
         self.assertEqual(self.comp.c.f, comp.c.f)
 
+    def testCompare(self):
+        comp2 = Complex()
+        inner2 = InnerConfig()
+        simple2 = Simple()
+        self.assert_(self.comp.compare(comp2))
+        self.assert_(comp2.compare(self.comp))
+        self.assert_(self.comp.c.compare(inner2))
+        self.assert_(self.simple.compare(simple2))
+        self.assert_(simple2.compare(self.simple))
+        outList = []
+        outFunc = lambda msg: outList.append(msg)
+        simple2.b = True
+        simple2.l.append(4)
+        simple2.d["foo"] = "var"
+        self.assertFalse(self.simple.compare(simple2, shortcut=True, output=outFunc))
+        self.assertEqual(len(outList), 1)
+        del outList[:]
+        self.assertFalse(self.simple.compare(simple2, shortcut=False, output=outFunc))
+        output = "\n".join(outList)
+        self.assert_("Inequality in b" in output)
+        self.assert_("Inequality in size for l" in output)
+        self.assert_("Inequality in keys for d" in output)
+        del outList[:]
+        self.simple.d["foo"] = "vast"
+        self.simple.l.append(5)
+        self.simple.b = True
+        self.simple.f += 1E8
+        self.assertFalse(self.simple.compare(simple2, shortcut=False, output=outFunc))
+        output = "\n".join(outList)
+        self.assert_("Inequality in f" in output)
+        self.assert_("Inequality in l[3]" in output)
+        self.assert_("Inequality in d['foo']" in output)
+        del outList[:]
+        comp2.r["BBB"].f = 1.0  # changing the non-selected item shouldn't break equality
+        self.assert_(self.comp.compare(comp2))
+        comp2.r["AAA"].i = 56   # changing the selected item should break equality
+        comp2.c.f = 1.0
+        self.assertFalse(self.comp.compare(comp2, shortcut=False, output=outFunc))
+        output = "\n".join(outList)
+        self.assert_("Inequality in c.f" in output)
+        self.assert_("Inequality in r['AAA']" in output)
+        self.assert_("Inequality in r['BBB']" not in output)
 
-def  suite():
+def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(ConfigTest)

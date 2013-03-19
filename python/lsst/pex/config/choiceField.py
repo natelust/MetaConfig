@@ -19,8 +19,9 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-from .config import Config, Field, _typeStr
 import traceback
+
+from .config import Config, Field, _typeStr
 
 __all__ = ["ChoiceField"]
 

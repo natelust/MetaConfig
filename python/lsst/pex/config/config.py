@@ -27,6 +27,8 @@ import math
 import collections
 import copy
 
+from .comparison import *
+
 __all__ = ("Config", "Field", "FieldValidationError")
 
 def _joinNamePath(prefix=None, name=None, index=None):
@@ -321,7 +323,29 @@ class Field(object):
         if at is None:
             at = traceback.extract_stack()[:-1]
         self.__set__(instance, None, at=at, label=label)
-   
+
+    def _compare(self, instance1, instance2, shortcut, rtol, atol, output):
+        """Helper function for Config.compare; used to compare two fields for equality.
+
+        Must be overridden by more complex field types.
+
+        @param[in] instance1  LHS Config instance to compare.
+        @param[in] instance2  RHS Config instance to compare.
+        @param[in] shortcut   If True, return as soon as an inequality is found.
+        @param[in] rtol       Relative tolerance for floating point comparisons.
+        @param[in] atol       Absolute tolerance for floating point comparisons.
+        @param[in] output     If not None, a callable that takes a string, used (possibly repeatedly)
+                              to report inequalities.
+
+        Floating point comparisons are performed by numpy.allclose; refer to that for details.
+        """
+        v1 = getattr(instance1, self.name)
+        v2 = getattr(instance2, self.name)
+        name = getComparisonName(
+            _joinNamePath(instance1._name, self.name),
+            _joinNamePath(instance2._name, self.name)
+            )
+        return compareScalars(name, v1, v2, dtype=self.dtype, rtol=rtol, atol=atol, output=output)
 
 class RecordingImporter(object):
     """An Importer (for sys.meta_path) that records which modules are being imported.
@@ -681,6 +705,27 @@ class Config(object):
             _typeStr(self), 
             ", ".join("%s=%r" % (k, v) for k, v in self.toDict().iteritems() if v is not None)
             )
+
+    def compare(self, other, shortcut=True, rtol=1E-8, atol=1E-8, output=None):
+        """Compare two Configs for equality.
+
+        If the Configs contain RegistryFields or ConfigChoiceFields, unselected Configs
+        will not be compared.
+
+        @param[in] other      Config object to compare with self.
+        @param[in] shortcut   If True, return as soon as an inequality is found.
+        @param[in] rtol       Relative tolerance for floating point comparisons.
+        @param[in] atol       Absolute tolerance for floating point comparisons.
+        @param[in] output     If not None, a callable that takes a string, used (possibly repeatedly)
+                              to report inequalities.
+
+        Floating point comparisons are performed by numpy.allclose; refer to that for details.
+        """
+        name1 = self._name if self._name is not None else "root"
+        name2 = other._name if other._name is not None else "root"
+        name = getComparisonName(name1, name2)
+        return compareConfigs(name, self, other, shortcut=shortcut,
+                              rtol=rtol, atol=atol, output=output)
 
 def unreduceConfig(cls, stream):
     config = cls()

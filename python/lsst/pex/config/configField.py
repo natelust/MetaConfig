@@ -1,5 +1,28 @@
-from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr
+# 
+# LSST Data Management System
+# Copyright 2008-2013 LSST Corporation.
+# 
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the LSST License Statement and 
+# the GNU General Public License along with this program.  If not, 
+# see <http://www.lsstcorp.org/LegalNotices/>.
+#
 import traceback
+
+from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr
+from .comparison import *
 
 __all__ = ["ConfigField"]
 
@@ -95,4 +118,23 @@ class ConfigField(Field):
             msg = "%s is not a valid value"%str(value)
             raise FieldValidationError(self, instance, msg)
 
+    def _compare(self, instance1, instance2, shortcut, rtol, atol, output):
+        """Helper function for Config.compare; used to compare two fields for equality.
 
+        @param[in] instance1  LHS Config instance to compare.
+        @param[in] instance2  RHS Config instance to compare.
+        @param[in] shortcut   If True, return as soon as an inequality is found.
+        @param[in] rtol       Relative tolerance for floating point comparisons.
+        @param[in] atol       Absolute tolerance for floating point comparisons.
+        @param[in] output     If not None, a callable that takes a string, used (possibly repeatedly)
+                              to report inequalities.
+
+        Floating point comparisons are performed by numpy.allclose; refer to that for details.
+        """
+        c1 = getattr(instance1, self.name)
+        c2 = getattr(instance2, self.name)
+        name = getComparisonName(
+            _joinNamePath(instance1._name, self.name),
+            _joinNamePath(instance2._name, self.name)
+            )
+        return compareConfigs(name, c1, c2, shortcut=shortcut, rtol=rtol, atol=atol, output=output)

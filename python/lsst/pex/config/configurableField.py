@@ -19,8 +19,10 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-from .config import Config, Field, _joinNamePath, _typeStr
 import traceback, copy
+
+from .config import Config, Field, _joinNamePath, _typeStr
+from .comparison import *
 
 class ConfigurableInstance(object):
     def __initValue(self, at, label):
@@ -104,7 +106,7 @@ class ConfigurableInstance(object):
     def __setattr__(self, name, value, at=None, label="assignment"):
         """
         Pretend to be an isntance of  ConfigClass. 
-        Attributes defiend by ConfigurableInstance will shadow those defined in ConfigClass
+        Attributes defined by ConfigurableInstance will shadow those defined in ConfigClass
         """
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
@@ -259,3 +261,25 @@ class ConfigurableField(Field):
         """
         return type(self)(doc=self.doc, target=self.target, ConfigClass=self.ConfigClass, 
                 default=copy.deepcopy(self.default))
+
+    def _compare(self, instance1, instance2, shortcut, rtol, atol, output):
+        """Helper function for Config.compare; used to compare two fields for equality.
+
+        @param[in] instance1  LHS Config instance to compare.
+        @param[in] instance2  RHS Config instance to compare.
+        @param[in] shortcut   If True, return as soon as an inequality is found.
+        @param[in] rtol       Relative tolerance for floating point comparisons.
+        @param[in] atol       Absolute tolerance for floating point comparisons.
+        @param[in] output     If not None, a callable that takes a string, used (possibly repeatedly)
+                              to report inequalities.
+
+        Floating point comparisons are performed by numpy.allclose; refer to that for details.
+        """
+        c1 = getattr(instance1, self.name)._value
+        c2 = getattr(instance2, self.name)._value
+        name = getComparisonName(
+            _joinNamePath(instance1._name, self.name),
+            _joinNamePath(instance2._name, self.name)
+            )
+        return compareConfigs(name, c1, c2, shortcut=shortcut, rtol=rtol, atol=atol, output=output)
+

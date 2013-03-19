@@ -19,10 +19,11 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-
-from .config import Config, Field, FieldValidationError, _typeStr, _joinNamePath
 import traceback, copy, collections
 import sys
+
+from .config import Config, Field, FieldValidationError, _typeStr, _joinNamePath
+from .comparison import *
 
 __all__ = ["ConfigChoiceField"]
 
@@ -390,3 +391,41 @@ class ConfigChoiceField(Field):
                           optional=self.optional, multi=self.multi)
         other.source = self.source
         return other
+
+    def _compare(self, instance1, instance2, shortcut, rtol, atol, output):
+        """Helper function for Config.compare; used to compare two fields for equality.
+
+        Only the selected config(s) are compared, as the parameters of any others do not matter.
+
+        @param[in] instance1  LHS Config instance to compare.
+        @param[in] instance2  RHS Config instance to compare.
+        @param[in] shortcut   If True, return as soon as an inequality is found.
+        @param[in] rtol       Relative tolerance for floating point comparisons.
+        @param[in] atol       Absolute tolerance for floating point comparisons.
+        @param[in] output     If not None, a callable that takes a string, used (possibly repeatedly)
+                              to report inequalities.
+
+        Floating point comparisons are performed by numpy.allclose; refer to that for details.
+        """
+        d1 = getattr(instance1, self.name)
+        d2 = getattr(instance2, self.name)
+        name = getComparisonName(
+            _joinNamePath(instance1._name, self.name),
+            _joinNamePath(instance2._name, self.name)
+            )
+        if not compareScalars("selection for %s" % name, d1._selection, d2._selection, output=output):
+            return False
+        if d1._selection is None:
+            return True
+        if self.multi:
+            nested = [(k, d1[k], d2[k]) for k in d1._selection]
+        else:
+            nested = [(d1._selection, d1[d1._selection], d2[d1._selection])]
+        equal = True
+        for k, c1, c2 in nested:
+            result = compareConfigs("%s[%r]" % (name, k), c1, c2, shortcut=shortcut,
+                                    rtol=rtol, atol=atol, output=output)
+            if not result and shortcut:
+                return False
+            equal = equal and result
+        return equal

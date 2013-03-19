@@ -19,18 +19,18 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+import collections
+import copy
 
 from .config import Config, Field, FieldValidationError, _typeStr
 from .configChoiceField import ConfigInstanceDict, ConfigChoiceField
-import collections
-import copy
 
 __all__ = ("Registry", "makeRegistry", "RegistryField", "registerConfig", "registerConfigurable")
 
 class ConfigurableWrapper(object):
     """A wrapper for configurables
     
-    U sed for configurables that don't contain a ConfigClass attribute,
+    Used for configurables that don't contain a ConfigClass attribute,
     or contain one that is being overridden.
     """
     def __init__(self, target, ConfigClass):

@@ -19,9 +19,10 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+import traceback
 
 from .config import Config, Field, _typeStr
-import traceback
+
 
 __all__ = ["RangeField"]
 
