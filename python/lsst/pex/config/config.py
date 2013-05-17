@@ -570,8 +570,8 @@ class Config(object):
             configType = type(self)
             typeString = _typeStr(configType)
             print >> outfile, "import %s" % (configType.__module__)
-            print >> outfile, "if type(%s) != %s:" % (root, typeString)
-            print >> outfile, """    raise ImportError("Cannot import config %s; type(%s)=%%s != %s" %% type(%s))""" % (outfile, root, typeString, root)
+            print >> outfile, "assert type(%s)==%s, 'config is of type %%s.%%s" % (root, typeString), \
+                "instead of %s' %% (type(root).__module__, type(root).__name__)" % (typeString,)
             self._save(outfile)
         finally:
             self._rename(tmp)
