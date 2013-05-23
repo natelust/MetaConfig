@@ -21,7 +21,7 @@
 #
 import traceback, copy
 
-from .config import Config, Field, _joinNamePath, _typeStr
+from .config import Config, Field, _joinNamePath, _typeStr, FieldValidationError
 from .comparison import *
 
 class ConfigurableInstance(object):
