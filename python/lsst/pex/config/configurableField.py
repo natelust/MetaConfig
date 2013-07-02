@@ -233,6 +233,8 @@ class ConfigurableField(Field):
             #not targeting the field-default target. 
             #save target information
             ConfigClass = value.ConfigClass
+            for module in set([target.__module__, ConfigClass.__module__]):
+                print >> outfile, "import %s" % module
             print >> outfile, "%s.retarget(target=%s, ConfigClass=%s)"%\
                     (fullname, _typeStr(target), _typeStr(ConfigClass))
         #save field values
