@@ -11,19 +11,8 @@ config.log
 *Lib.py
 doc/html
 doc/*.tag
-doc/*.inc
 doc/doxygen.conf
 tests/.tests
 version.py
-tests/DefaultPolicyFile_1
-tests/PAFBadSyntax
-tests/PAFtypes
-tests/PolicyString_1
-tests/Policy_1
-tests/Policy_2
-tests/Policy_3
-tests/Policy_4
-tests/testBadPAFWrite
-tests/testDefaults
 
 roundtrip.test
