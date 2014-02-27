@@ -52,7 +52,10 @@
  *  smart pointers or getters/setters instead).
  *
  *  The nested control object class must also be wrapped into a config object, and the Python module
- *  of the swigged nested control object must be passed as the MODULE argument to the macro.
+ *  of the swigged nested control object must be passed as the MODULE argument to the macro.  When
+ *  a wrapped control object is used as a nested field in the same package it is defined in, the
+ *  MODULE argument must refer to the actual Swig-generated module, not the just the package, even
+ *  if the name is lifted into the package namespace.
  *
  *  @sa lsst.pex.config.wrap.makeConfigClass
  */
