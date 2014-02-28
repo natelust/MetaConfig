@@ -23,6 +23,7 @@
 import inspect
 import re
 import importlib
+import traceback
 
 from .config import *
 from .listField import *
@@ -178,14 +179,23 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
             if value is not None:
                 setattr(r, k, value)
         return r
-    def readControl(self, control):
+    def readControl(self, control, __at=None, __label="readControl", __reset=False):
         """Read values from a C++ Control object and assign them to self's fields.
+
+        The __at, __label, and __reset arguments are for internal use only; they are used to
+        remove internal calls from the history.
         """
+        if __at is None: __at = traceback.extract_stack()[:-1]
+        values = {}
         for k, f in fields.iteritems():
             if isinstance(f, ConfigField):
-                getattr(self, k).readControl(getattr(control, k))
+                getattr(self, k).readControl(getattr(control, k),
+                                             __at=__at, __label=__label, __reset=__reset)
             else:
-                setattr(self, k, getattr(control, k))
+                values[k] = getattr(control, k)
+        if __reset:
+            self._history = {}
+        self.update(__at=__at, __label=__label, **values)
     def validate(self):
         """Validate the config object by constructing a control object and using
         a C++ validate() implementation."""
@@ -196,23 +206,14 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
         """Initialize the config object, using the Control objects default ctor
         to provide defaults."""
         super(cls, self).setDefaults()
-        defaults = {}
         try:
             r = self.Control()
-            for k, f in fields.iteritems():
-                if not isinstance(f, ConfigField):
-                    value = getattr(r, k)
-                    defaults[k] = getattr(r, k)
-            # Wipe out bogus history from initializing the class.
-            self._history = {}
-            # Make up something for C++ until we can get C++ source info.
-            self.update(
-                    __at=[(ctrl.__name__ + " C++", 0, "setDefaults", "")],
-                    __label="default",
-                    **defaults)
+            # Indicate in the history that these values came from C++, even if we can't say which line
+            self.readControl(r, __at=[(ctrl.__name__ + " C++", 0, "setDefaults", "")], __label="defaults",
+                             __reset=True)
         except:
             pass # if we can't instantiate the Control, don't set defaults
-    
+
     ctrl.ConfigClass = cls
     cls.Control = ctrl
     cls.makeControl = makeControl
