@@ -36,10 +36,11 @@ _dtypeMap = {
     "int": int,
     "double": float,
     "float": float,
+    "boost::int64_t": int,
     "std::string": str
 }
 
-_containerRegex = re.compile(r"(std::)?(vector|list)<\s*(?P<type>[a-z:]+)\s*>")
+_containerRegex = re.compile(r"(std::)?(vector|list)<\s*(?P<type>[a-z0-9_:]+)\s*>")
 
 def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     """A function that creates a Python config class that matches a  C++ control object class.
