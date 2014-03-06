@@ -44,6 +44,7 @@ class Simple(pexConfig.Config):
         itemCheck=lambda x: x is not None and x>0)
     d = pexConfig.DictField("dict test", str, str, default={"key":"value"}, 
             itemCheck=lambda x: x.startswith('v'))
+    n = pexConfig.Field("nan test", float, default=float("NAN"))
 
 GLOBAL_REGISTRY["AAA"] = Simple
 
