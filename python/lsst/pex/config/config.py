@@ -690,7 +690,12 @@ class Config(object):
     def __eq__(self, other):
         if type(other) == type(self):
             for name in self._fields:
-                if getattr(self, name) != getattr(other, name):
+                thisValue = getattr(self, name)
+                otherValue = getattr(other, name)
+                if isinstance(thisValue, float) and math.isnan(thisValue):
+                    if not math.isnan(otherValue):
+                        return False
+                elif thisValue != otherValue:
                     return False
             return True
         return False

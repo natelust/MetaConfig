@@ -296,6 +296,8 @@ except ImportError:
         self.assert_(self.comp.c.compare(inner2))
         self.assert_(self.simple.compare(simple2))
         self.assert_(simple2.compare(self.simple))
+        self.assert_(self.simple == simple2)
+        self.assert_(simple2 == self.simple)
         outList = []
         outFunc = lambda msg: outList.append(msg)
         simple2.b = True
