@@ -54,7 +54,7 @@ def compareScalars(name, v1, v2, output, rtol=1E-8, atol=1E-8, dtype=None):
     if v1 is None or v2 is None:
         result = (v1 == v2)
     elif dtype in (float, complex):
-        result = numpy.allclose(v1, v2, rtol=rtol, atol=atol)
+        result = numpy.allclose(v1, v2, rtol=rtol, atol=atol) or (numpy.isnan(v1) and numpy.isnan(v2))
     else:
         result = (v1 == v2)
     if not result and output is not None:

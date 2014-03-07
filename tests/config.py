@@ -44,6 +44,7 @@ class Simple(pexConfig.Config):
         itemCheck=lambda x: x is not None and x>0)
     d = pexConfig.DictField("dict test", str, str, default={"key":"value"}, 
             itemCheck=lambda x: x.startswith('v'))
+    n = pexConfig.Field("nan test", float, default=float("NAN"))
 
 GLOBAL_REGISTRY["AAA"] = Simple
 
@@ -295,6 +296,8 @@ except ImportError:
         self.assert_(self.comp.c.compare(inner2))
         self.assert_(self.simple.compare(simple2))
         self.assert_(simple2.compare(self.simple))
+        self.assert_(self.simple == simple2)
+        self.assert_(simple2 == self.simple)
         outList = []
         outFunc = lambda msg: outList.append(msg)
         simple2.b = True
