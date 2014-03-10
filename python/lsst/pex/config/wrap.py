@@ -140,7 +140,10 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
                 ctype = getattr(ctrl, getType)()
                 if hasattr(ctrl, getModule):  # if this is present, it's a nested control object
                     nestedModuleName = getattr(ctrl, getModule)()
-                    nestedModuleObj = importlib.import_module(nestedModuleName)
+                    if nestedModuleName == moduleName:
+                        nestedModuleObj = moduleObj
+                    else:
+                        nestedModuleObj = importlib.import_module(nestedModuleName)
                     try:
                         dtype = getattr(nestedModuleObj, ctype).ConfigClass
                     except AttributeError:
