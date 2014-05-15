@@ -51,15 +51,18 @@ Various swigged-up C++ classes for testing
 
     struct InnerControlObject {
         LSST_CONTROL_FIELD(p, double, "a double field");
+        LSST_CONTROL_FIELD(q, int, "another integer field");
 
-        explicit InnerControlObject(double p_ = 2.0) : p(p_) {}
+        explicit InnerControlObject(double p_ = 2.0) : p(p_), q(0) {}
     };
 
     struct OuterControlObject {
         LSST_NESTED_CONTROL_FIELD(a, testLib, InnerControlObject, "a nested control field");
         LSST_CONTROL_FIELD(b, int, "a integer field");
 
-        OuterControlObject(int b_ = 0) : b(b_) {}
+        OuterControlObject(int b_ = 0) : b(b_) {
+            a.q = 1;
+        }
     };
 
     struct ControlObject {
@@ -73,8 +76,8 @@ Various swigged-up C++ classes for testing
         return fooVal == ctrl.foo && barVal == ctrl.bar;
     }
 
-    bool checkNestedControl(OuterControlObject const & ctrl, double apVal, int bVal) {
-        return ctrl.a.p == apVal && ctrl.b == bVal;
+    bool checkNestedControl(OuterControlObject const & ctrl, double apVal, int aqVal, int bVal) {
+        return ctrl.a.p == apVal && ctrl.b == bVal && ctrl.a.q == aqVal;
     }
 
 %}
