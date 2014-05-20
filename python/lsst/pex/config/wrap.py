@@ -31,6 +31,9 @@ from .configField import *
 
 __all__ = ("wrap", "makeConfigClass")
 
+# Mapping from C++ types to Python type: assumes we can round-trip between these using
+# the usual Swig converters, but doesn't require they be binary equivalent under-the-hood
+# or anything.
 _dtypeMap = {
     "bool": bool,
     "int": int,
