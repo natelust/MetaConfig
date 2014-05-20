@@ -67,24 +67,34 @@ class NestedWrapTest(unittest.TestCase):
         config = testLib.OuterConfigObject()
         self.assert_(isinstance(config.a, testLib.InnerConfigObject))
         config.a.p = 5.0
+        config.a.q = 7
         config.b = 2
         control = config.makeControl()
-        self.assert_(testLib.checkNestedControl(control, config.a.p, config.b))
+        self.assert_(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
 
     def testReadControl(self):
         """Test reading the values from a C++ Control object into a Config object."""
         control = testLib.OuterControlObject()
         control.a.p = 6.0
+        control.a.q = 4
         control.b = 3
         config = testLib.OuterConfigObject()
         config.readControl(control)
-        self.assert_(testLib.checkNestedControl(control, config.a.p, config.b))
+        self.assert_(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
 
     def testDefaults(self):
         """Test that C++ Control object defaults are correctly used as defaults for Config objects."""
         config = testLib.OuterConfigObject()
         control = testLib.OuterControlObject()
-        self.assert_(testLib.checkNestedControl(control, config.a.p, config.b))
+        self.assert_(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
+
+    def testInt64(self):
+        """Test that we can wrap C++ Control objects with int64 members."""
+        config = testLib.OuterConfigObject()
+        control = testLib.OuterControlObject()
+        self.assert_(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
+        self.assertGreater(config.a.q, 1 << 30)
+        self.assertGreater(control.a.q, 1 << 30)
 
 def suite():
     utilsTests.init()
