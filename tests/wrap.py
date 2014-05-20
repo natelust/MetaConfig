@@ -88,6 +88,14 @@ class NestedWrapTest(unittest.TestCase):
         control = testLib.OuterControlObject()
         self.assert_(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
 
+    def testInt64(self):
+        """Test that we can wrap C++ Control objects with int64 members."""
+        config = testLib.OuterConfigObject()
+        control = testLib.OuterControlObject()
+        self.assert_(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
+        self.assertGreater(config.a.q, 1 << 30)
+        self.assertGreater(control.a.q, 1 << 30)
+
 def suite():
     utilsTests.init()
     suites = []
