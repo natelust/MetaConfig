@@ -31,7 +31,7 @@
  *  The defaults for the config class will be set properly if and only if the control class is
  *  default-constructable.
  *
- *  @sa lsst.pex.config.wrap.makeConfigClass
+ *  See lsst.pex.config.wrap.makeConfigClass for a complete example of how to use this macro.
  */
 #define LSST_CONTROL_FIELD(NAME, TYPE, DOC)             \
     static char const * _doc_ ## NAME() {               \
@@ -57,7 +57,7 @@
  *  MODULE argument must refer to the actual Swig-generated module, not the just the package, even
  *  if the name is lifted into the package namespace.
  *
- *  @sa lsst.pex.config.wrap.makeConfigClass
+ *  See lsst.pex.config.wrap.makeConfigClass for a complete example of how to use this macro.
  */
 #define LSST_NESTED_CONTROL_FIELD(NAME, MODULE, TYPE, DOC)       \
     static char const * _doc_ ## NAME() {                        \

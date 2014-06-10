@@ -68,6 +68,8 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     lsst/pex/config.h (note that it must have sensible default constructor):
 
     @code
+    // myHeader.h
+
     struct InnerControl {
         LSST_CONTROL_FIELD(wim, std::string, "documentation for field 'wim'");
     };
@@ -81,7 +83,20 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     };
     @endcode
 
-    You can use LSST_NESTED_CONTROL_FIELD to nest control objects.  Now, Swig those control objects.  
+
+    You can use LSST_NESTED_CONTROL_FIELD to nest control objects.  Now, Swig those control objects as
+    you would any other C++ class, but make sure you include lsst/pex/config.h before including the header
+    file where the control object class is defined:
+    @code
+    // mySwigLib.i
+    %{
+    #include "myHeader.h"
+    %}
+
+    %include "lsst/pex/config.h"
+    %include "myHeader.h"
+    @endcode
+
     Now, in Python, do this:
 
     @code
@@ -97,7 +112,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     respectively.  In addition, if FooControl has a validate() member function,
     a custom validate() method will be added to FooConfig that uses it.   And,
     of course, all of the above will be done for InnerControl/InnerConfig too.
-    
+
     Any field that would be injected that would clash with an existing attribute of the
     class will be silently ignored; this allows the user to customize fields and
     inherit them from wrapped control classes.  However, these names will still be
@@ -105,8 +120,8 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     be present as base class fields or other instance attributes or descriptors.
 
     While LSST_CONTROL_FIELD will work for any C++ type, automatic Config generation
-    only supports bool, int, double, and std::string fields, along with std::list
-    and std::vectors of those types.
+    only supports bool, int, boost::int64_t, double, and std::string  fields, along
+    with std::list and std::vectors of those types.
     """
     if name is None:
         if "Control" not in ctrl.__name__:
