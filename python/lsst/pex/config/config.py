@@ -54,6 +54,8 @@ def _autocast(x, dtype):
     """
     if dtype==float and type(x)==int:
         return float(x)
+    if dtype==int and type(x)==long:
+        return int(x)
     return x
 
 def _typeStr(x):
