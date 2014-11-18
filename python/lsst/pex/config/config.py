@@ -237,11 +237,14 @@ class Field(object):
         """
         value = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)
+
+        # write documentation as multiline string
+        doc = "'''" + self.doc + "'''"
         if isinstance(value, float) and (math.isinf(value) or math.isnan(value)):
             # non-finite numbers need special care
-            print >> outfile, "%s=float('%r')"%(fullname, value)
+            print >> outfile, "%s\n%s=float('%r')\n" % (doc, fullname, value)
         else:
-            print >> outfile, "%s=%r"%(fullname, value)
+            print >> outfile, "%s\n%s=%r\n" % (doc, fullname, value)
     
     def toDict(self, instance):
         """
