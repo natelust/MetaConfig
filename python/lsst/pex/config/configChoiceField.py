@@ -69,7 +69,7 @@ class SelectionSet(collections.MutableSet):
         
         if value not in self._dict:
             #invoke __getitem__ to make sure it's present
-            r = self.__getitem__(value, at=at)
+            r = self._dict.__getitem__(value, at=at)
 
         self.__history.append(("added %s to selection"%value, at, "selection"))
         self._set.add(value)
