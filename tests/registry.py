@@ -120,6 +120,14 @@ class ConfigTest(unittest.TestCase):
         c.r = "foo2"
         c.r.apply()
 
+    def testExceptions(self):
+        class C1(pexConfig.Config):
+            r = self.registry.makeField("registry field", multi=True, default=[])
+        c = C1()
+        def fail(name): # lambda doesn't like |=
+            c.r.names |= [name]
+        self.assertRaises(pexConfig.FieldValidationError, fail, "bar")
+
 def  suite():
     utilsTests.init()
     suites = []
