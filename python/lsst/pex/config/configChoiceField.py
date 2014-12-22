@@ -201,7 +201,8 @@ class ConfigInstanceDict(collections.Mapping):
             try:
                 dtype = self._field.typemap[k]
             except:
-                raise FieldValidationError(self._field, self._config, "Unknown key %r"%k)
+                raise FieldValidationError(self._field, self._config,
+                                           "Unknown key %r in Registry/ConfigChoiceField" % k)
             name = _joinNamePath(self._config._name, self._field.name, k)
             if at is None:
                 at = traceback.extract_stack()[:-1] + [dtype._source]
