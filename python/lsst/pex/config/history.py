@@ -160,8 +160,8 @@ def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
         sourceLengths = []
         for value, output in outputs:
             sourceLengths.append(max([len(x[0][0]) for x in output]))
+        sourceLength = max(sourceLengths)
 
-    sourceLength = max(sourceLengths)
     valueLength = len(prefix) + max([len(str(value)) for value, output in outputs])
     #
     # actually generate the config history
