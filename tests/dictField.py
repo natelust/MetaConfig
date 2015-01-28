@@ -29,7 +29,8 @@ import lsst.pex.config as pexConfig
 class Config1(pexConfig.Config):
     d1 = pexConfig.DictField("d1", keytype=str, itemtype=int, default={"hi":4}, itemCheck=lambda x: x > 0)
     d2 = pexConfig.DictField("d2", keytype=str, itemtype=str, default=None)
-    d3 = pexConfig.DictField("d1", keytype=float, itemtype=float, optional = True, itemCheck=lambda x: x > 0)
+    d3 = pexConfig.DictField("d3", keytype=float, itemtype=float, optional = True, itemCheck=lambda x: x > 0)
+    d4 = pexConfig.DictField("d4", keytype=str, itemtype=None, default={})
 
 class DictFieldTest(unittest.TestCase):
     def testConstructor(self):
@@ -71,11 +72,20 @@ class DictFieldTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "d1", {"a":0})
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "d1", [1.2, 3, 4])
         c.d1 = None; c.d1 = {"a":1, "b":2}
-       
-        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "d3", {"hi", True})
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "d3", {"hi": True})
         c.d3={4:5}
         self.assertEqual(c.d3, {4.:5.})
-       
+        d = {"a": None, "b": 4, "c": "foo"}
+        c.d4 = d
+        self.assertEqual(c.d4, d)
+        c.d4["a"] = 12
+        c.d4["b"] = "three"
+        c.d4["c"] = None
+        self.assertEqual(c.d4["a"], 12)
+        self.assertEqual(c.d4["b"], "three")
+        self.assertEqual(c.d4["c"], None)
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "d4", {"hi": [1, 2, 3]})
+
     def testValidate(self):
         c = Config1()
         self.assertRaises(pexConfig.FieldValidationError, Config1.validate, c)

@@ -80,10 +80,15 @@ class Dict(collections.MutableMapping):
 
         #validate itemtype
         x = _autocast(x, self._field.itemtype)
-        if type(x) != self._field.itemtype and x is not None:
-            msg ="Value %s at key %r is of incorrect type %s. Expected type %s"%\
+        if self._field.itemtype is None:
+            if type(x) not in self._field.supportedTypes and x is not None:
+                msg ="Value %s at key %r is of invalid type %s" % (x, k, _typeStr(x))
+                raise FieldValidationError(self._field, self._config, msg)
+        else:
+            if type(x) != self._field.itemtype and x is not None:
+                msg ="Value %s at key %r is of incorrect type %s. Expected type %s"%\
                     (x, k, _typeStr(x), _typeStr(self._field.itemtype))
-            raise FieldValidationError(self._field, self._config, msg)
+                raise FieldValidationError(self._field, self._config, msg)
 
         #validate item using itemcheck
         if self._field.itemCheck is not None and not self._field.itemCheck(x):
@@ -153,7 +158,7 @@ class DictField(Field):
         if keytype not in self.supportedTypes:
             raise ValueError("'keytype' %s is not a supported type"%\
                     _typeStr(keytype))
-        elif itemtype not in self.supportedTypes:
+        elif itemtype is not None and itemtype not in self.supportedTypes:
             raise ValueError("'itemtype' %s is not a supported type"%\
                     _typeStr(itemtype))
         if dictCheck is not None and not hasattr(dictCheck, "__call__"):
