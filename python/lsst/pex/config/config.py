@@ -20,11 +20,13 @@
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
 
+import os
 import io
 import traceback
 import sys
 import math
 import copy
+import tempfile
 
 from .comparison import getComparisonName, compareScalars, compareConfigs
 
@@ -569,8 +571,10 @@ class Config(object):
         @param[in] filename  name of file to which to write the config
         @param[in] root  name to use for the root config variable; the same value must be used when loading
         """
-        with open(filename, 'w') as outfile:
+        d = os.path.dirname(filename)
+        with tempfile.NamedTemporaryFile(delete=False, dir=d) as outfile:
             self.saveToStream(outfile, root)
+            os.rename(outfile.name, filename)
 
     def saveToStream(self, outfile, root="config"):
         """!Save a python script to a stream, which, when loaded, reproduces this Config
