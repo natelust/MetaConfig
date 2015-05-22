@@ -25,7 +25,6 @@ import os
 import unittest
 import lsst.utils.tests as utilsTests
 import lsst.pex.config as pexConf
-import eups
 
 class Config1(pexConf.Config):
     f = pexConf.Field("Config1.f", float, default=4)
