@@ -25,7 +25,7 @@ import os
 import unittest
 import lsst.utils.tests as utilsTests
 import lsst.pex.config as pexConf
-import eups
+import lsst.utils
 
 class Config1(pexConf.Config):
     f = pexConf.Field("Config1.f", float, default=4)
@@ -39,7 +39,7 @@ class Config3(pexConf.Config):
 class FieldNameReportingTest(unittest.TestCase):
     def test(self):
         c3 = Config3()
-        pex_product_dir = eups.productDir("pex_config")
+        pex_product_dir = lsst.utils.getPackageDir('pex_config')
         c3.load(pex_product_dir+ "/tests/config/ticket1914.py")
 
 def  suite():
