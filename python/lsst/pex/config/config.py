@@ -573,7 +573,7 @@ class Config(object):
             typeString = _typeStr(configType)
             print >> outfile, "import %s" % (configType.__module__)
             print >> outfile, "assert type(%s)==%s, 'config is of type %%s.%%s" % (root, typeString), \
-                "instead of %s' %% (type(root).__module__, type(root).__name__)" % (typeString,)
+                "instead of %s' %% (type(%s).__module__, type(%s).__name__)" % (typeString, root, root)
             self._save(outfile)
         finally:
             self._rename(tmp)
