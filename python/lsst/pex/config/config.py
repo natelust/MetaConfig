@@ -518,7 +518,7 @@ class Config(object):
             except KeyError, e:
                 raise KeyError("No field of name %s exists in config type %s"%(name, _typeStr(self)))
 
-    def load(self, filename, root="root"):
+    def load(self, filename, root="config"):
         """
         Load override from files, modify this config in place by executing the
         Python code in the given file.
@@ -526,45 +526,45 @@ class Config(object):
         The file should modify a Config named root
 
         For example:
-            root.myField = 5
+            config.myField = 5
         """
         with RecordingImporter() as importer:
             local = {root: self}
             execfile(filename, {}, local)
         self._imports.update(importer.getModules())
 
-    def loadFromStream(self, stream, root="root"):
+    def loadFromStream(self, stream, root="config"):
         """
         Modify this config in place by executign the python code in the
         provided stream.
 
-        The stream should modify a Config named 'root', e.g.: root.myField = 5
+        The stream should modify a Config whose name is root, e.g.: config.myField = 5
         """
         with RecordingImporter() as importer:
             local = {root: self}
             exec stream in {}, local
         self._imports.update(importer.getModules())
 
-    def save(self, filename, root="root"):
+    def save(self, filename, root="config"):
         """
         Generates a python script at the given filename, which, when loaded,
         reproduces this Config.
 
         @param filename [in] name of file to write to
-        @param root [in] name to use for the root config variable
-            If not "root", must match what is used in load())
+        @param root [in] name to use for the root config variable;
+            If not "config", must match what is used in load())
         """
         with open(filename, 'w') as outfile:
             self.saveToStream(outfile, root)
 
-    def saveToStream(self, outfile, root="root"):
+    def saveToStream(self, outfile, root="config"):
         """
         Generates a python script to the given open file object, which, when
         loaded, reproduces this Config.
 
         @param outfile [inout] open file object to write to
         @param root [in] name to use for the root config variable
-            If not "root", must match what is used in load())
+            If not "config", must match what is used in load())
         """
         tmp = self._name
         self._rename(root)
@@ -729,8 +729,8 @@ class Config(object):
 
         Floating point comparisons are performed by numpy.allclose; refer to that for details.
         """
-        name1 = self._name if self._name is not None else "root"
-        name2 = other._name if other._name is not None else "root"
+        name1 = self._name if self._name is not None else "config"
+        name2 = other._name if other._name is not None else "config"
         name = getComparisonName(name1, name2)
         return compareConfigs(name, self, other, shortcut=shortcut,
                               rtol=rtol, atol=atol, output=output)
