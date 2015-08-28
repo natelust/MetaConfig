@@ -22,7 +22,7 @@
 import traceback
 
 from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr
-from .comparison import *
+from .comparison import compareConfigs, getComparisonName
 
 __all__ = ["ConfigField"]
 

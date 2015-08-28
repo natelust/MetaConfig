@@ -22,7 +22,7 @@
 import traceback, copy
 
 from .config import Config, Field, _joinNamePath, _typeStr, FieldValidationError
-from .comparison import *
+from .comparison import compareConfigs, getComparisonName
 
 class ConfigurableInstance(object):
     def __initValue(self, at, label):

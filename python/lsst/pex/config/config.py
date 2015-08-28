@@ -24,10 +24,9 @@ import io
 import traceback
 import sys
 import math
-import collections
 import copy
 
-from .comparison import *
+from .comparison import getComparisonName, compareScalars, compareConfigs
 
 __all__ = ("Config", "Field", "FieldValidationError")
 
@@ -459,9 +458,10 @@ class Config(object):
         the author does not need to be concerned about when or even if he
         should call the base Config.__init__
         """
-        name=kw.pop("__name", None)
-        at=kw.pop("__at", traceback.extract_stack()[:-1])
-        label=kw.pop("__label", "default")
+        name = kw.pop("__name", None)
+        at = kw.pop("__at", traceback.extract_stack()[:-1])
+        # remove __label and ignore it
+        kw.pop("__label", "default")
 
         instance = object.__new__(cls)
         instance._frozen=False
@@ -508,14 +508,14 @@ class Config(object):
         history tracebacks of the config. Modifying these keywords allows users
         to lie about a Config's history. Please do not do so!
         """
-        at=kw.pop("__at", traceback.extract_stack()[:-1])
+        at = kw.pop("__at", traceback.extract_stack()[:-1])
         label = kw.pop("__label", "update")
 
         for name, value in kw.iteritems():            
             try:
                 field = self._fields[name]
                 field.__set__(self, value, at=at, label=label)
-            except KeyError, e:
+            except KeyError:
                 raise KeyError("No field of name %s exists in config type %s"%(name, _typeStr(self)))
 
     def load(self, filename, root="config"):

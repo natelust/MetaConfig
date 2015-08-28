@@ -25,9 +25,9 @@ import re
 import importlib
 import traceback
 
-from .config import *
-from .listField import *
-from .configField import *
+from .config import Config, Field
+from .listField import ListField
+from .configField import ConfigField
 
 __all__ = ("wrap", "makeConfigClass")
 
