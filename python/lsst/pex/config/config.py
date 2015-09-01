@@ -396,59 +396,54 @@ class Config(object):
     attributes; these are used to define most of the base class behavior.  
     Simple derived class should be able to be defined simply by setting those 
     attributes.
+
+    Config also emulates a dict of field name: field value
     """
 
     __metaclass__ = ConfigMeta
 
     def __iter__(self):
-        """
-        Enable iterating over a config allows inspection of a Config's fields,
-        so that a Config behaves like a dict mapping field names to field
-        descriptors
+        """!Iterate over fields
         """
         return self._fields.__iter__()
 
     def keys(self):
-        """
-        Return the list of field names
+        """!Return the list of field names
         """
         return self._storage.keys()
     def values(self):
-        """
-        Return the list of field values
+        """!Return the list of field values
         """
         return self._storage.values()
     def items(self):
-        """
-        Return the list of (field name, field value) pairs
+        """!Return the list of (field name, field value) pairs
         """
         return self._storage.items()
 
     def iteritems(self):
-        """
-        Enable iterate over (field name, field value) pairs
+        """!Iterate over (field name, field value) pairs
         """
         return self._storage.iteritems()
+
     def itervalues(self):
-        """
-        Enable iteration over field values
+        """!Iterate over field values
         """
         return self.storage.itervalues()
+
     def iterkeys(self):
-        """
-        Enable iteration over field names
+        """!Iterate over field names
         """
         return self.storage.iterkeys()
 
     def __contains__(self, name):
-        """
-        Determines whether the field 'name' exists in this config
+        """!Return True if the specified field exists in this config
+
+        @param[in] name  field name to test for
         """
         return self._storage.__contains__(name)
 
     def __new__(cls, *args, **kw):
-        """
-        Allocate a new Config object.
+        """!Allocate a new Config object.
 
         In order to ensure that all Config object are always in a proper
         state when handed to users or to derived Config classes, some
@@ -499,11 +494,9 @@ class Config(object):
         pass
             
     def update(self, **kw):
-        """
-        Treat the Config as a dict, updating values as provided by the keyword
-        arguments.
+        """!Update values specified by the keyword arguments
 
-        The '__at' and '__label' keyword arguments are special internal 
+        @warning The '__at' and '__label' keyword arguments are special internal 
         keywords. They are used to strip out any internal steps from the 
         history tracebacks of the config. Modifying these keywords allows users
         to lie about a Config's history. Please do not do so!
@@ -519,14 +512,13 @@ class Config(object):
                 raise KeyError("No field of name %s exists in config type %s"%(name, _typeStr(self)))
 
     def load(self, filename, root="config"):
-        """
-        Load override from files, modify this config in place by executing the
-        Python code in the given file.
+        """!Modify this config in place by executing the Python code in the named file.
 
-        The file should modify a Config named root
+        @param[in] filename  name of file containing config override code
+        @param[in] root  name of variable in file that refers to the config being overridden
 
-        For example:
-            config.myField = 5
+        For example: if the value of root is "config" and the file contains this text:
+        "config.myField = 5" then this config's field "myField" is set to 5.
         """
         with RecordingImporter() as importer:
             local = {root: self}
@@ -534,11 +526,13 @@ class Config(object):
         self._imports.update(importer.getModules())
 
     def loadFromStream(self, stream, root="config"):
-        """
-        Modify this config in place by executign the python code in the
-        provided stream.
+        """!Modify this config in place by executing the python code in the provided stream.
 
-        The stream should modify a Config whose name is root, e.g.: config.myField = 5
+        @param[in] stream  open file object or string containing config override code
+        @param[in] root  name of variable in stream that refers to the config being overridden
+
+        For example: if the value of root is "config" and the stream contains this text:
+        "config.myField = 5" then this config's field "myField" is set to 5.
         """
         with RecordingImporter() as importer:
             local = {root: self}
@@ -546,25 +540,19 @@ class Config(object):
         self._imports.update(importer.getModules())
 
     def save(self, filename, root="config"):
-        """
-        Generates a python script at the given filename, which, when loaded,
-        reproduces this Config.
+        """!Save a python script to the named file, which, when loaded, reproduces this Config
 
-        @param filename [in] name of file to write to
-        @param root [in] name to use for the root config variable;
-            If not "config", must match what is used in load())
+        @param[in] filename  name of file to which to write the config
+        @param[in] root  name to use for the root config variable; the same value must be used when loading
         """
         with open(filename, 'w') as outfile:
             self.saveToStream(outfile, root)
 
     def saveToStream(self, outfile, root="config"):
-        """
-        Generates a python script to the given open file object, which, when
-        loaded, reproduces this Config.
+        """!Save a python script to a stream, which, when loaded, reproduces this Config
 
-        @param outfile [inout] open file object to write to
-        @param root [in] name to use for the root config variable
-            If not "config", must match what is used in load())
+        @param outfile [inout] open file object to which to write the config
+        @param root [in] name to use for the root config variable; the same value must be used when loading
         """
         tmp = self._name
         self._rename(root)
@@ -579,16 +567,14 @@ class Config(object):
             self._rename(tmp)
 
     def freeze(self):
-        """
-        Make this Config, and recursively all sub-configs read-only
+        """!Make this Config and all sub-configs read-only
         """
         self._frozen=True
         for field in self._fields.itervalues():
             field.freeze(self)
 
     def _save(self, outfile):
-        """
-        Internal use only. Save this Config to an open stream object
+        """!Save this Config to an open stream object
         """
         for imp in self._imports:
             if imp in sys.modules and sys.modules[imp] is not None:
@@ -597,13 +583,10 @@ class Config(object):
             field.save(outfile, self)
 
     def toDict(self):
-        """
-        Convert this Config into a dict whose keys are field names, 
-        and whose values are field values.
+        """!Return a dict of field name: value
 
-        Correct behavior is dependent on proper implementation of 
-        Field.toDict. If implementing a new Field type, you may need to
-        implement your own toDict method.
+        Correct behavior is dependent on proper implementation of  Field.toDict. If implementing a new
+        Field type, you may need to implement your own toDict method.
         """
         dict_ = {}
         for name, field in self._fields.iteritems():
@@ -611,22 +594,19 @@ class Config(object):
         return dict_
 
     def _rename(self, name):
-        """
-        Internal use only. 
-        Rename this Config object to reflect its position in a Config hierarchy
+        """!Rename this Config object in its parent config
 
+        @param[in] name  new name for this config in its parent config
         
-        Correct behavior is dependent on proper implementation of 
-        Field.rename. If implementing a new Field type, you may need to
-        implement your own rename method.
+        Correct behavior is dependent on proper implementation of Field.rename. If implementing a new
+        Field type, you may need to implement your own rename method.
         """
         self._name = name
         for field in self._fields.itervalues():
             field.rename(self)
 
     def validate(self):
-        """
-        Validate the Config.
+        """!Validate the Config; raise an exception if invalid
 
         The base class implementation performs type checks on all fields by 
         calling Field.validate(). 
@@ -643,8 +623,11 @@ class Config(object):
             field.validate(self)
    
     def formatHistory(self, name, **kwargs):
-        """
-        Format the config's history to a more human-readable format
+        """!Format the specified config field's history to a more human-readable format
+
+        @param[in] name  name of field whose history is wanted
+        @param[in] kwargs  keyword arguments for lsst.pex.config.history.format
+        @return a string containing the formatted history
         """
         import lsst.pex.config.history as pexHist
         return pexHist.format(self, name, **kwargs)
@@ -655,8 +638,7 @@ class Config(object):
     history = property(lambda x: x._history)
 
     def __setattr__(self, attr, value, at=None, label="assignment"):
-        """
-        Regulate which attributes can be set.
+        """!Regulate which attributes can be set
 
         Unlike normal python objects, Config objects are locked such 
         that no additional attributes nor properties may be added to them
@@ -715,7 +697,7 @@ class Config(object):
             )
 
     def compare(self, other, shortcut=True, rtol=1E-8, atol=1E-8, output=None):
-        """Compare two Configs for equality.
+        """!Compare two Configs for equality; return True if equal
 
         If the Configs contain RegistryFields or ConfigChoiceFields, unselected Configs
         will not be compared.
