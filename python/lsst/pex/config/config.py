@@ -519,24 +519,47 @@ class Config(object):
 
         For example: if the value of root is "config" and the file contains this text:
         "config.myField = 5" then this config's field "myField" is set to 5.
-        """
-        with RecordingImporter() as importer:
-            local = {root: self}
-            execfile(filename, {}, local)
-        self._imports.update(importer.getModules())
 
-    def loadFromStream(self, stream, root="config"):
+        @deprecated For purposes of backwards compatibility, older config files that use
+        root="root" instead of root="config" will be loaded with a warning printed to sys.stderr.
+        This feature will be removed at some point.
+        """
+        with open(filename) as f:
+            code = compile(f.read(), filename=filename, mode="exec")
+            self.loadFromStream(stream=code, root=root)
+
+    def loadFromStream(self, stream, root="config", filename=None):
         """!Modify this config in place by executing the python code in the provided stream.
 
-        @param[in] stream  open file object or string containing config override code
+        @param[in] stream  open file object, string or compiled string containing config override code
         @param[in] root  name of variable in stream that refers to the config being overridden
+        @param[in] filename  name of config override file, or None if unknown or contained
+            in the stream; used for error reporting
 
         For example: if the value of root is "config" and the stream contains this text:
         "config.myField = 5" then this config's field "myField" is set to 5.
+
+        @deprecated For purposes of backwards compatibility, older config files that use
+        root="root" instead of root="config" will be loaded with a warning printed to sys.stderr.
+        This feature will be removed at some point.
         """
         with RecordingImporter() as importer:
-            local = {root: self}
-            exec stream in {}, local
+            try:
+                local = {root: self}
+                exec stream in {}, local
+            except NameError as e:
+                if root == "config" and "root" in e.args[0]:
+                    if filename is None:
+                        # try to determine the file name; a compiled string has attribute "co_filename",
+                        # an open file has attribute "name", else give up
+                        filename = getattr(stream, "co_filename", None)
+                        if filename is None:
+                            filename = getattr(stream, "name", "?")
+                    sys.stderr.write("Config override file %r" % (filename,) + \
+                        " appears to use 'root' instead of 'config'; trying with 'root'")
+                    local = {"root": self}
+                    exec stream in {}, local
+
         self._imports.update(importer.getModules())
 
     def save(self, filename, root="config"):
