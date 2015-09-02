@@ -25,7 +25,6 @@ import os
 import unittest
 import lsst.utils.tests as utilsTests
 import lsst.pex.config as pexConfig
-import sys
 
 class Config1(pexConfig.Config):
     f = pexConfig.Field(doc="Config1.f",dtype=int, default=4)

@@ -21,14 +21,8 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-import io
-import re
-import os
 import unittest
 import lsst.utils.tests as utilsTests
-import lsst.pex.config as pexConfig
-import sys
-import pickle
 
 import testLib
 

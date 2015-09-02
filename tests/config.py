@@ -27,7 +27,6 @@ import os
 import unittest
 import lsst.utils.tests as utilsTests
 import lsst.pex.config as pexConfig
-import sys
 import pickle
 
 GLOBAL_REGISTRY = {}
