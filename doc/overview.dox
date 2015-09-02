@@ -39,15 +39,15 @@ Defining a configuration subclass::
 \endcode
 
 Here is a sample configuration override file to be used with the partial
-``IsrTaskConfig`` above.  Note that all field names are prefixed with "root"
+``IsrTaskConfig`` above.  Note that all field names are prefixed with "config"
 and that overrides should never be used to set already-existing default
 values::
 \code
-    root.doWrite = False
-    root.fwhm = 0.8
-    root.saturatedMaskName = 'SATUR'
-    root.flatScalingType = 'MEAN'
-    root.keysToRemoveFromAssembledCcd = ['AMPNAME']
+    config.doWrite = False
+    config.fwhm = 0.8
+    config.saturatedMaskName = 'SATUR'
+    config.flatScalingType = 'MEAN'
+    config.keysToRemoveFromAssembledCcd = ['AMPNAME']
 \endcode
 
 Typical usage::

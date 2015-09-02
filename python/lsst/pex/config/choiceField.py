@@ -21,7 +21,7 @@
 #
 import traceback
 
-from .config import Config, Field, _typeStr
+from .config import Field, _typeStr
 
 __all__ = ["ChoiceField"]
 

@@ -1,1 +1,1 @@
-root.c.r["c1"].f = 5
+config.c.r["c1"].f = 5

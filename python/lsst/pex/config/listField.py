@@ -19,11 +19,11 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-import traceback, copy
+import traceback
 import collections
 
 from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
-from .comparison import *
+from .comparison import compareScalars, getComparisonName
 
 __all__ = ["ListField"]
 

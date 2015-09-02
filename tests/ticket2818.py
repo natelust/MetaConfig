@@ -35,7 +35,7 @@ class ImportTest(unittest.TestCase):
         from ticket2818.another import AnotherConfigurable # Leave this uncommented to demonstrate bug
         config = BaseConfig()
         config.loadFromStream("""from ticket2818.another import AnotherConfigurable
-root.test.retarget(AnotherConfigurable)
+config.test.retarget(AnotherConfigurable)
 """)
         stream = io.BytesIO()
         config.saveToStream(stream)

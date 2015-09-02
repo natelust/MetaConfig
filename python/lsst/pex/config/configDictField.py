@@ -19,12 +19,11 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-import traceback, copy
-import collections
+import traceback
 
-from .config import Config, Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
+from .config import Config, FieldValidationError, _typeStr, _joinNamePath
 from .dictField import Dict, DictField
-from .comparison import *
+from .comparison import compareConfigs, compareScalars, getComparisonName
 
 __all__=["ConfigDictField"]
 

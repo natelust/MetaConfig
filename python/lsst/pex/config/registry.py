@@ -22,7 +22,7 @@
 import collections
 import copy
 
-from .config import Config, Field, FieldValidationError, _typeStr
+from .config import Config, FieldValidationError, _typeStr
 from .configChoiceField import ConfigInstanceDict, ConfigChoiceField
 
 __all__ = ("Registry", "makeRegistry", "RegistryField", "registerConfig", "registerConfigurable")

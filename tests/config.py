@@ -27,7 +27,6 @@ import os
 import unittest
 import lsst.utils.tests as utilsTests
 import lsst.pex.config as pexConfig
-import sys
 import pickle
 
 GLOBAL_REGISTRY = {}
@@ -156,6 +155,17 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
 
+        # test backwards compatibility feature of allowing "root" instead of "config"
+        outfile = open("roundtrip.test", "w")
+        self.comp.saveToStream(outfile, root="root")
+        outfile.close()
+
+        roundTrip = Complex()
+        roundTrip.load("roundtrip.test")
+        os.remove("roundtrip.test")
+
+        self.assertEqual(self.comp.c.f, roundTrip.c.f)
+        self.assertEqual(self.comp.r.name, roundTrip.r.name)
 
     def testDuplicateRegistryNames(self):
         self.comp.r["AAA"].f = 5.0

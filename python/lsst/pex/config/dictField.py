@@ -19,11 +19,11 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-import traceback, copy
+import traceback
 import collections
 
-from .config import Config, Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
-from .comparison import *
+from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
+from .comparison import getComparisonName, compareScalars
 
 __all__=["DictField"]
 
@@ -44,7 +44,7 @@ class Dict(collections.MutableMapping):
                 for k in value:
                     #do not set history per-item
                     self.__setitem__(k, value[k], at=at, label=label, setHistory=False)
-            except TypeError, e:
+            except TypeError:
                 msg = "Value %s is of incorrect type %s. Mapping type expected."%\
                         (value, _typeStr(value))
                 raise FieldValidationError(self._field, self._config, msg)

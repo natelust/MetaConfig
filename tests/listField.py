@@ -21,7 +21,6 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-import os
 import unittest
 import lsst.utils.tests as utilsTests
 import lsst.pex.config as pexConfig
@@ -63,7 +62,7 @@ class ListFieldTest(unittest.TestCase):
         try:
             class BadLengths(pexConfig.Config):
                 l = pexConfig.ListField("...", int, minLength=4, maxLength=2)
-        except ValueError, e:
+        except ValueError:
             pass
         else:
             raise SyntaxError("minLnegth <= maxLength should not be allowed")
@@ -77,7 +76,7 @@ class ListFieldTest(unittest.TestCase):
             raise SyntaxError("negative length should not be allowed")
         
         try:
-            class BadLength(pexConfig.Config):
+            class BadLength2(pexConfig.Config):
                 l = pexConfig.ListField("...", int, maxLength=-1)
         except:
             pass
