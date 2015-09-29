@@ -54,10 +54,6 @@ class ChoiceField(Field):
     def _validateValue(self, value):
         Field._validateValue(self, value)
         if value not in self.allowed:
-            allowedStr = "{%s"%self.allowed.keys()[0]
-            for x in self.allowed:
-                allowedStr += ", %s"%x
-            allowedStr+="}"
-            msg = "Value %s is not allowed.\n\tAllowed values: %s"%\
-                    (value, allowedStr)
+            msg = "Value {} is not allowed.\n\tAllowed values: [{}]".format(
+                      value, ", ".join(str(key) for key in self.allowed.keys()))
             raise ValueError(msg)
