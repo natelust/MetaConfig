@@ -238,8 +238,8 @@ class Field(object):
         value = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)
 
-        # write documentation as multiline string
-        doc = "'''" + self.doc + "'''"
+        # write full documentation string as comment lines (i.e. first character is #)
+        doc = "# " + str(self.doc).replace("\n", "\n# ")
         if isinstance(value, float) and (math.isinf(value) or math.isnan(value)):
             # non-finite numbers need special care
             print >> outfile, "%s\n%s=float('%r')\n" % (doc, fullname, value)
