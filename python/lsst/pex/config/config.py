@@ -1,6 +1,6 @@
 # 
 # LSST Data Management System
-# Copyright 2008, 2009, 2010 LSST Corporation.
+# Copyright 2008-2015 AURA/LSST.
 # 
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -17,7 +17,7 @@
 # 
 # You should have received a copy of the LSST License Statement and 
 # the GNU General Public License along with this program.  If not, 
-# see <http://www.lsstcorp.org/LegalNotices/>.
+# see <https://www.lsstcorp.org/LegalNotices/>.
 #
 
 import io
@@ -61,7 +61,7 @@ def _typeStr(x):
     """
     Utility function to generate a fully qualified type name.
 
-    This is used primarily in writing config files to be 
+    This is used primarily in writing config files to be
     executed later upon 'load'.
     """
     if hasattr(x, '__module__') and hasattr(x, '__name__'):
@@ -77,8 +77,8 @@ class ConfigMeta(type):
     """A metaclass for Config
 
     Adds a dictionary containing all Field class attributes
-    as a class attribute called '_fields', and adds the name of each field as 
-    an instance variable of the field itself (so you don't have to pass the 
+    as a class attribute called '_fields', and adds the name of each field as
+    an instance variable of the field itself (so you don't have to pass the
     name of the field to the field constructor).
     """
     def __init__(self, name, bases, dict_):
@@ -98,7 +98,7 @@ class ConfigMeta(type):
             return fields
 
         fields = getFields(self)
-        for k, v in fields.iteritems():            
+        for k, v in fields.iteritems():
             setattr(self, k, copy.deepcopy(v))
 
     def __setattr__(self, name, value):
@@ -115,7 +115,7 @@ class FieldValidationError(ValueError):
     - fieldName: name of the Field which incurred the error
     - fullname: fully qualified name of the Field instance
     - history: full history of all changes to the Field instance
-    - fieldSource: file and line number of the Field definition   
+    - fieldSource: file and line number of the Field definition
     """
     def __init__(self, field, config, msg):
         self.fieldType = type(field)
@@ -127,11 +127,10 @@ class FieldValidationError(ValueError):
         error="%s '%s' failed validation: %s\n"\
                 "For more information read the Field definition at:\n%s"\
                 "And the Config definition at:\n%s"%\
-              (self.fieldType.__name__, self.fullname, msg, 
+              (self.fieldType.__name__, self.fullname, msg,
                       traceback.format_list([self.fieldSource])[0],
                       traceback.format_list([self.configSource])[0])
         ValueError.__init__(self, error)
-
 
 class Field(object):
     """A field in a a Config.
@@ -146,13 +145,13 @@ class Field(object):
 
     def __init__(self, doc, dtype, default=None, check=None, optional=False):
         """Initialize a Field.
-        
-        dtype ------ Data type for the field.  
+
+        dtype ------ Data type for the field.
         doc -------- Documentation for the field.
         default ---- A default value for the field.
-        check ------ A callable to be called with the field value that returns 
-                     False if the value is invalid.  More complex inter-field 
-                     validation can be written as part of Config validate() 
+        check ------ A callable to be called with the field value that returns
+                     False if the value is invalid.  More complex inter-field
+                     validation can be written as part of Config validate()
                      method; this will be ignored if set to None.
         optional --- When False, Config validate() will fail if value is None
         """
@@ -160,7 +159,6 @@ class Field(object):
             raise ValueError("Unsupported Field dtype %s"%_typeStr(dtype))
         source = traceback.extract_stack(limit=2)[0]
         self._setup(doc=doc, dtype=dtype, default=default, check=check, optional=optional, source=source)
-        
 
     def _setup(self, doc, dtype, default, check, optional, source):
         """
@@ -177,7 +175,7 @@ class Field(object):
 
     def rename(self, instance):
         """
-        Rename an instance of this field, not the field itself. 
+        Rename an instance of this field, not the field itself.
         This is invoked by the owning config object and should not be called
         directly
 
@@ -199,7 +197,7 @@ class Field(object):
         value = self.__get__(instance)
         if not self.optional and value is None:
             raise FieldValidationError(self, instance, "Required value cannot be None")
-   
+
     def freeze(self, instance):
         """
         Make this field read-only.
@@ -211,7 +209,7 @@ class Field(object):
     def _validateValue(self, value):
         """
         Validate a value that is not None
-    
+
         This is called from __set__
         This is not part of the Field API. However, simple derived field types
             may benifit from implementing _validateValue
@@ -237,23 +235,26 @@ class Field(object):
         """
         value = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)
+
+        # write full documentation string as comment lines (i.e. first character is #)
+        doc = "# " + str(self.doc).replace("\n", "\n# ")
         if isinstance(value, float) and (math.isinf(value) or math.isnan(value)):
             # non-finite numbers need special care
-            print >> outfile, "%s=float('%r')"%(fullname, value)
+            print >> outfile, "%s\n%s=float('%r')\n" % (doc, fullname, value)
         else:
-            print >> outfile, "%s=%r"%(fullname, value)
-    
+            print >> outfile, "%s\n%s=%r\n" % (doc, fullname, value)
+
     def toDict(self, instance):
         """
-        Convert the field value so that it can be set as the value of an item 
+        Convert the field value so that it can be set as the value of an item
         in a dict.
         This is invoked by the owning config object and should not be called
         directly
 
         Simple values are passed through. Complex data structures must be
         manipulated. For example, a field holding a sub-config should, instead
-        of the subconfig object, return a dict where the keys are the field 
-        names in the subconfig, and the values are the field values in the 
+        of the subconfig object, return a dict where the keys are the field
+        names in the subconfig, and the values are the field values in the
         subconfig.
         """
         return self.__get__(instance)
@@ -264,12 +265,12 @@ class Field(object):
         This is invoked by the owning config object and should not be called
         directly
 
-        When the field attribute is accessed on a Config class object, it 
-        returns the field object itself in order to allow inspection of 
+        When the field attribute is accessed on a Config class object, it
+        returns the field object itself in order to allow inspection of
         Config classes.
 
         When the field attribute is access on a config instance, the actual
-        value described by the field (and held by the Config instance) is 
+        value described by the field (and held by the Config instance) is
         returned.
         """
         if instance is None or not isinstance(instance, Config):
@@ -283,18 +284,18 @@ class Field(object):
         This is invoked by the owning config object and should not be called
         directly
 
-        Derived Field classes may need to override the behavior. When overriding 
+        Derived Field classes may need to override the behavior. When overriding
         __set__, Field authors should follow the following rules:
         * Do not allow modification of frozen configs
-        * Validate the new value *BEFORE* modifying the field. Except if the 
+        * Validate the new value *BEFORE* modifying the field. Except if the
             new value is None. None is special and no attempt should be made to
-            validate it until Config.validate is called. 
+            validate it until Config.validate is called.
         * Do not modify the Config instance to contain invalid values.
-        * If the field is modified, update the history of the field to reflect the 
+        * If the field is modified, update the history of the field to reflect the
             changes
 
         In order to decrease the need to implement this method in derived Field
-        types, value validation is performed in the method _validateValue. If 
+        types, value validation is performed in the method _validateValue. If
         only the validation step differs in the derived Field, it is simpler to
         implement _validateValue than to re-implement __set__. More complicated
         behavior, however, may require a reimplementation.
@@ -309,7 +310,7 @@ class Field(object):
                 self._validateValue(value)
             except BaseException, e:
                 raise FieldValidationError(self, instance, e.message)
-        
+
         instance._storage[self.name] = value
         if at is None:
             at = traceback.extract_stack()[:-1]
@@ -392,9 +393,9 @@ class RecordingImporter(object):
 class Config(object):
     """Base class for control objects.
 
-    A Config object will usually have several Field instances as class 
-    attributes; these are used to define most of the base class behavior.  
-    Simple derived class should be able to be defined simply by setting those 
+    A Config object will usually have several Field instances as class
+    attributes; these are used to define most of the base class behavior.
+    Simple derived class should be able to be defined simply by setting those
     attributes.
 
     Config also emulates a dict of field name: field value
@@ -465,12 +466,12 @@ class Config(object):
         instance._history = {}
         instance._imports = set()
         # load up defaults
-        for field in instance._fields.itervalues():           
+        for field in instance._fields.itervalues():
             instance._history[field.name]=[]
             field.__set__(instance, field.default, at=at+[field.source], label="default")
         # set custom default-overides
         instance.setDefaults()
-        # set constructor overides 
+        # set constructor overides
         instance.update(__at=at, **kw)
         return instance
 
@@ -486,25 +487,25 @@ class Config(object):
 
     def setDefaults(self):
         """
-        Derived config classes that must compute defaults rather than using the 
-        Field defaults should do so here. 
-        To correctly use inherited defaults, implementations of setDefaults() 
+        Derived config classes that must compute defaults rather than using the
+        Field defaults should do so here.
+        To correctly use inherited defaults, implementations of setDefaults()
         must call their base class' setDefaults()
         """
         pass
-            
+
     def update(self, **kw):
         """!Update values specified by the keyword arguments
 
-        @warning The '__at' and '__label' keyword arguments are special internal 
-        keywords. They are used to strip out any internal steps from the 
+        @warning The '__at' and '__label' keyword arguments are special internal
+        keywords. They are used to strip out any internal steps from the
         history tracebacks of the config. Modifying these keywords allows users
         to lie about a Config's history. Please do not do so!
         """
         at = kw.pop("__at", traceback.extract_stack()[:-1])
         label = kw.pop("__label", "update")
 
-        for name, value in kw.iteritems():            
+        for name, value in kw.iteritems():
             try:
                 field = self._fields[name]
                 field.__set__(self, value, at=at, label=label)
@@ -620,7 +621,7 @@ class Config(object):
         """!Rename this Config object in its parent config
 
         @param[in] name  new name for this config in its parent config
-        
+
         Correct behavior is dependent on proper implementation of Field.rename. If implementing a new
         Field type, you may need to implement your own rename method.
         """
@@ -631,20 +632,20 @@ class Config(object):
     def validate(self):
         """!Validate the Config; raise an exception if invalid
 
-        The base class implementation performs type checks on all fields by 
-        calling Field.validate(). 
+        The base class implementation performs type checks on all fields by
+        calling Field.validate().
 
-        Complex single-field validation can be defined by deriving new Field 
-        types. As syntactic sugar, some derived Field types are defined in 
-        this module which handle recursing into sub-configs 
+        Complex single-field validation can be defined by deriving new Field
+        types. As syntactic sugar, some derived Field types are defined in
+        this module which handle recursing into sub-configs
         (ConfigField, ConfigChoiceField)
 
-        Inter-field relationships should only be checked in derived Config 
+        Inter-field relationships should only be checked in derived Config
         classes after calling this method, and base validation is complete
         """
         for field in self._fields.itervalues():
             field.validate(self)
-   
+
     def formatHistory(self, name, **kwargs):
         """!Format the specified config field's history to a more human-readable format
 
@@ -663,11 +664,11 @@ class Config(object):
     def __setattr__(self, attr, value, at=None, label="assignment"):
         """!Regulate which attributes can be set
 
-        Unlike normal python objects, Config objects are locked such 
+        Unlike normal python objects, Config objects are locked such
         that no additional attributes nor properties may be added to them
-        dynamically. 
+        dynamically.
 
-        Although this is not the standard Python behavior, it helps to 
+        Although this is not the standard Python behavior, it helps to
         protect users from accidentally mispelling a field name, or
         trying to set a non-existent field.
         """
@@ -693,7 +694,7 @@ class Config(object):
             self._fields[attr].__delete__(self, at=at, label=label)
         else:
             object.__delattr__(self, attr)
-            
+
     def __eq__(self, other):
         if type(other) == type(self):
             for name in self._fields:
@@ -706,7 +707,7 @@ class Config(object):
                     return False
             return True
         return False
-    
+
     def __ne__(self, other):
         return not self.__eq__(other)
 
@@ -715,7 +716,7 @@ class Config(object):
 
     def __repr__(self):
         return "%s(%s)" % (
-            _typeStr(self), 
+            _typeStr(self),
             ", ".join("%s=%r" % (k, v) for k, v in self.toDict().iteritems() if v is not None)
             )
 
