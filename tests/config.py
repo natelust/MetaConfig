@@ -22,6 +22,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 import io
+import itertools
 import re
 import os
 import unittest
@@ -128,6 +129,54 @@ class ConfigTest(unittest.TestCase):
         self.assertRaises(ValueError, self.comp.validate)
         self.comp.r="BBB"
         self.comp.validate()
+
+    def testRangeFieldConstructor(self):
+        """Test RangeField constructor's checking of min, max
+        """
+        val = 3
+        self.assertRaises(ValueError, pexConfig.RangeField, "", int, default=val, min=val, max=val-1)
+        self.assertRaises(ValueError, pexConfig.RangeField, "", float, default=val, min=val, max=val-1e-15)
+        for inclusiveMin, inclusiveMax in itertools.product((False, True), (False, True)):
+            if inclusiveMin and inclusiveMax:
+                # should not raise
+                class Cfg1(pexConfig.Config):
+                    r1 = pexConfig.RangeField(doc="", dtype=int,
+                        default=val, min=val, max=val, inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+                    r2 = pexConfig.RangeField(doc="", dtype=float,
+                        default=val, min=val, max=val, inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+                Cfg1()
+            else:
+                # raise while constructing the RangeField (hence cannot make it part of a Config)
+                self.assertRaises(ValueError, pexConfig.RangeField, doc="", dtype=int,
+                    default=val, min=val, max=val, inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+                self.assertRaises(ValueError, pexConfig.RangeField, doc="", dtype=float,
+                    default=val, min=val, max=val, inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+
+    def testRangeFieldDefault(self):
+        """Test RangeField's checking of the default value
+        """
+        minVal = 3
+        maxVal = 4
+        for val, inclusiveMin, inclusiveMax, shouldRaise in (
+            (minVal, False, True, True),
+            (minVal, True, True, False),
+            (maxVal, True, False, True),
+            (maxVal, True, True, False),
+        ):
+            class Cfg1(pexConfig.Config):
+                r = pexConfig.RangeField(doc="", dtype=int,
+                    default=val, min=minVal, max=maxVal,
+                    inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+            class Cfg2(pexConfig.Config):
+                r2 = pexConfig.RangeField(doc="", dtype=float,
+                    default=val, min=minVal, max=maxVal,
+                    inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+        if shouldRaise:
+            self.assertRaises(pexConfig.FieldValidationError, Cfg1)
+            self.assertRaises(pexConfig.FieldValidationError, Cfg2)
+        else:
+            Cfg1()
+            Cfg2()
 
     def testSave(self):
         self.comp.r="BBB"

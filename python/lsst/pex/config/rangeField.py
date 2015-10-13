@@ -45,8 +45,12 @@ class RangeField(Field):
         if min is None and max is None:
             raise ValueError("min and max cannot both be None")
 
-        if min is not None and max is not None and min > max:
-            swap(min, max)
+        if min is not None and max is not None:
+            if min > max:
+                raise ValueError("min = %s > %s = max" % (min, max))
+            elif min == max and not (inclusiveMin and inclusiveMax):
+                raise ValueError("min = max = %s and min and max not both inclusive" % (min,))
+
         self.min = min
         self.max = max
 
