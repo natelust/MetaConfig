@@ -391,6 +391,12 @@ except ImportError:
         self.assert_("Inequality in r['AAA']" in output)
         self.assert_("Inequality in r['BBB']" not in output)
 
+    def testLoadError(self):
+        """Check that loading allows errors in the file being loaded to propagate
+        """
+        self.assertRaises(SyntaxError, self.simple.loadFromStream, "bork bork bork")
+        self.assertRaises(NameError, self.simple.loadFromStream, "config.f = bork")
+
 def suite():
     utilsTests.init()
     suites = []

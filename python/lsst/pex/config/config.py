@@ -562,6 +562,8 @@ class Config(object):
                         " appears to use 'root' instead of 'config'; trying with 'root'")
                     local = {"root": self}
                     exec stream in {}, local
+                else:
+                    raise
 
         self._imports.update(importer.getModules())
 
