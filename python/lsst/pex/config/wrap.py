@@ -39,7 +39,7 @@ _dtypeMap = {
     "int": int,
     "double": float,
     "float": float,
-    "boost::int64_t": int,
+    "std::int64_t": int,
     "std::string": str
 }
 
@@ -120,7 +120,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     be present as base class fields or other instance attributes or descriptors.
 
     While LSST_CONTROL_FIELD will work for any C++ type, automatic Config generation
-    only supports bool, int, boost::int64_t, double, and std::string  fields, along
+    only supports bool, int, std::int64_t, double, and std::string  fields, along
     with std::list and std::vectors of those types.
     """
     if name is None:
