@@ -40,8 +40,9 @@ Various swigged-up C++ classes for testing
 %lsst_exceptions()
 
 %{
+#include <cstdint>
+
 #include "lsst/pex/config.h"
-#include "boost/cstdint.hpp"
 %}
 
 %include "lsst/pex/config.h"
@@ -52,9 +53,9 @@ Various swigged-up C++ classes for testing
 
     struct InnerControlObject {
         LSST_CONTROL_FIELD(p, double, "a double field");
-        LSST_CONTROL_FIELD(q, boost::int64_t, "a 64-bit integer field");
+        LSST_CONTROL_FIELD(q, std::int64_t, "a 64-bit integer field");
 
-        explicit InnerControlObject(double p_ = 2.0) : p(p_), q(boost::int64_t(1) << 33) {}
+        explicit InnerControlObject(double p_ = 2.0) : p(p_), q(std::int64_t(1) << 33) {}
     };
 
     struct OuterControlObject {
@@ -77,7 +78,7 @@ Various swigged-up C++ classes for testing
         return fooVal == ctrl.foo && barVal == ctrl.bar;
     }
 
-    bool checkNestedControl(OuterControlObject const & ctrl, double apVal, boost::int64_t aqVal, int bVal) {
+    bool checkNestedControl(OuterControlObject const & ctrl, double apVal, std::int64_t aqVal, int bVal) {
         return ctrl.a.p == apVal && ctrl.b == bVal && ctrl.a.q == aqVal;
     }
 
