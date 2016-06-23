@@ -32,6 +32,9 @@ class Config1(pexConfig.Config):
 class Config2(pexConfig.Config):
     d1 = pexConfig.ConfigDictField("d1", keytype=str, itemtype=Config1, itemCheck=lambda x: x.f > 0)
 
+class Config3(pexConfig.Config):
+    field1 = pexConfig.ConfigDictField(keytype=str, itemtype=pexConfig.Config, default={}, doc='doc')
+
 class ConfigDictFieldTest(unittest.TestCase):
     def testConstructor(self):
         try:
@@ -121,6 +124,27 @@ class ConfigDictFieldTest(unittest.TestCase):
     def testNoArbitraryAttributes(self):
         c= Config2(d1={})        
         self.assertRaises(pexConfig.FieldValidationError, setattr, c.d1, "should", "fail") 
+
+    def testEquality(self):
+        """Test ConfigDictField.__eq__
+
+        We create two configs, with the keys explicitly added in a different order
+        and test their equality.
+        """
+        keys1 = ['A', 'B', 'C']
+        keys2 = ['X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e']
+
+        c1 = Config3()
+        c1.field1 = {k: pexConfig.Config() for k in keys1}
+        for k in keys2:
+            c1.field1[k] = pexConfig.Config()
+
+        c2 = Config3()
+        for k in keys2 + keys1:
+            c2.field1[k] = pexConfig.Config()
+
+        self.assertTrue(pexConfig.compareConfigs('test', c1, c2))
+
 
 def  suite():
     utilsTests.init()

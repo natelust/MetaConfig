@@ -183,7 +183,7 @@ class ConfigDictField(DictField):
             _joinNamePath(instance1._name, self.name),
             _joinNamePath(instance2._name, self.name)
             )
-        if not compareScalars("keys for %s" % name, d1.keys(), d2.keys(), output=output):
+        if not compareScalars("keys for %s" % name, set(d1.keys()), set(d2.keys()), output=output):
             return False
         equal = True
         for k, v1 in d1.iteritems():

@@ -107,6 +107,26 @@ class DictFieldTest(unittest.TestCase):
         c= Config1()
         self.assertRaises(pexConfig.FieldValidationError, setattr, c.d1, "should", "fail")
 
+    def testEquality(self):
+        """Test DictField.__eq__
+
+        We create two dicts, with the keys explicitly added in a different order
+        and test their equality.
+        """
+        keys1 = ['A', 'B', 'C']
+        keys2 = ['X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e']
+
+        c1 = Config1()
+        c1.d4 = {k: "" for k in keys1}
+        for k in keys2:
+            c1.d4[k] = ""
+
+        c2 = Config1()
+        for k in keys2 + keys1:
+            c2.d4[k] = ""
+
+        self.assertTrue(pexConfig.compareConfigs('test', c1, c2))
+
 def  suite():
     utilsTests.init()
     suites = []
