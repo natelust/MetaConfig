@@ -228,7 +228,7 @@ class DictField(Field):
             return False
         if d1 is None and d2 is None:
             return True
-        if not compareScalars("keys for %s" % name, d1.keys(), d2.keys(), output=output):
+        if not compareScalars("keys for %s" % name, set(d1.keys()), set(d2.keys()), output=output):
             return False
         equal = True
         for k, v1 in d1.iteritems():
