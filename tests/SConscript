@@ -1,3 +1,4 @@
 # -*- python -*-
 from lsst.sconsUtils import scripts
-scripts.BasicSConscript.tests()
+scripts.BasicSConscript.pybind11(['testLib'])
+scripts.BasicSConscript.tests(noBuildList=['testLib.cc'])

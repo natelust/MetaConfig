@@ -60,6 +60,10 @@ class List(collections.MutableSequence):
             msg = "Item at position %d is not a valid value: %s" % (i, x)
             raise FieldValidationError(self._field, self._config, msg)
 
+    def list(self):
+        return self._list
+
+
     """
     Read-only history
     """

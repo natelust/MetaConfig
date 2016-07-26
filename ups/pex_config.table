@@ -3,6 +3,8 @@ setupRequired(pex_policy)
 setupRequired(numpy)
 setupRequired(utils)
 setupRequired(python_future)
+setupRequired(pybind11)
+setupRequired(python)
 
 envPrepend(LD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
 envPrepend(DYLD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
