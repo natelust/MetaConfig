@@ -20,6 +20,7 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+from __future__ import print_function
 import os
 import sys
 sys.path = [os.path.join(os.path.abspath(os.path.dirname(__file__)), "ticket2818")] + sys.path
@@ -39,7 +40,7 @@ config.test.retarget(AnotherConfigurable)
 """)
         stream = io.BytesIO()
         config.saveToStream(stream)
-        print stream.getvalue()
+        print(stream.getvalue())
         self.assertTrue("import ticket2818.another" in stream.getvalue())
 
 def suite():

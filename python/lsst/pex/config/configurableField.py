@@ -19,6 +19,8 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+from __future__ import print_function
+
 import traceback, copy
 
 from .config import Config, Field, _joinNamePath, _typeStr, FieldValidationError
@@ -85,7 +87,7 @@ class ConfigurableInstance(object):
         
         try:
             ConfigClass = self._field.validateTarget(target,ConfigClass)
-        except BaseException, e:
+        except BaseException as e:
             raise FieldValidationError(self._field, self._config, e.message)
        
         if at is None:
@@ -234,9 +236,9 @@ class ConfigurableField(Field):
             #save target information
             ConfigClass = value.ConfigClass
             for module in set([target.__module__, ConfigClass.__module__]):
-                print >> outfile, "import %s" % module
-            print >> outfile, "%s.retarget(target=%s, ConfigClass=%s)"%\
-                    (fullname, _typeStr(target), _typeStr(ConfigClass))
+                print("import %s" % module, file=outfile)
+            print("%s.retarget(target=%s, ConfigClass=%s)"%\
+                    (fullname, _typeStr(target), _typeStr(ConfigClass)), file=outfile)
         #save field values
         value._save(outfile)
 

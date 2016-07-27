@@ -19,6 +19,8 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+from __future__ import print_function
+
 import traceback
 
 from .config import Config, FieldValidationError, _typeStr, _joinNamePath
@@ -150,12 +152,12 @@ class ConfigDictField(DictField):
         configDict = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)
         if configDict is None:
-            print >>outfile, "%s=%r"%(fullname, configDict)
+            print("%s=%r"%(fullname, configDict), file=outfile)
             return
 
-        print >>outfile, "%s=%r"%(fullname, {})
+        print("%s=%r"%(fullname, {}), file=outfile)
         for v in configDict.itervalues():
-            print >>outfile, "%s=%s()"%(v._name, _typeStr(v))
+            print("%s=%s()"%(v._name, _typeStr(v)), file=outfile)
             v._save(outfile)
 
     def freeze(self, instance):

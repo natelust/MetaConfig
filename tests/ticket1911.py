@@ -21,6 +21,7 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+from __future__ import print_function
 import unittest
 import lsst.utils.tests as utilsTests
 import lsst.pex.config as pexConf
@@ -51,8 +52,8 @@ class SubConfigDefaultsTest(unittest.TestCase):
         c1 = Config1()
         self.assertEqual(c1.r1.name, "C1")
         self.assertEqual(list(c1.r2.names), ["C2"])
-        print c1.r1.target
-        print c1.r2.targets
+        print(c1.r1.target)
+        print(c1.r2.targets)
         c1.validate()
         c2 = Config2()
         self.assertEqual(Config2.c.default, Config1)

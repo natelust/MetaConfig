@@ -230,7 +230,7 @@ class ConfigTest(unittest.TestCase):
         
         #test multi-level inheritance
         c= CCC()
-        self.assertEqual(c.toDict().has_key("a"), True)
+        self.assertEqual("a" in c.toDict(), True)
         self.assertEqual(c._fields["a"].dtype, int)
         self.assertEqual(c.a, 4)
 
@@ -243,14 +243,14 @@ class ConfigTest(unittest.TestCase):
 
         e = EEE()
         self.assertEqual(e._fields["a"].dtype, float)
-        self.assertEqual(e.toDict().has_key("a"), True)
+        self.assertEqual("a" in e.toDict(), True)
         self.assertEqual(e.a, 0.0)
 
         class FFF(AAA, DDD):
             pass
         f = FFF()
         self.assertEqual(f._fields["a"].dtype, int)
-        self.assertEqual(f.toDict().has_key("a"), True)
+        self.assertEqual("a" in f.toDict(), True)
         self.assertEqual(f.a, 4)
 
         #test inheritance from non Config objects
@@ -260,7 +260,7 @@ class ConfigTest(unittest.TestCase):
             pass
         h = HHH()
         self.assertEqual(h._fields["a"].dtype, float)
-        self.assertEqual(h.toDict().has_key("a"), True)
+        self.assertEqual("a" in h.toDict(), True)
         self.assertEqual(h.a, 10.0)
 
         #test partial Field redefinition

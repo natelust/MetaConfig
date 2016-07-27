@@ -19,6 +19,7 @@
 # the GNU General Public License along with this program.  If not, 
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
+from __future__ import print_function
 
 import os
 import io
@@ -242,9 +243,9 @@ class Field(object):
         doc = "# " + str(self.doc).replace("\n", "\n# ")
         if isinstance(value, float) and (math.isinf(value) or math.isnan(value)):
             # non-finite numbers need special care
-            print >> outfile, "%s\n%s=float('%r')\n" % (doc, fullname, value)
+            print("%s\n%s=float('%r')\n" % (doc, fullname, value), file=outfile)
         else:
-            print >> outfile, "%s\n%s=%r\n" % (doc, fullname, value)
+            print("%s\n%s=%r\n" % (doc, fullname, value), file=outfile)
 
     def toDict(self, instance):
         """
@@ -310,7 +311,7 @@ class Field(object):
             value = _autocast(value, self.dtype)
             try:
                 self._validateValue(value)
-            except BaseException, e:
+            except BaseException as e:
                 raise FieldValidationError(self, instance, e.message)
 
         instance._storage[self.name] = value
@@ -549,7 +550,7 @@ class Config(object):
         with RecordingImporter() as importer:
             try:
                 local = {root: self}
-                exec stream in {}, local
+                exec(stream, {}, local)
             except NameError as e:
                 if root == "config" and "root" in e.args[0]:
                     if filename is None:
@@ -561,7 +562,7 @@ class Config(object):
                     sys.stderr.write("Config override file %r" % (filename,) + \
                         " appears to use 'root' instead of 'config'; trying with 'root'")
                     local = {"root": self}
-                    exec stream in {}, local
+                    exec(stream, {}, local)
                 else:
                     raise
 
@@ -589,9 +590,9 @@ class Config(object):
         try:
             configType = type(self)
             typeString = _typeStr(configType)
-            print >> outfile, "import %s" % (configType.__module__)
-            print >> outfile, "assert type(%s)==%s, 'config is of type %%s.%%s" % (root, typeString), \
-                "instead of %s' %% (type(%s).__module__, type(%s).__name__)" % (typeString, root, root)
+            print("import %s" % (configType.__module__), file=outfile)
+            print("assert type(%s)==%s, 'config is of type %%s.%%s" % (root, typeString), \
+                "instead of %s' %% (type(%s).__module__, type(%s).__name__)" % (typeString, root, root), file=outfile)
             self._save(outfile)
         finally:
             self._rename(tmp)
@@ -608,7 +609,7 @@ class Config(object):
         """
         for imp in self._imports:
             if imp in sys.modules and sys.modules[imp] is not None:
-                print >> outfile, "import %s" % imp
+                print("import %s" % imp, file=outfile)
         for field in self._fields.itervalues():
             field.save(outfile, self)
 

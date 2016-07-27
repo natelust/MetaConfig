@@ -19,6 +19,8 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+from __future__ import print_function
+
 import traceback, copy, collections
 
 from .config import Config, Field, FieldValidationError, _typeStr, _joinNamePath
@@ -378,9 +380,9 @@ class ConfigChoiceField(Field):
         for v in instanceDict.itervalues():
             v._save(outfile)
         if self.multi:
-            print >> outfile, "%s.names=%r"%(fullname, instanceDict.names)
+            print("%s.names=%r"%(fullname, instanceDict.names), file=outfile)
         else:
-            print >> outfile, "%s.name=%r"%(fullname, instanceDict.name)
+            print("%s.name=%r"%(fullname, instanceDict.name), file=outfile)
 
     def __deepcopy__(self, memo):
         """Customize deep-copying, because we always want a reference to the original typemap.

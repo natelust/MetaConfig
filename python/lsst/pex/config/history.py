@@ -19,6 +19,7 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+from __future__ import print_function
 
 import os
 import re
@@ -82,16 +83,16 @@ class Color(object):
             if isinstance(val, dict):
                 unknown = []
                 for k in val.keys():
-                    if Color.categories.has_key(k):
-                        if Color.colors.has_key(val[k]):
+                    if k in Color.categories:
+                        if val[k] in Color.colors:
                             Color.categories[k] = val[k]
                         else:
-                            print >> sys.stderr, "Unknown colour %s for category %s" % (val[k], k)
+                            print("Unknown colour %s for category %s" % (val[k], k), file=sys.stderr)
                     else:
                         unknown.append(k)
 
                 if unknown:
-                    print >> sys.stderr, "Unknown colourizing category: %s" % " ".join(unknown)
+                    print("Unknown colourizing category: %s" % " ".join(unknown), file=sys.stderr)
 
         return Color._colorize
 
@@ -130,8 +131,8 @@ def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
     if name is None:
         for i, name in enumerate(config.history.keys()):
             if i > 0:
-                print
-            print format(config, name)
+                print()
+            print(format(config, name))
 
     outputs = []
     for value, tb, label in config.history[name]:
