@@ -156,7 +156,7 @@ class ConfigDictField(DictField):
             return
 
         print("%s=%r"%(fullname, {}), file=outfile)
-        for v in configDict.itervalues():
+        for v in configDict.values():
             print("%s=%s()"%(v._name, _typeStr(v)), file=outfile)
             v._save(outfile)
 
@@ -188,7 +188,7 @@ class ConfigDictField(DictField):
         if not compareScalars("keys for %s" % name, set(d1.keys()), set(d2.keys()), output=output):
             return False
         equal = True
-        for k, v1 in d1.iteritems():
+        for k, v1 in d1.items():
             v2 = d2[k]
             result = compareConfigs("%s[%r]" % (name, k), v1, v2, shortcut=shortcut,
                                     rtol=rtol, atol=atol, output=output)

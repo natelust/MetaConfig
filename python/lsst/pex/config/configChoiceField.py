@@ -20,6 +20,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 from __future__ import print_function
+from builtins import str
 
 import traceback, copy, collections
 
@@ -240,7 +241,7 @@ class ConfigInstanceDict(collections.Mapping):
             oldValue.update(__at=at, __label=label, **value._storage)
 
     def _rename(self, fullname):
-        for k, v in self._dict.iteritems():
+        for k, v in self._dict.items():
             v._rename(_joinNamePath(name=fullname, index=k))
 
     def __setattr__(self, attr, value, at=None, label="assignment"):
@@ -329,7 +330,7 @@ class ConfigChoiceField(Field):
             at = traceback.extract_stack()[:-1]
         instanceDict = self._getOrMake(instance)
         if isinstance(value, self.instanceDictClass):
-            for k,v  in value.iteritems():
+            for k,v  in value.items():
                 instanceDict.__setitem__(k, v, at=at, label=label)
             instanceDict._setSelection(value._selection, at=at, label=label)
 
@@ -363,7 +364,7 @@ class ConfigChoiceField(Field):
             dict_["name"] =instanceDict.name
 
         values = {}
-        for k, v in instanceDict.iteritems():
+        for k, v in instanceDict.items():
             values[k]=v.toDict()
         dict_["values"]=values
 
@@ -371,13 +372,13 @@ class ConfigChoiceField(Field):
 
     def freeze(self, instance):
         instanceDict = self.__get__(instance)
-        for v in instanceDict.itervalues():
+        for v in instanceDict.values():
             v.freeze()
 
     def save(self, outfile, instance):
         instanceDict = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)
-        for v in instanceDict.itervalues():
+        for v in instanceDict.values():
             v._save(outfile)
         if self.multi:
             print("%s.names=%r"%(fullname, instanceDict.names), file=outfile)

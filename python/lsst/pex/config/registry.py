@@ -19,6 +19,8 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+from builtins import object
+
 import collections
 import copy
 
@@ -155,7 +157,7 @@ class RegistryInstanceDict(ConfigInstanceDict):
         """
         if self.active is None:
             msg = "No selection has been made.  Options: %s" % \
-                    (" ".join(self._field.typemap.registry.keys()))
+                    (" ".join(list(self._field.typemap.registry.keys())))
             raise FieldValidationError(self._field, self._config, msg)
         if self._field.multi:
             retvals = []

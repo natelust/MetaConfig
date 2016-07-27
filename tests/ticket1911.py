@@ -22,6 +22,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 from __future__ import print_function
+from builtins import object
 import unittest
 import lsst.utils.tests as utilsTests
 import lsst.pex.config as pexConf

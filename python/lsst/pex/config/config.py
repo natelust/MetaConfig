@@ -20,6 +20,9 @@
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
 from __future__ import print_function
+from builtins import str
+from builtins import object
+from past.builtins import long
 
 import os
 import io
@@ -30,6 +33,7 @@ import copy
 import tempfile
 
 from .comparison import getComparisonName, compareScalars, compareConfigs
+from future.utils import with_metaclass
 
 __all__ = ("Config", "Field", "FieldValidationError")
 
@@ -95,13 +99,13 @@ class ConfigMeta(type):
             for b in bases:
                 fields.update(getFields(b))
 
-            for k, v in classtype.__dict__.iteritems():
+            for k, v in classtype.__dict__.items():
                 if isinstance(v, Field):
                     fields[k] = v
             return fields
 
         fields = getFields(self)
-        for k, v in fields.iteritems():
+        for k, v in fields.items():
             setattr(self, k, copy.deepcopy(v))
 
     def __setattr__(self, name, value):
@@ -393,7 +397,7 @@ class RecordingImporter(object):
         """Return the set of modules that were imported."""
         return self._modules
 
-class Config(object):
+class Config(with_metaclass(ConfigMeta, object)):
     """Base class for control objects.
 
     A Config object will usually have several Field instances as class
@@ -404,8 +408,6 @@ class Config(object):
     Config also emulates a dict of field name: field value
     """
 
-    __metaclass__ = ConfigMeta
-
     def __iter__(self):
         """!Iterate over fields
         """
@@ -414,30 +416,30 @@ class Config(object):
     def keys(self):
         """!Return the list of field names
         """
-        return self._storage.keys()
+        return list(self._storage.keys())
     def values(self):
         """!Return the list of field values
         """
-        return self._storage.values()
+        return list(self._storage.values())
     def items(self):
         """!Return the list of (field name, field value) pairs
         """
-        return self._storage.items()
+        return list(self._storage.items())
 
     def iteritems(self):
         """!Iterate over (field name, field value) pairs
         """
-        return self._storage.iteritems()
+        return iter(self._storage.items())
 
     def itervalues(self):
         """!Iterate over field values
         """
-        return self.storage.itervalues()
+        return iter(self.storage.values())
 
     def iterkeys(self):
         """!Iterate over field names
         """
-        return self.storage.iterkeys()
+        return iter(self.storage.keys())
 
     def __contains__(self, name):
         """!Return True if the specified field exists in this config
@@ -469,7 +471,7 @@ class Config(object):
         instance._history = {}
         instance._imports = set()
         # load up defaults
-        for field in instance._fields.itervalues():
+        for field in instance._fields.values():
             instance._history[field.name]=[]
             field.__set__(instance, field.default, at=at+[field.source], label="default")
         # set custom default-overides
@@ -508,7 +510,7 @@ class Config(object):
         at = kw.pop("__at", traceback.extract_stack()[:-1])
         label = kw.pop("__label", "update")
 
-        for name, value in kw.iteritems():
+        for name, value in kw.items():
             try:
                 field = self._fields[name]
                 field.__set__(self, value, at=at, label=label)
@@ -601,7 +603,7 @@ class Config(object):
         """!Make this Config and all sub-configs read-only
         """
         self._frozen=True
-        for field in self._fields.itervalues():
+        for field in self._fields.values():
             field.freeze(self)
 
     def _save(self, outfile):
@@ -610,7 +612,7 @@ class Config(object):
         for imp in self._imports:
             if imp in sys.modules and sys.modules[imp] is not None:
                 print("import %s" % imp, file=outfile)
-        for field in self._fields.itervalues():
+        for field in self._fields.values():
             field.save(outfile, self)
 
     def toDict(self):
@@ -620,7 +622,7 @@ class Config(object):
         Field type, you may need to implement your own toDict method.
         """
         dict_ = {}
-        for name, field in self._fields.iteritems():
+        for name, field in self._fields.items():
             dict_[name] = field.toDict(self)
         return dict_
 
@@ -633,7 +635,7 @@ class Config(object):
         Field type, you may need to implement your own rename method.
         """
         self._name = name
-        for field in self._fields.itervalues():
+        for field in self._fields.values():
             field.rename(self)
 
     def validate(self):
@@ -650,7 +652,7 @@ class Config(object):
         Inter-field relationships should only be checked in derived Config
         classes after calling this method, and base validation is complete
         """
-        for field in self._fields.itervalues():
+        for field in self._fields.values():
             field.validate(self)
 
     def formatHistory(self, name, **kwargs):
@@ -724,7 +726,7 @@ class Config(object):
     def __repr__(self):
         return "%s(%s)" % (
             _typeStr(self),
-            ", ".join("%s=%r" % (k, v) for k, v in self.toDict().iteritems() if v is not None)
+            ", ".join("%s=%r" % (k, v) for k, v in self.toDict().items() if v is not None)
             )
 
     def compare(self, other, shortcut=True, rtol=1E-8, atol=1E-8, output=None):

@@ -19,6 +19,8 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+from builtins import str
+
 import traceback
 import collections
 
@@ -231,7 +233,7 @@ class DictField(Field):
         if not compareScalars("keys for %s" % name, set(d1.keys()), set(d2.keys()), output=output):
             return False
         equal = True
-        for k, v1 in d1.iteritems():
+        for k, v1 in d1.items():
             v2 = d2[k]
             result = compareScalars("%s[%r]" % (name, k), v1, v2, dtype=self.itemtype,
                                     rtol=rtol, atol=atol, output=output)

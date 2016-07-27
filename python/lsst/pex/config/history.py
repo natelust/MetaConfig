@@ -20,6 +20,8 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 from __future__ import print_function
+from builtins import str
+from builtins import object
 
 import os
 import re
@@ -82,7 +84,7 @@ class Color(object):
 
             if isinstance(val, dict):
                 unknown = []
-                for k in val.keys():
+                for k in val:
                     if k in Color.categories:
                         if val[k] in Color.colors:
                             Color.categories[k] = val[k]

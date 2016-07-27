@@ -96,7 +96,7 @@ def compareConfigs(name, c1, c2, shortcut=True, rtol=1E-8, atol=1E-8, output=Non
             output("Config types do not match for %s: %s != %s" % (name, type(c1), type(c2)))
         return False
     equal = True
-    for field in c1._fields.itervalues():
+    for field in c1._fields.values():
         result = field._compare(c1, c2, shortcut=shortcut, rtol=rtol, atol=atol, output=output)
         if not result and shortcut:
             return False

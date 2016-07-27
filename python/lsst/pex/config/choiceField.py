@@ -19,6 +19,7 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+from builtins import str
 import traceback
 
 from .config import Field, _typeStr
@@ -41,7 +42,7 @@ class ChoiceField(Field):
             raise ValueError("ChoiceFields must allow at least one choice")
         
         doc += "\nAllowed values:\n"
-        for choice, choiceDoc in self.allowed.iteritems():
+        for choice, choiceDoc in self.allowed.items():
             if choice is not None and not isinstance(choice, dtype):
                 raise ValueError("ChoiceField's allowed choice %s is of incorrect type %s. Expected %s"%\
                         (choice, _typeStr(choice), _typeStr(dtype)))
@@ -55,5 +56,5 @@ class ChoiceField(Field):
         Field._validateValue(self, value)
         if value not in self.allowed:
             msg = "Value {} is not allowed.\n\tAllowed values: [{}]".format(
-                      value, ", ".join(str(key) for key in self.allowed.keys()))
+                      value, ", ".join(str(key) for key in self.allowed))
             raise ValueError(msg)

@@ -19,6 +19,7 @@
 # the GNU General Public License along with this program.  If not, 
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+from past.builtins import basestring
 
 import inspect
 import re
@@ -191,7 +192,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
         Control object's default constructor.
         """
         r = self.Control()
-        for k, f in fields.iteritems():
+        for k, f in fields.items():
             value = getattr(self, k)
             if isinstance(f, ConfigField):
                 value = value.makeControl()
@@ -206,7 +207,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
         """
         if __at is None: __at = traceback.extract_stack()[:-1]
         values = {}
-        for k, f in fields.iteritems():
+        for k, f in fields.items():
             if isinstance(f, ConfigField):
                 getattr(self, k).readControl(getattr(control, k),
                                              __at=__at, __label=__label, __reset=__reset)
@@ -240,7 +241,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     cls.setDefaults = setDefaults
     if hasattr(ctrl, "validate"):
         cls.validate = validate
-    for k, field in fields.iteritems():
+    for k, field in fields.items():
         if not hasattr(cls, k):
             setattr(cls, k, field)
     return cls
