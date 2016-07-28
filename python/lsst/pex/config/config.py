@@ -247,9 +247,9 @@ class Field(object):
         doc = "# " + str(self.doc).replace("\n", "\n# ")
         if isinstance(value, float) and (math.isinf(value) or math.isnan(value)):
             # non-finite numbers need special care
-            print("%s\n%s=float('%r')\n" % (doc, fullname, value), file=outfile)
+            outfile.write("{}\n{}=float('{!r}')\n\n".format(doc, fullname, value).encode())
         else:
-            print("%s\n%s=%r\n" % (doc, fullname, value), file=outfile)
+            outfile.write("{}\n{}={!r}\n\n".format(doc, fullname, value).encode())
 
     def toDict(self, instance):
         """
@@ -592,9 +592,12 @@ class Config(with_metaclass(ConfigMeta, object)):
         try:
             configType = type(self)
             typeString = _typeStr(configType)
-            print("import %s" % (configType.__module__), file=outfile)
-            print("assert type(%s)==%s, 'config is of type %%s.%%s" % (root, typeString), \
-                "instead of %s' %% (type(%s).__module__, type(%s).__name__)" % (typeString, root, root), file=outfile)
+            # Printing to a BytesIO stream does not seem to be portable so we use write()
+            outfile.write("import {}\n".format(configType.__module__).encode())
+            outfile.write("assert type({})=={}, 'config is of type %s.%s ".format(root, typeString).encode())
+            outfile.write("instead of {}' % (type({}).__module__, type({}).__name__)\n".format(typeString,
+                                                                                               root,
+                                                                                               root).encode())
             self._save(outfile)
         finally:
             self._rename(tmp)
@@ -611,7 +614,7 @@ class Config(with_metaclass(ConfigMeta, object)):
         """
         for imp in self._imports:
             if imp in sys.modules and sys.modules[imp] is not None:
-                print("import %s" % imp, file=outfile)
+                outfile.write("import {}\n".format(imp).encode())
         for field in self._fields.values():
             field.save(outfile, self)
 

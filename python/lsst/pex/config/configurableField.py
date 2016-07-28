@@ -238,9 +238,10 @@ class ConfigurableField(Field):
             #save target information
             ConfigClass = value.ConfigClass
             for module in set([target.__module__, ConfigClass.__module__]):
-                print("import %s" % module, file=outfile)
-            print("%s.retarget(target=%s, ConfigClass=%s)"%\
-                    (fullname, _typeStr(target), _typeStr(ConfigClass)), file=outfile)
+                outfile.write("import {}\n".format(module).encode())
+            outfile.write("{}.retarget(target={}, ConfigClass={})".format(fullname,
+                                                                          _typeStr(target),
+                                                                          _typeStr(ConfigClass)).encode())
         #save field values
         value._save(outfile)
 

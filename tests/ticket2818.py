@@ -40,8 +40,9 @@ config.test.retarget(AnotherConfigurable)
 """)
         stream = io.BytesIO()
         config.saveToStream(stream)
-        print(stream.getvalue())
-        self.assertTrue("import ticket2818.another" in stream.getvalue())
+        values = stream.getvalue().decode()
+        print(values)
+        self.assertTrue("import ticket2818.another" in values)
 
 def suite():
     utilsTests.init()

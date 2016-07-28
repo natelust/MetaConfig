@@ -195,7 +195,7 @@ class ConfigTest(unittest.TestCase):
 
         del roundTrip
         #test saving to an open file
-        outfile = open("roundtrip.test", "w")
+        outfile = open("roundtrip.test", "wb")
         self.comp.saveToStream(outfile)
         outfile.close()
 
@@ -207,7 +207,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
 
         # test backwards compatibility feature of allowing "root" instead of "config"
-        outfile = open("roundtrip.test", "w")
+        outfile = open("roundtrip.test", "wb")
         self.comp.saveToStream(outfile, root="root")
         outfile.close()
 
@@ -307,7 +307,7 @@ class ConfigTest(unittest.TestCase):
 
         # Generate a Config through loading
         stream = io.BytesIO()
-        stream.write(importStatement)
+        stream.write(importStatement.encode())
         self.comp.saveToStream(stream)
         roundtrip = Complex()
         roundtrip.loadFromStream(stream.getvalue())
@@ -317,10 +317,11 @@ class ConfigTest(unittest.TestCase):
         stream = io.BytesIO()
         roundtrip.saveToStream(stream)
         self.assertEqual(self.comp.c.f, roundtrip.c.f)
+        streamStr = stream.getvalue().decode()
         if shouldBeThere:
-            self.assertTrue(re.search(searchString, stream.getvalue()))
+            self.assertTrue(re.search(searchString, streamStr))
         else:
-            self.assertFalse(re.search(searchString, stream.getvalue()))
+            self.assertFalse(re.search(searchString, streamStr))
 
 
     def testImports(self):

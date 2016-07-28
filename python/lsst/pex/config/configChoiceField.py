@@ -381,9 +381,9 @@ class ConfigChoiceField(Field):
         for v in instanceDict.values():
             v._save(outfile)
         if self.multi:
-            print("%s.names=%r"%(fullname, instanceDict.names), file=outfile)
+            outfile.write("{}.names={!r}\n".format(fullname, instanceDict.names).encode())
         else:
-            print("%s.name=%r"%(fullname, instanceDict.name), file=outfile)
+            outfile.write("{}.name={!r}\n".format(fullname, instanceDict.name).encode())
 
     def __deepcopy__(self, memo):
         """Customize deep-copying, because we always want a reference to the original typemap.

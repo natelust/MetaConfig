@@ -152,12 +152,12 @@ class ConfigDictField(DictField):
         configDict = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)
         if configDict is None:
-            print("%s=%r"%(fullname, configDict), file=outfile)
+            outfile.write("{}={!r}\n".format(fullname, configDict).encode())
             return
 
-        print("%s=%r"%(fullname, {}), file=outfile)
+        outfile.write("{}={!r}\n".format(fullname, {}).encode())
         for v in configDict.values():
-            print("%s=%s()"%(v._name, _typeStr(v)), file=outfile)
+            outfile.write("{}={}()\n".format(v._name, _typeStr(v)).encode())
             v._save(outfile)
 
     def freeze(self, instance):
