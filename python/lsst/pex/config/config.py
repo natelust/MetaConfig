@@ -316,7 +316,7 @@ class Field(object):
             try:
                 self._validateValue(value)
             except BaseException as e:
-                raise FieldValidationError(self, instance, e.message)
+                raise FieldValidationError(self, instance, str(e))
 
         instance._storage[self.name] = value
         if at is None:
