@@ -1,7 +1,7 @@
-# 
+#
 # LSST Data Management System
 # Copyright 2008, 2009, 2010 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -9,14 +9,14 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 from builtins import str
@@ -57,7 +57,7 @@ class Dict(collections.MutableMapping):
     """
     Read-only history
     """
-    history = property(lambda x: x._history)   
+    history = property(lambda x: x._history)
 
     def __getitem__(self, k): return self._dict[k]
 
@@ -78,7 +78,7 @@ class Dict(collections.MutableMapping):
         if type(k) != self._field.keytype:
             msg = "Key %r is of type %s, expected type %s"%\
                     (k, _typeStr(k), _typeStr(self._field.keytype))
-            raise FieldValidationError(self._field, self._config, msg)   
+            raise FieldValidationError(self._field, self._config, msg)
 
         #validate itemtype
         x = _autocast(x, self._field.itemtype)
@@ -99,16 +99,16 @@ class Dict(collections.MutableMapping):
 
         if at is None:
             at = traceback.extract_stack()[:-1]
-            
+
         self._dict[k]=x
         if setHistory:
             self._history.append((dict(self._dict), at, label))
 
     def __delitem__(self, k, at=None, label="delitem", setHistory=True):
         if self._config._frozen:
-            raise FieldValidationError(self._field, self._config, 
+            raise FieldValidationError(self._field, self._config,
                     "Cannot modify a frozen Config")
-        
+
         del self._dict[k]
         if setHistory:
             if at is None:
@@ -129,7 +129,7 @@ class Dict(collections.MutableMapping):
         else:
             # We throw everything else.
             msg = "%s has no attribute %s"%(_typeStr(self._field), attr)
-            raise FieldValidationError(self._field, self._config, msg) 
+            raise FieldValidationError(self._field, self._config, msg)
 
 
 class DictField(Field):
@@ -138,7 +138,7 @@ class DictField(Field):
 
     Both key and item types are restricted to builtin POD types:
         (int, float, complex, bool, str)
-    
+
     Users can provide two check functions:
         dictCheck: used to validate the dict as a whole, and
         itemCheck: used to validate each item individually
@@ -147,15 +147,15 @@ class DictField(Field):
 
     class MyConfig(Config):
         field = DictField(
-                doc="example string-to-int mapping field", 
-                keytype=str, itemtype=int, 
+                doc="example string-to-int mapping field",
+                keytype=str, itemtype=int,
                 default= {})
     """
     DictClass = Dict
 
     def __init__(self, doc, keytype, itemtype, default=None, optional=False, dictCheck=None, itemCheck=None):
         source = traceback.extract_stack(limit=2)[0]
-        self._setup( doc=doc, dtype=Dict, default=default, check=None, 
+        self._setup( doc=doc, dtype=Dict, default=default, check=None,
                 optional=optional, source=source)
         if keytype not in self.supportedTypes:
             raise ValueError("'keytype' %s is not a supported type"%\
@@ -172,7 +172,7 @@ class DictField(Field):
         self.itemtype = itemtype
         self.dictCheck = dictCheck
         self.itemCheck = itemCheck
-   
+
     def validate(self, instance):
         """
         DictField validation ensures that non-optional fields are not None,
@@ -185,7 +185,7 @@ class DictField(Field):
                 and not self.dictCheck(value):
             msg = "%s is not a valid value"%str(value)
             raise FieldValidationError(self, instance, msg)
-            
+
 
     def __set__(self, instance, value, at=None, label="assignment"):
         if instance._frozen:
@@ -202,9 +202,9 @@ class DictField(Field):
             history.append((value, at, label))
 
         instance._storage[self.name] = value
-    
-    def toDict(self, instance):        
-        value = self.__get__(instance)        
+
+    def toDict(self, instance):
+        value = self.__get__(instance)
         return dict(value) if value is not None else None
 
     def _compare(self, instance1, instance2, shortcut, rtol, atol, output):

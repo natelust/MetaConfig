@@ -1,7 +1,7 @@
-# 
+#
 # LSST Data Management System
 # Copyright 2008, 2009, 2010 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -9,14 +9,14 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 from __future__ import print_function
@@ -34,7 +34,7 @@ class ConfigurableInstance(object):
         if field.default is an instance of ConfigClass, custom construct
         _value with the correct values from default.
         otherwise call ConfigClass constructor
-        """    
+        """
         name=_joinNamePath(self._config._name, self._field.name)
         if type(self._field.default)==self.ConfigClass:
             storage = self._field.default._storage
@@ -50,7 +50,7 @@ class ConfigurableInstance(object):
         object.__setattr__(self, "_target", field.target)
         object.__setattr__(self, "_ConfigClass",field.ConfigClass)
         object.__setattr__(self, "_value", None)
- 
+
         if at is None:
             at = traceback.extract_stack()[:-1]
         at += [self._field.source]
@@ -73,25 +73,25 @@ class ConfigurableInstance(object):
     """
     value = property(lambda x: x._value)
 
-    def apply(self, *args, **kw):       
+    def apply(self, *args, **kw):
         """
         Call the confirurable.
         With argument config=self.value along with any positional and kw args
         """
         return self.target(*args, config=self.value, **kw)
-    
+
     """
     Target a new configurable and ConfigClass
     """
     def retarget(self, target, ConfigClass=None, at=None, label="retarget"):
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
-        
+
         try:
             ConfigClass = self._field.validateTarget(target,ConfigClass)
         except BaseException as e:
             raise FieldValidationError(self._field, self._config, e.message)
-       
+
         if at is None:
             at = traceback.extract_stack()[:-1]
         object.__setattr__(self, "_target", target)
@@ -100,7 +100,7 @@ class ConfigurableInstance(object):
             self.__initValue(at, label)
 
         history = self._config._history.setdefault(self._field.name, [])
-        msg = "retarget(target=%s, ConfigClass=%s)"%(_typeStr(target), _typeStr(ConfigClass))        
+        msg = "retarget(target=%s, ConfigClass=%s)"%(_typeStr(target), _typeStr(ConfigClass))
         history.append((msg, at, label))
 
     def __getattr__(self, name):
@@ -109,14 +109,14 @@ class ConfigurableInstance(object):
 
     def __setattr__(self, name, value, at=None, label="assignment"):
         """
-        Pretend to be an isntance of  ConfigClass. 
+        Pretend to be an isntance of  ConfigClass.
         Attributes defined by ConfigurableInstance will shadow those defined in ConfigClass
         """
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
-        
-        if name in self.__dict__: 
-            #attribute exists in the ConfigurableInstance wrapper 
+
+        if name in self.__dict__:
+            #attribute exists in the ConfigurableInstance wrapper
             object.__setattr__(self, name, value)
         else:
             if at is None:
@@ -125,14 +125,14 @@ class ConfigurableInstance(object):
 
     def __delattr__(self, name, at=None, label="delete"):
         """
-        Pretend to be an isntance of  ConfigClass. 
+        Pretend to be an isntance of  ConfigClass.
         Attributes defiend by ConfigurableInstance will shadow those defined in ConfigClass
         """
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
-        
+
         try:
-            #attribute exists in the ConfigurableInstance wrapper 
+            #attribute exists in the ConfigurableInstance wrapper
             object.__delattr__(self, name)
         except AttributeError:
             if at is None:
@@ -175,8 +175,8 @@ class ConfigurableField(Field):
                 If not provided by target.ConfigClass it must be provided explicitly in this argument
         """
         ConfigClass = self.validateTarget(target, ConfigClass)
-        
-        if default is None: 
+
+        if default is None:
             default=ConfigClass
         if default != ConfigClass and type(default) != ConfigClass:
             raise TypeError("'default' is of incorrect type %s. Expected %s"%\
@@ -206,7 +206,7 @@ class ConfigurableField(Field):
     def __set__(self, instance, value, at=None, label="assignment"):
         if instance._frozen:
             raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
-        if at is None: 
+        if at is None:
             at = traceback.extract_stack()[:-1]
         oldValue = self.__getOrMake(instance, at=at)
 
@@ -222,19 +222,19 @@ class ConfigurableField(Field):
             msg = "Value %s is of incorrect type %s. Expected %s" %\
                     (value, _typeStr(value), _typeStr(oldValue.ConfigClass))
             raise FieldValidationError(self, instance, msg)
-    
+
     def rename(self, instance):
         fullname = _joinNamePath(instance._name, self.name)
         value = self.__getOrMake(instance)
         value._rename(fullname)
-        
-    def save(self, outfile, instance):        
+
+    def save(self, outfile, instance):
         fullname = _joinNamePath(instance._name, self.name)
         value = self.__getOrMake(instance)
         target= value.target
 
         if target != self.target:
-            #not targeting the field-default target. 
+            #not targeting the field-default target.
             #save target information
             ConfigClass = value.ConfigClass
             for module in set([target.__module__, ConfigClass.__module__]):
@@ -252,7 +252,7 @@ class ConfigurableField(Field):
     def toDict(self, instance):
         value = self.__get__(instance)
         return value.toDict()
-    
+
     def validate(self, instance):
         value = self.__get__(instance)
         value.validate()
@@ -266,7 +266,7 @@ class ConfigurableField(Field):
 
         WARNING: this must be overridden by subclasses if they change the constructor signature!
         """
-        return type(self)(doc=self.doc, target=self.target, ConfigClass=self.ConfigClass, 
+        return type(self)(doc=self.doc, target=self.target, ConfigClass=self.ConfigClass,
                 default=copy.deepcopy(self.default))
 
     def _compare(self, instance1, instance2, shortcut, rtol, atol, output):

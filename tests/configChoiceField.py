@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-# 
+#
 # LSST Data Management System
 # Copyright 2008, 2009, 2010 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -11,14 +11,14 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 import os
@@ -31,7 +31,7 @@ class Config1(pexConfig.Config):
 
     def validate(self):
         pexConfig.Config.validate(self)
-        if self.f <= 0: 
+        if self.f <= 0:
             raise pexConfig.FieldValidationError(Config1.f, self, "f should be > 0")
 
 class Config2(pexConfig.Config):
@@ -40,19 +40,19 @@ class Config2(pexConfig.Config):
 TYPEMAP={"AAA":Config1, "BBB":Config2, "CCC":Config1}
 class Config3(pexConfig.Config):
     a= pexConfig.ConfigChoiceField(
-            doc="single non-optional", 
+            doc="single non-optional",
             typemap=TYPEMAP,
             default = "AAA", multi=False, optional=False)
     b= pexConfig.ConfigChoiceField(
-            doc="single optional", 
+            doc="single optional",
             typemap=TYPEMAP,
             default = "AAA", multi=False, optional=True)
     c= pexConfig.ConfigChoiceField(
-            doc="multi non-optional", 
+            doc="multi non-optional",
             typemap=TYPEMAP,
             default = ["AAA"], multi=True, optional=False)
     d= pexConfig.ConfigChoiceField(
-            doc="multi optional", 
+            doc="multi optional",
             typemap=TYPEMAP,
             default = ["AAA"], multi=True, optional=True)
 
@@ -118,7 +118,7 @@ class ConfigChoiceFieldTest(unittest.TestCase):
 
         #test bad assignment
         self.assertRaises(
-                pexConfig.FieldValidationError, 
+                pexConfig.FieldValidationError,
                 setattr, self.config.c, "names", "AAA")
         self.config.c.names=["AAA"]
 

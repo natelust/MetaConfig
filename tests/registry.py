@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-# 
+#
 # LSST Data Management System
 # Copyright 2008, 2009, 2010 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -11,14 +11,14 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 from builtins import object
@@ -33,13 +33,13 @@ class ConfigTest(unittest.TestCase):
         """
         class ParentConfig(pexConfig.Config):
             pass
-        
+
         self.registry = pexConfig.makeRegistry(doc="unit test configs", configBaseType=ParentConfig)
-        
+
         class FooConfig1(ParentConfig):
             pass
         self.fooConfig1Class = FooConfig1
-        
+
         class FooConfig2(ParentConfig):
             pass
         self.fooConfig2Class = FooConfig2
@@ -47,11 +47,11 @@ class ConfigTest(unittest.TestCase):
         class Config1(pexConfig.Config):
             pass
         self.config1Class = Config1
-        
+
         class Config2(pexConfig.Config):
             pass
         self.config2Class = Config2
-        
+
         @pexConfig.registerConfigurable("foo1", self.registry)
         class FooAlg1(object):
             ConfigClass = FooConfig1
@@ -60,7 +60,7 @@ class ConfigTest(unittest.TestCase):
             def foo(self):
                 pass
         self.fooAlg1Class = FooAlg1
-        
+
         class FooAlg2(object):
             ConfigClass = FooConfig2
             def __init__(self, config):
@@ -69,17 +69,17 @@ class ConfigTest(unittest.TestCase):
                 pass
         self.registry.register("foo2", FooAlg2, FooConfig2)
         self.fooAlg2Class = FooAlg2
-        
+
         # override Foo2 with FooConfig1
         self.registry.register("foo21", FooAlg2, FooConfig1)
-    
+
     def tearDown(self):
         del self.registry
         del self.fooConfig1Class
         del self.fooConfig2Class
         del self.fooAlg1Class
         del self.fooAlg2Class
-        
+
     def testBasics(self):
         self.assertEqual(self.registry["foo1"], self.fooAlg1Class)
         self.assertEqual(self.registry["foo2"].ConfigClass, self.fooConfig2Class)
@@ -91,7 +91,7 @@ class ConfigTest(unittest.TestCase):
         wrapper21 = self.registry["foo21"]
         foo21 = wrapper21(wrapper21.ConfigClass())
         self.assertTrue(isinstance(foo21, self.fooAlg2Class))
-        
+
     def testReplace(self):
         """Test replacement in registry (should always fail)
         """

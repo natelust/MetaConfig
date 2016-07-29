@@ -1,7 +1,7 @@
-# 
+#
 # LSST Data Management System
 # Copyright 2008, 2009, 2010 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -9,14 +9,14 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 from __future__ import print_function
@@ -170,14 +170,14 @@ def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
     # actually generate the config history
     #
     msg = []
-    fullname = "%s.%s" %(config._name, name) if config._name is not None else name 
+    fullname = "%s.%s" %(config._name, name) if config._name is not None else name
     msg.append(_colorize(re.sub(r"^root\.", "", fullname), "NAME"))
     for value, output in outputs:
         line = prefix + _colorize("%-*s" % (valueLength, value), "VALUE") + " "
         for i, vt in enumerate(output):
             if writeSourceLine:
                 vt[0][0] = "%-*s" % (sourceLength, vt[0][0])
-            
+
             output[i] = " ".join([_colorize(v, t) for v, t in vt])
 
         line += ("\n%*s" % (valueLength + 1, "")).join(output)

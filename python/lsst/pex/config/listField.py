@@ -1,7 +1,7 @@
-# 
+#
 # LSST Data Management System
 # Copyright 2008, 2009, 2010 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -9,14 +9,14 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 from builtins import zip
@@ -54,7 +54,7 @@ class List(collections.MutableSequence):
             msg="Item at position %d with value %s is of incorrect type %s. Expected %s"%\
                     (i, x, _typeStr(x), _typeStr(self._field.itemtype))
             raise FieldValidationError(self._field, self._config, msg)
-                
+
         if self._field.itemCheck is not None and not self._field.itemCheck(x):
             msg="Item at position %d is not a valid value: %s"%(i, x)
             raise FieldValidationError(self._field, self._config, msg)
@@ -63,7 +63,7 @@ class List(collections.MutableSequence):
     """
     Read-only history
     """
-    history = property(lambda x: x._history)   
+    history = property(lambda x: x._history)
 
     def __contains__(self, x): return x in self._list
 
@@ -83,16 +83,16 @@ class List(collections.MutableSequence):
         else:
             x = _autocast(x, self._field.itemtype)
             self.validateItem(i, x)
-            
+
         self._list[i]=x
         if setHistory:
             if at is None:
                 at = traceback.extract_stack()[:-1]
             self.history.append((list(self._list), at, label))
 
-        
+
     def __getitem__(self, i): return self._list[i]
-    
+
     def __delitem__(self, i, at =None, label="delitem", setHistory=True):
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, \
@@ -105,7 +105,7 @@ class List(collections.MutableSequence):
 
     def __iter__(self): return iter(self._list)
 
-    def insert(self, i, x, at=None, label="insert", setHistory=True): 
+    def insert(self, i, x, at=None, label="insert", setHistory=True):
         if at is None:
             at = traceback.extract_stack()[:-1]
         self.__setitem__(slice(i,i), [x], at=at, label=label, setHistory=setHistory)
@@ -140,25 +140,25 @@ class List(collections.MutableSequence):
             # We throw everything else.
             msg = "%s has no attribute %s"%(_typeStr(self._field), attr)
             raise FieldValidationError(self._field, self._config, msg)
-    
+
 
 class ListField(Field):
     """
     Defines a field which is a container of values of type dtype
 
-    If length is not None, then instances of this field must match this length 
+    If length is not None, then instances of this field must match this length
     exactly.
-    If minLength is not None, then instances of the field must be no shorter 
+    If minLength is not None, then instances of the field must be no shorter
     then minLength
-    If maxLength is not None, then instances of the field must be no longer 
+    If maxLength is not None, then instances of the field must be no longer
     than maxLength
-    
+
     Additionally users can provide two check functions:
     listCheck - used to validate the list as a whole, and
-    itemCheck - used to validate each item individually    
+    itemCheck - used to validate each item individually
     """
     def __init__(self, doc, dtype, default=None, optional=False,
-            listCheck=None, itemCheck=None, 
+            listCheck=None, itemCheck=None,
             length=None, minLength=None, maxLength=None):
         if dtype not in Field.supportedTypes:
             raise ValueError("Unsupported dtype %s"%_typeStr(dtype))
@@ -173,7 +173,7 @@ class ListField(Field):
             if minLength is not None and maxLength is not None \
                     and minLength > maxLength:
                 raise ValueError("'maxLength' (%d) must be at least as large as 'minLength' (%d)"%(maxLength, minLength))
-        
+
         if listCheck is not None and not hasattr(listCheck, "__call__"):
             raise ValueError("'listCheck' must be callable")
         if itemCheck is not None and not hasattr(itemCheck, "__call__"):
@@ -187,7 +187,7 @@ class ListField(Field):
         self.length=length
         self.minLength=minLength
         self.maxLength=maxLength
-   
+
 
     def validate(self, instance):
         """
@@ -201,7 +201,7 @@ class ListField(Field):
         if value is not None:
             lenValue =len(value)
             if self.length is not None and not lenValue == self.length:
-                msg = "Required list length=%d, got length=%d"%(self.length, lenValue)                
+                msg = "Required list length=%d, got length=%d"%(self.length, lenValue)
                 raise FieldValidationError(self, instance, msg)
             elif self.minLength is not None and lenValue < self.minLength:
                 msg = "Minimum allowed list length=%d, got length=%d"%(self.minLength, lenValue)
@@ -228,9 +228,9 @@ class ListField(Field):
 
         instance._storage[self.name] = value
 
-    
-    def toDict(self, instance):        
-        value = self.__get__(instance)        
+
+    def toDict(self, instance):
+        value = self.__get__(instance)
         return list(value) if value is not None else None
 
     def _compare(self, instance1, instance2, shortcut, rtol, atol, output):

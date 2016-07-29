@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-# 
+#
 # LSST Data Management System
 # Copyright 2008, 2009, 2010 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -11,14 +11,14 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 import os
@@ -52,7 +52,7 @@ class ConfigDictFieldTest(unittest.TestCase):
             pass
         else:
             raise SyntaxError("Unsupported itemtypes should not be allowed")
-       
+
         try:
             class BadItemCheck(pexConfig.Config):
                 d = pexConfig.ConfigDictField("...", keytype=str, itemtype=Config1, itemCheck=4)
@@ -60,7 +60,7 @@ class ConfigDictFieldTest(unittest.TestCase):
             pass
         else:
             raise SyntaxError("Non-callable itemCheck should not be allowed")
-        
+
         try:
             class BadDictCheck(pexConfig.Config):
                 d = pexConfig.DictField("...", keytype=int, itemtype=Config1, dictCheck=4)
@@ -75,11 +75,11 @@ class ConfigDictFieldTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "d1", {"a":0})
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "d1", [1.2, 3, 4])
         c.d1 = None; c.d1 = {"a":Config1, "b":Config1()}
-       
+
     def testValidate(self):
         c = Config2()
         self.assertRaises(pexConfig.FieldValidationError, Config2.validate, c)
-        
+
         c.d1 = {"a":Config1(f=0)}
         self.assertRaises(pexConfig.FieldValidationError, Config2.validate, c)
 
@@ -120,10 +120,10 @@ class ConfigDictFieldTest(unittest.TestCase):
         c.freeze()
 
         self.assertRaises(pexConfig.FieldValidationError, setattr, c.d1["a"], "f" , 0)
-    
+
     def testNoArbitraryAttributes(self):
-        c= Config2(d1={})        
-        self.assertRaises(pexConfig.FieldValidationError, setattr, c.d1, "should", "fail") 
+        c= Config2(d1={})
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c.d1, "should", "fail")
 
     def testEquality(self):
         """Test ConfigDictField.__eq__

@@ -1,7 +1,7 @@
-# 
+#
 # LSST Data Management System
 # Copyright 2008-2013 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -9,14 +9,14 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 from builtins import str
@@ -36,12 +36,12 @@ class ConfigField(Field):
 
     Note that dtype must be a subclass of Config.
 
-    If default=None, the field will default to a default-constructed 
+    If default=None, the field will default to a default-constructed
     instance of dtype.
 
-    Additionally, to allow for fewer deep-copies, assigning an instance of 
-    ConfigField to dtype itself, is considered equivalent to assigning a 
-    default-constructed sub-config. This means that the argument default can be 
+    Additionally, to allow for fewer deep-copies, assigning an instance of
+    ConfigField to dtype itself, is considered equivalent to assigning a
+    default-constructed sub-config. This means that the argument default can be
     dtype, as well as an instance of dtype.
 
     Assigning to ConfigField will update all of the fields in the config.
@@ -54,9 +54,9 @@ class ConfigField(Field):
         if default is None:
             default = dtype
         source = traceback.extract_stack(limit=2)[0]
-        self._setup( doc=doc, dtype=dtype, default=default, check=check, 
+        self._setup( doc=doc, dtype=dtype, default=default, check=check,
                 optional=False, source=source)
-  
+
     def __get__(self, instance, owner=None):
         if instance is None or not isinstance(instance, Config):
             return self
@@ -77,7 +77,7 @@ class ConfigField(Field):
             msg = "Value %s is of incorrect type %s. Expected %s" %\
                     (value, _typeStr(value), _typeStr(self.dtype))
             raise FieldValidationError(self, instance, msg)
-        
+
         if at is None:
             at = traceback.extract_stack()[:-1]
 
@@ -99,7 +99,7 @@ class ConfigField(Field):
     def rename(self, instance):
         value = self.__get__(instance)
         value._rename(_joinNamePath(instance._name, self.name))
-        
+
     def save(self, outfile, instance):
         value = self.__get__(instance)
         value._save(outfile)
@@ -111,7 +111,7 @@ class ConfigField(Field):
     def toDict(self, instance):
         value = self.__get__(instance)
         return value.toDict()
-    
+
     def validate(self, instance):
         value = self.__get__(instance)
         value.validate()

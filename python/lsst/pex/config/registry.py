@@ -1,7 +1,7 @@
-# 
+#
 # LSST Data Management System
 # Copyright 2008, 2009, 2010 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -9,14 +9,14 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 from builtins import object
@@ -31,7 +31,7 @@ __all__ = ("Registry", "makeRegistry", "RegistryField", "registerConfig", "regis
 
 class ConfigurableWrapper(object):
     """A wrapper for configurables
-    
+
     Used for configurables that don't contain a ConfigClass attribute,
     or contain one that is being overridden.
     """
@@ -41,7 +41,7 @@ class ConfigurableWrapper(object):
 
     def __call__(self, *args, **kwargs):
         return self._target(*args, **kwargs)
-    
+
 
 class Registry(collections.Mapping):
     """A base class for global registries, mapping names to configurables.
@@ -77,7 +77,7 @@ class Registry(collections.Mapping):
 
     def __init__(self, configBaseType=Config):
         """Construct a registry of name: configurables
-        
+
         @param configBaseType: base class for config classes in registry
         """
         if not issubclass(configBaseType, Config):
@@ -87,15 +87,15 @@ class Registry(collections.Mapping):
 
     def register(self, name, target, ConfigClass=None):
         """Add a new item to the registry.
-        
+
         @param target       A callable 'object that takes a Config instance as its first argument.
                             This may be a Python type, but is not required to be.
         @param ConfigClass  A subclass of pex_config Config used to configure the configurable;
                             if None then configurable.ConfigClass is used.
-                          
+
         @note: If ConfigClass is provided then then 'target' is wrapped in a new object that forwards
                function calls to it.  Otherwise the original 'target' is stored.
-        
+
         @raise AttributeError if ConfigClass is None and target does not have attribute ConfigClass
         """
         if name in self._dict:
@@ -108,9 +108,9 @@ class Registry(collections.Mapping):
             raise TypeError("ConfigClass=%s is not a subclass of %r" % \
                     (_typeStr(wrapper.ConfigClass), _typeStr(self._configBaseType)))
         self._dict[name] = wrapper
-    
+
     def __getitem__(self, key): return self._dict[key]
-    def __len__(self): return len(self._dict)    
+    def __len__(self): return len(self._dict)
     def __iter__(self): return iter(self._dict)
     def __contains__(self, key): return key in self._dict
 
@@ -128,14 +128,14 @@ class RegistryAdaptor(collections.Mapping):
     def __len__(self): return len(self.registry)
     def __contains__(self, k): return k in self.registry
 
-class RegistryInstanceDict(ConfigInstanceDict):    
+class RegistryInstanceDict(ConfigInstanceDict):
     def __init__(self, config, field):
         ConfigInstanceDict.__init__(self, config, field)
         self.registry = field.registry
 
     def _getTarget(self):
         if self._field.multi:
-            raise FieldValidationError(self._field, self._config, 
+            raise FieldValidationError(self._field, self._config,
                     "Multi-selection field has no attribute 'target'")
         return self._field.typemap.registry[self._selection]
     target = property(_getTarget)
@@ -150,7 +150,7 @@ class RegistryInstanceDict(ConfigInstanceDict):
     def apply(self, *args, **kw):
         """Call the active target(s) with the active config as a keyword arg
 
-        If this is a multi-selection field, return a list obtained by calling 
+        If this is a multi-selection field, return a list obtained by calling
         each active target with its corresponding active config.
 
         Additional arguments will be passed on to the configurable target(s)
@@ -182,10 +182,10 @@ class RegistryField(ConfigChoiceField):
 
     def __deepcopy__(self, memo):
         """Customize deep-copying, want a reference to the original registry.
-        WARNING: this must be overridden by subclasses if they change the 
+        WARNING: this must be overridden by subclasses if they change the
             constructor signature!
         """
-        other = type(self)(doc=self.doc, registry=self.registry, 
+        other = type(self)(doc=self.doc, registry=self.registry,
                 default=copy.deepcopy(self.default),
                 optional=self.optional, multi=self.multi)
         other.source=self.source
@@ -193,7 +193,7 @@ class RegistryField(ConfigChoiceField):
 
 def makeRegistry(doc, configBaseType=Config):
     """A convenience function to create a new registry.
-    
+
     The returned value is an instance of a trivial subclass of Registry whose only purpose is to
     customize its doc string and set attrList.
     """

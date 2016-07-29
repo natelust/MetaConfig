@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-# 
+#
 # LSST Data Management System
 # Copyright 2008, 2009, 2010 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -11,14 +11,14 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 from builtins import object
@@ -44,7 +44,7 @@ class Simple(pexConfig.Config):
             min=3.0, inclusiveMin=True)
     l = pexConfig.ListField("list test", int, default=[1,2,3], maxLength=5,
         itemCheck=lambda x: x is not None and x>0)
-    d = pexConfig.DictField("dict test", str, str, default={"key":"value"}, 
+    d = pexConfig.DictField("dict test", str, str, default={"key":"value"},
             itemCheck=lambda x: x.startswith('v'))
     n = pexConfig.Field("nan test", float, default=float("NAN"))
 
@@ -55,7 +55,7 @@ class InnerConfig(pexConfig.Config):
 GLOBAL_REGISTRY["BBB"] = InnerConfig
 
 class OuterConfig(InnerConfig, pexConfig.Config):
-    i = pexConfig.ConfigField("Outer.i", InnerConfig)   
+    i = pexConfig.ConfigField("Outer.i", InnerConfig)
     def __init__(self):
         pexConfig.Config.__init__(self)
         self.i.f = 5.0
@@ -75,12 +75,12 @@ class Complex(pexConfig.Config):
 
 
 class ConfigTest(unittest.TestCase):
-    def setUp(self): 
+    def setUp(self):
         self.simple = Simple()
         self.inner = InnerConfig()
         self.outer = OuterConfig()
         self.comp = Complex()
-    
+
     def tearDown(self):
         del self.simple
         del self.inner
@@ -112,7 +112,7 @@ class ConfigTest(unittest.TestCase):
         self.assertRaises(ValueError, setattr, self.outer.i, "f",-5)
         self.outer.i.f=10.
         self.outer.validate()
-       
+
         try:
             self.simple.d["failKey"]="failValue"
         except pexConfig.FieldValidationError:
@@ -125,7 +125,7 @@ class ConfigTest(unittest.TestCase):
         self.assertRaises(ValueError, self.outer.validate)
         self.outer.i = InnerConfig()
         self.assertRaises(ValueError, self.outer.validate)
-        
+
         self.comp.validate()
         self.comp.r= None
         self.assertRaises(ValueError, self.comp.validate)
@@ -185,7 +185,7 @@ class ConfigTest(unittest.TestCase):
         self.comp.p="AAA"
         self.comp.c.f=5.
         self.comp.save("roundtrip.test")
-        
+
         roundTrip = Complex()
         roundTrip.load("roundtrip.test")
         os.remove("roundtrip.test")
@@ -229,7 +229,7 @@ class ConfigTest(unittest.TestCase):
             b = pexConfig.Field("BBB.b", int, default=3)
         class CCC(BBB):
             c = pexConfig.Field("CCC.c", int, default=2)
-        
+
         #test multi-level inheritance
         c= CCC()
         self.assertEqual("a" in c.toDict(), True)
@@ -273,7 +273,7 @@ class ConfigTest(unittest.TestCase):
 
         self.assertEqual(III.a.default, 5)
         self.assertEqual(AAA.a.default, 4)
-    
+
     def testConvert(self):
         pol = pexConfig.makePolicy(self.simple)
         self.assertEqual(pol.exists("i"), False)
@@ -281,7 +281,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(pol.get("b"), self.simple.b)
         self.assertEqual(pol.get("c"), self.simple.c)
         self.assertEqual(pol.getArray("l"), list(self.simple.l))
-        
+
         ps = pexConfig.makePropertySet(self.simple)
         self.assertEqual(ps.exists("i"), False)
         self.assertEqual(ps.get("f"), self.simple.f)
@@ -300,7 +300,7 @@ class ConfigTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp.c, "f", 10.0)
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp, "r", "AAA")
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp, "p", "AAA")
-        self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp.p["AAA"], "f", 5.0) 
+        self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp.p["AAA"], "f", 5.0)
 
     def checkImportRoundTrip(self, importStatement, searchString, shouldBeThere):
         self.comp.c.f=5.
@@ -312,7 +312,7 @@ class ConfigTest(unittest.TestCase):
         roundtrip = Complex()
         roundtrip.loadFromStream(stream.getvalue())
         self.assertEqual(self.comp.c.f, roundtrip.c.f)
-        
+
         # Check the save stream
         stream = io.BytesIO()
         roundtrip.saveToStream(stream)

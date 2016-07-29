@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-# 
+#
 # LSST Data Management System
 # Copyright 2008, 2009, 2010 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -11,14 +11,14 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 import unittest
@@ -66,7 +66,7 @@ class ListFieldTest(unittest.TestCase):
             pass
         else:
             raise SyntaxError("minLnegth <= maxLength should not be allowed")
-        
+
         try:
             class BadLength(pexConfig.Config):
                 l = pexConfig.ListField("...", int, length=-1)
@@ -74,7 +74,7 @@ class ListFieldTest(unittest.TestCase):
             pass
         else:
             raise SyntaxError("negative length should not be allowed")
-        
+
         try:
             class BadLength2(pexConfig.Config):
                 l = pexConfig.ListField("...", int, maxLength=-1)
@@ -90,11 +90,11 @@ class ListFieldTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l1", [1, 2, 0])
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l1", [1, 2, None])
         c.l1 = None; c.l1 = [1, 1]; c.l1 = [1,1,1]; c.l1 = [1,1,1,1]; c.l1= [1,1,1,1,1]
-        
+
 
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l2", [1, 2, None])
         c.l2 = None; c.l2 = [1,2,3];
-        
+
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l3", [0,3,2])
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l3", [1, 2, None])
         c.l3 = None; c.l3 = [1,1,1]
@@ -102,7 +102,7 @@ class ListFieldTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l4", [0,3,2])
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l4", [1, 2, None])
         c.l4 = None; c.l4 = [1,1,1]
-       
+
     def testValidate(self):
         c = Config1()
         self.assertRaises(pexConfig.FieldValidationError, Config1.validate, c)
@@ -136,7 +136,7 @@ class ListFieldTest(unittest.TestCase):
         self.assertEqual(c.ls, ["hi", "foo"])
 
     def testNoArbitraryAttributes(self):
-        c= Config1()        
+        c= Config1()
         self.assertRaises(pexConfig.FieldValidationError, setattr, c.l1, "should", "fail")
 
 def  suite():

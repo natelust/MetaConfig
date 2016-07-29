@@ -1,7 +1,7 @@
-# 
+#
 # LSST Data Management System
 # Copyright 2008, 2009, 2010 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -9,14 +9,14 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 import traceback
@@ -32,12 +32,12 @@ class RangeField(Field):
     The range is defined by providing min and/or max values.
     If min or max is None, the range will be open in that direction
     If inclusive[Min|Max] is True the range will include the [min|max] value
-    
+
     """
 
     supportedTypes=(int, float)
 
-    def __init__(self, doc, dtype, default=None, optional=False, 
+    def __init__(self, doc, dtype, default=None, optional=False,
             min=None, max=None, inclusiveMin=True, inclusiveMax=False):
         if dtype not in self.supportedTypes:
             raise ValueError("Unsupported RangeField dtype %s"%(_typeStr(dtype)))
@@ -68,7 +68,7 @@ class RangeField(Field):
             self.minCheck = lambda x, y: True if y is None else x >= y
         else:
             self.minCheck = lambda x, y: True if y is None else x > y
-        self._setup( doc, dtype=dtype, default=default, check=None, optional=optional, source=source) 
+        self._setup( doc, dtype=dtype, default=default, check=None, optional=optional, source=source)
 
     def _validateValue(self, value):
         Field._validateValue(self, value)
