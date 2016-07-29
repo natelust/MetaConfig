@@ -20,6 +20,7 @@
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
 from __future__ import print_function
+oldStringType = str  # Need to keep hold of original str type
 from builtins import str
 from builtins import object
 from past.builtins import long
@@ -155,7 +156,9 @@ class Field(object):
     class Example(Config):
         myInt = Field(int, "an integer field!", default=0)
     """
-    supportedTypes = (str, bool, float, int, complex)
+    # Must be able to support str and future str as we can not guarantee that
+    # code will pass in a future str type on Python 2
+    supportedTypes = (str, oldStringType, bool, float, int, complex)
 
     def __init__(self, doc, dtype, default=None, check=None, optional=False):
         """Initialize a Field.
