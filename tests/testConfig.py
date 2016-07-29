@@ -28,7 +28,7 @@ import itertools
 import re
 import os
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import lsst.pex.config as pexConfig
 import pickle
 
@@ -400,15 +400,14 @@ except ImportError:
         self.assertRaises(SyntaxError, self.simple.loadFromStream, "bork bork bork")
         self.assertRaises(NameError, self.simple.loadFromStream, "config.f = bork")
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(ConfigTest)
-    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-    return unittest.TestSuite(suites)
 
-def run(exit=False):
-    utilsTests.run(suite(), exit)
+class TestMemory(lsst.utils.tests.MemoryTestCase):
+    pass
 
-if __name__=='__main__':
-    run(True)
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
+if __name__ == "__main__":
+    lsst.utils.tests.init()
+    unittest.main()

@@ -24,7 +24,7 @@
 import math
 import tempfile
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import lsst.pex.config as pexConf
 
 class PexTestConfig(pexConf.Config):
@@ -57,16 +57,14 @@ class LoadSpecialTest(unittest.TestCase):
         self.assertEqual(c1.f2, c2.f2)
         self.assertTrue(math.isnan(c2.f1))
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(EqualityTest)
-    suites += unittest.makeSuite(LoadSpecialTest)
-    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-    return unittest.TestSuite(suites)
 
-def run(exit=False):
-    utilsTests.run(suite(), exit)
+class TestMemory(lsst.utils.tests.MemoryTestCase):
+    pass
 
-if __name__=='__main__':
-    run(True)
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
+if __name__ == "__main__":
+    lsst.utils.tests.init()
+    unittest.main()

@@ -23,7 +23,7 @@
 #
 import os
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import lsst.pex.config as pexConfig
 
 class Config1(pexConfig.Config):
@@ -146,15 +146,13 @@ class ConfigDictFieldTest(unittest.TestCase):
         self.assertTrue(pexConfig.compareConfigs('test', c1, c2))
 
 
-def  suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(ConfigDictFieldTest)
-    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-    return unittest.TestSuite(suites)
+class TestMemory(lsst.utils.tests.MemoryTestCase):
+    pass
 
-def run(exit=False):
-    utilsTests.run(suite(), exit)
 
-if __name__=='__main__':
-    run(True)
+def setup_module(module):
+    lsst.utils.tests.init()
+
+if __name__ == "__main__":
+    lsst.utils.tests.init()
+    unittest.main()

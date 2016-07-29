@@ -22,7 +22,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import lsst.pex.config as pexConf
 import lsst.utils
 
@@ -41,15 +41,14 @@ class FieldNameReportingTest(unittest.TestCase):
         pex_product_dir = lsst.utils.getPackageDir('pex_config')
         c3.load(pex_product_dir+ "/tests/config/ticket1914.py")
 
-def  suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(FieldNameReportingTest)
-    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-    return unittest.TestSuite(suites)
 
-def run(exit=False):
-    utilsTests.run(suite(), exit)
+class TestMemory(lsst.utils.tests.MemoryTestCase):
+    pass
 
-if __name__=='__main__':
-    run(True)
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
+if __name__ == "__main__":
+    lsst.utils.tests.init()
+    unittest.main()

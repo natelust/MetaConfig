@@ -22,7 +22,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import lsst.pex.config as pexConfig
 
 def isSorted(l):
@@ -139,15 +139,14 @@ class ListFieldTest(unittest.TestCase):
         c= Config1()
         self.assertRaises(pexConfig.FieldValidationError, setattr, c.l1, "should", "fail")
 
-def  suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(ListFieldTest)
-    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-    return unittest.TestSuite(suites)
 
-def run(exit=False):
-    utilsTests.run(suite(), exit)
+class TestMemory(lsst.utils.tests.MemoryTestCase):
+    pass
 
-if __name__=='__main__':
-    run(True)
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
+if __name__ == "__main__":
+    lsst.utils.tests.init()
+    unittest.main()

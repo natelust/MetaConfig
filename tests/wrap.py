@@ -22,7 +22,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 
 import testLib
 
@@ -90,16 +90,14 @@ class NestedWrapTest(unittest.TestCase):
         self.assertGreater(config.a.q, 1 << 30)
         self.assertGreater(control.a.q, 1 << 30)
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(WrapTest)
-    suites += unittest.makeSuite(NestedWrapTest)
-    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-    return unittest.TestSuite(suites)
 
-def run(exit=False):
-    utilsTests.run(suite(), exit)
+class TestMemory(lsst.utils.tests.MemoryTestCase):
+    pass
 
-if __name__=='__main__':
-    run(True)
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
+if __name__ == "__main__":
+    lsst.utils.tests.init()
+    unittest.main()

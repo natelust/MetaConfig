@@ -24,7 +24,7 @@
 from builtins import object
 
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import lsst.pex.config as pexConfig
 
 class ConfigTest(unittest.TestCase):
@@ -129,15 +129,14 @@ class ConfigTest(unittest.TestCase):
             c.r.names |= [name]
         self.assertRaises(pexConfig.FieldValidationError, fail, "bar")
 
-def  suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(ConfigTest)
-    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-    return unittest.TestSuite(suites)
 
-def run(exit=False):
-    utilsTests.run(suite(), exit)
+class TestMemory(lsst.utils.tests.MemoryTestCase):
+    pass
 
-if __name__=='__main__':
-    run(True)
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
+if __name__ == "__main__":
+    lsst.utils.tests.init()
+    unittest.main()

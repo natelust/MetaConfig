@@ -22,7 +22,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import lsst.pex.config as pexConf
 
 class Config1(pexConf.Config):
@@ -54,15 +54,14 @@ class SquashingDefaultsTest(unittest.TestCase):
         c3=Config3(f=11)
         self.assertEqual(c3.f, 6)
 
-def  suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(SquashingDefaultsTest)
-    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-    return unittest.TestSuite(suites)
 
-def run(exit=False):
-    utilsTests.run(suite(), exit)
+class TestMemory(lsst.utils.tests.MemoryTestCase):
+    pass
 
-if __name__=='__main__':
-    run(True)
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
+if __name__ == "__main__":
+    lsst.utils.tests.init()
+    unittest.main()
