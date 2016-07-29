@@ -22,6 +22,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 from builtins import object
+from past.builtins import unicode
 
 import io
 import itertools
@@ -203,7 +204,7 @@ class ConfigTest(unittest.TestCase):
 
         del roundTrip
         # test saving to an open file
-        outfile = open("roundtrip.test", "wb")
+        outfile = open("roundtrip.test", "w")
         self.comp.saveToStream(outfile)
         outfile.close()
 
@@ -215,7 +216,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
 
         # test backwards compatibility feature of allowing "root" instead of "config"
-        outfile = open("roundtrip.test", "wb")
+        outfile = open("roundtrip.test", "w")
         self.comp.saveToStream(outfile, root="root")
         outfile.close()
 
@@ -318,18 +319,18 @@ class ConfigTest(unittest.TestCase):
         self.comp.c.f = 5.
 
         # Generate a Config through loading
-        stream = io.BytesIO()
-        stream.write(importStatement.encode())
+        stream = io.StringIO()
+        stream.write(unicode(importStatement))
         self.comp.saveToStream(stream)
         roundtrip = Complex()
         roundtrip.loadFromStream(stream.getvalue())
         self.assertEqual(self.comp.c.f, roundtrip.c.f)
 
         # Check the save stream
-        stream = io.BytesIO()
+        stream = io.StringIO()
         roundtrip.saveToStream(stream)
         self.assertEqual(self.comp.c.f, roundtrip.c.f)
-        streamStr = stream.getvalue().decode()
+        streamStr = stream.getvalue()
         if shouldBeThere:
             self.assertTrue(re.search(searchString, streamStr))
         else:

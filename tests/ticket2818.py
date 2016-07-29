@@ -40,9 +40,9 @@ class ImportTest(unittest.TestCase):
         config.loadFromStream("""from ticket2818helper.another import AnotherConfigurable
 config.test.retarget(AnotherConfigurable)
 """)
-        stream = io.BytesIO()
+        stream = io.StringIO()
         config.saveToStream(stream)
-        values = stream.getvalue().decode()
+        values = stream.getvalue()
         print(values)
         self.assertTrue("import ticket2818helper.another" in values)
 

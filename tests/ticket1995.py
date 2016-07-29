@@ -52,7 +52,7 @@ class LoadSpecialTest(unittest.TestCase):
         c1.list1 = None
         c1.f1 = float('nan')
         c2.f2 = float('inf')
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode="w") as f:
             c1.saveToStream(f.file)
             f.file.close()
             c2.load(f.name)

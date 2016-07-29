@@ -254,9 +254,9 @@ class Field(object):
         doc = "# " + str(self.doc).replace("\n", "\n# ")
         if isinstance(value, float) and (math.isinf(value) or math.isnan(value)):
             # non-finite numbers need special care
-            outfile.write("{}\n{}=float('{!r}')\n\n".format(doc, fullname, value).encode())
+            outfile.write(u"{}\n{}=float('{!r}')\n\n".format(doc, fullname, value))
         else:
-            outfile.write("{}\n{}={!r}\n\n".format(doc, fullname, value).encode())
+            outfile.write(u"{}\n{}={!r}\n\n".format(doc, fullname, value))
 
     def toDict(self, instance):
         """
@@ -497,9 +497,10 @@ class Config(with_metaclass(ConfigMeta, object)):
         We need to condense and reconstitute the Config, since it may contain lambdas
         (as the 'check' elements) that cannot be pickled.
         """
-        stream = io.BytesIO()
+        # The stream must be in characters to match the API but pickle requires bytes
+        stream = io.StringIO()
         self.saveToStream(stream)
-        return (unreduceConfig, (self.__class__, stream.getvalue()))
+        return (unreduceConfig, (self.__class__, stream.getvalue().encode()))
 
     def setDefaults(self):
         """
@@ -541,7 +542,7 @@ class Config(with_metaclass(ConfigMeta, object)):
         root="root" instead of root="config" will be loaded with a warning printed to sys.stderr.
         This feature will be removed at some point.
         """
-        with open(filename) as f:
+        with open(filename, "r") as f:
             code = compile(f.read(), filename=filename, mode="exec")
             self.loadFromStream(stream=code, root=root)
 
@@ -572,8 +573,8 @@ class Config(with_metaclass(ConfigMeta, object)):
                         filename = getattr(stream, "co_filename", None)
                         if filename is None:
                             filename = getattr(stream, "name", "?")
-                    sys.stderr.write("Config override file %r" % (filename,) +
-                                     " appears to use 'root' instead of 'config'; trying with 'root'")
+                    sys.stderr.write(u"Config override file %r" % (filename,) +
+                                     u" appears to use 'root' instead of 'config'; trying with 'root'")
                     local = {"root": self}
                     exec(stream, {}, local)
                 else:
@@ -588,14 +589,14 @@ class Config(with_metaclass(ConfigMeta, object)):
         @param[in] root  name to use for the root config variable; the same value must be used when loading
         """
         d = os.path.dirname(filename)
-        with tempfile.NamedTemporaryFile(delete=False, dir=d) as outfile:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, dir=d) as outfile:
             self.saveToStream(outfile, root)
             os.rename(outfile.name, filename)
 
     def saveToStream(self, outfile, root="config"):
         """!Save a python script to a stream, which, when loaded, reproduces this Config
 
-        @param outfile [inout] open file object to which to write the config
+        @param outfile [inout] open file object to which to write the config. Accepts strings not bytes.
         @param root [in] name to use for the root config variable; the same value must be used when loading
         """
         tmp = self._name
@@ -603,12 +604,11 @@ class Config(with_metaclass(ConfigMeta, object)):
         try:
             configType = type(self)
             typeString = _typeStr(configType)
-            # Printing to a BytesIO stream does not seem to be portable so we use write()
-            outfile.write("import {}\n".format(configType.__module__).encode())
-            outfile.write("assert type({})=={}, 'config is of type %s.%s ".format(root, typeString).encode())
-            outfile.write("instead of {}' % (type({}).__module__, type({}).__name__)\n".format(typeString,
+            outfile.write(u"import {}\n".format(configType.__module__))
+            outfile.write(u"assert type({})=={}, 'config is of type %s.%s ".format(root, typeString))
+            outfile.write(u"instead of {}' % (type({}).__module__, type({}).__name__)\n".format(typeString,
                                                                                                root,
-                                                                                               root).encode())
+                                                                                               root))
             self._save(outfile)
         finally:
             self._rename(tmp)
@@ -625,7 +625,7 @@ class Config(with_metaclass(ConfigMeta, object)):
         """
         for imp in self._imports:
             if imp in sys.modules and sys.modules[imp] is not None:
-                outfile.write("import {}\n".format(imp).encode())
+                outfile.write(u"import {}\n".format(imp))
         for field in self._fields.values():
             field.save(outfile, self)
 
