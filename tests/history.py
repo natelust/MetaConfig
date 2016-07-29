@@ -1,4 +1,4 @@
-#/usr/bin/env python
+#!/usr/bin/env python
 
 #
 # LSST Data Management System
@@ -23,49 +23,52 @@
 #
 
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 import lsst.pex.config as pexConfig
 import lsst.pex.config.history as pexConfigHistory
 
-class TestConfig(pexConfig.Config):
+
+class PexTestConfig(pexConfig.Config):
     a = pexConfig.Field('Parameter A', float, default=1.0)
+
 
 class HistoryTest(unittest.TestCase):
     def testHistory(self):
-        b = TestConfig()
+        b = PexTestConfig()
         b.update(a=4.0)
         pexConfigHistory.Color.colorize(False)
         output = b.formatHistory("a", writeSourceLine=False)
         comparison = """a
-1.0 run(True)
-    utilsTests.run(suite(), exit)
-    if unittest.TextTestRunner().run(suite).wasSuccessful():
+1.0 unittest.main()
+    self.runTests()
+    self.result = testRunner.run(self.test)
     test(result)
     return self.run(*args, **kwds)
     test(result)
     return self.run(*args, **kwds)
     testMethod()
-    b = TestConfig()
+    b = PexTestConfig()
     a = pexConfig.Field('Parameter A', float, default=1.0)
-4.0 run(True)
-    utilsTests.run(suite(), exit)
-    if unittest.TextTestRunner().run(suite).wasSuccessful():
+4.0 unittest.main()
+    self.runTests()
+    self.result = testRunner.run(self.test)
     test(result)
     return self.run(*args, **kwds)
     test(result)
     return self.run(*args, **kwds)
     testMethod()
     b.update(a=4.0)"""
+        self.maxDiff = None
         self.assertEqual(output, comparison)
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(HistoryTest)
-    return unittest.TestSuite(suites)
 
-def run(exit=False):
-    utilsTests.run(suite(), exit)
+class TestMemory(lsst.utils.tests.MemoryTestCase):
+    pass
 
-if __name__ == '__main__':
-    run(True)
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
+if __name__ == "__main__":
+    lsst.utils.tests.init()
+    unittest.main()
