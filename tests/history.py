@@ -38,7 +38,13 @@ class HistoryTest(unittest.TestCase):
         b.update(a=4.0)
         pexConfigHistory.Color.colorize(False)
         output = b.formatHistory("a", writeSourceLine=False)
-        comparison = """a
+
+        # The history differs depending on how the tests are executed and might
+        # depend on pytest internals. We therefore test the output for the presence
+        # of strings that we know should be there.
+
+        # For reference, this is the output from running with unittest.main()
+        """a
 1.0 unittest.main()
     self.runTests()
     self.result = testRunner.run(self.test)
@@ -58,8 +64,17 @@ class HistoryTest(unittest.TestCase):
     return self.run(*args, **kwds)
     testMethod()
     b.update(a=4.0)"""
-        self.maxDiff = None
-        self.assertEqual(output, comparison)
+
+        self.assertTrue(output.startswith("a\n1.0"))
+        self.assertIn("""return self.run(*args, **kwds)
+    testMethod()
+    b = PexTestConfig()
+    a = pexConfig.Field('Parameter A', float, default=1.0)
+4.0""", output)
+
+        self.assertIn("""    return self.run(*args, **kwds)
+    testMethod()
+    b.update(a=4.0)""", output)
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):
