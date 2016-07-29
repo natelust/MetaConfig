@@ -44,7 +44,7 @@ config.test.retarget(AnotherConfigurable)
         config.saveToStream(stream)
         values = stream.getvalue()
         print(values)
-        self.assertTrue("import ticket2818helper.another" in values)
+        self.assertIn("import ticket2818helper.another", values)
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):

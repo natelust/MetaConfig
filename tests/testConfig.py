@@ -353,25 +353,25 @@ except ImportError:
     def testPickle(self):
         self.simple.f = 5
         simple = pickle.loads(pickle.dumps(self.simple))
-        self.assertTrue(isinstance(simple, Simple))
+        self.assertIsInstance(simple, Simple)
         self.assertEqual(self.simple.f, simple.f)
 
         self.comp.c.f = 5
         comp = pickle.loads(pickle.dumps(self.comp))
-        self.assertTrue(isinstance(comp, Complex))
+        self.assertIsInstance(comp, Complex)
         self.assertEqual(self.comp.c.f, comp.c.f)
 
     def testCompare(self):
         comp2 = Complex()
         inner2 = InnerConfig()
         simple2 = Simple()
-        self.assert_(self.comp.compare(comp2))
-        self.assert_(comp2.compare(self.comp))
-        self.assert_(self.comp.c.compare(inner2))
-        self.assert_(self.simple.compare(simple2))
-        self.assert_(simple2.compare(self.simple))
-        self.assert_(self.simple == simple2)
-        self.assert_(simple2 == self.simple)
+        self.assertTrue(self.comp.compare(comp2))
+        self.assertTrue(comp2.compare(self.comp))
+        self.assertTrue(self.comp.c.compare(inner2))
+        self.assertTrue(self.simple.compare(simple2))
+        self.assertTrue(simple2.compare(self.simple))
+        self.assertEqual(self.simple, simple2)
+        self.assertEqual(simple2, self.simple)
         outList = []
 
         def outFunc(msg):
@@ -384,9 +384,9 @@ except ImportError:
         del outList[:]
         self.assertFalse(self.simple.compare(simple2, shortcut=False, output=outFunc))
         output = "\n".join(outList)
-        self.assert_("Inequality in b" in output)
-        self.assert_("Inequality in size for l" in output)
-        self.assert_("Inequality in keys for d" in output)
+        self.assertIn("Inequality in b", output)
+        self.assertIn("Inequality in size for l", output)
+        self.assertIn("Inequality in keys for d", output)
         del outList[:]
         self.simple.d["foo"] = "vast"
         self.simple.l.append(5)
@@ -394,19 +394,19 @@ except ImportError:
         self.simple.f += 1E8
         self.assertFalse(self.simple.compare(simple2, shortcut=False, output=outFunc))
         output = "\n".join(outList)
-        self.assert_("Inequality in f" in output)
-        self.assert_("Inequality in l[3]" in output)
-        self.assert_("Inequality in d['foo']" in output)
+        self.assertIn("Inequality in f", output)
+        self.assertIn("Inequality in l[3]", output)
+        self.assertIn("Inequality in d['foo']", output)
         del outList[:]
         comp2.r["BBB"].f = 1.0  # changing the non-selected item shouldn't break equality
-        self.assert_(self.comp.compare(comp2))
+        self.assertTrue(self.comp.compare(comp2))
         comp2.r["AAA"].i = 56   # changing the selected item should break equality
         comp2.c.f = 1.0
         self.assertFalse(self.comp.compare(comp2, shortcut=False, output=outFunc))
         output = "\n".join(outList)
-        self.assert_("Inequality in c.f" in output)
-        self.assert_("Inequality in r['AAA']" in output)
-        self.assert_("Inequality in r['BBB']" not in output)
+        self.assertIn("Inequality in c.f", output)
+        self.assertIn("Inequality in r['AAA']", output)
+        self.assertNotIn("Inequality in r['BBB']", output)
 
     def testLoadError(self):
         """Check that loading allows errors in the file being loaded to propagate

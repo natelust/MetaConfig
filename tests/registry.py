@@ -95,7 +95,7 @@ class ConfigTest(unittest.TestCase):
     def testWrapper(self):
         wrapper21 = self.registry["foo21"]
         foo21 = wrapper21(wrapper21.ConfigClass())
-        self.assertTrue(isinstance(foo21, self.fooAlg2Class))
+        self.assertIsInstance(foo21, self.fooAlg2Class)
 
     def testReplace(self):
         """Test replacement in registry (should always fail)
@@ -110,11 +110,11 @@ class ConfigTest(unittest.TestCase):
 
         class TopConfig(pexConfig.Config):
             middle = pexConfig.ConfigField(dtype=MidConfig, doc="docs for middle")
-        self.assert_(MidConfig.field.registry is self.registry)
+        self.assertIs(MidConfig.field.registry, self.registry)
         middle = MidConfig()
         top = TopConfig()
-        self.assert_(middle.field.registry is self.registry)
-        self.assert_(top.middle.field.registry is self.registry)
+        self.assertIs(middle.field.registry, self.registry)
+        self.assertIs(top.middle.field.registry, self.registry)
 
     def testRegistryField(self):
         class C1(pexConfig.Config):

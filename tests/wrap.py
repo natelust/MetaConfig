@@ -35,7 +35,7 @@ class WrapTest(unittest.TestCase):
         config.foo = 2
         config.bar.append("baz")
         control = config.makeControl()
-        self.assert_(testLib.checkControl(control, config.foo, config.bar))
+        self.assertTrue(testLib.checkControl(control, config.foo, config.bar))
 
     def testReadControl(self):
         """Test reading the values from a C++ Control object into a Config object."""
@@ -47,13 +47,13 @@ class WrapTest(unittest.TestCase):
         control.bar = vec
         config = testLib.ConfigObject()
         config.readControl(control)
-        self.assert_(testLib.checkControl(control, config.foo, config.bar))
+        self.assertTrue(testLib.checkControl(control, config.foo, config.bar))
 
     def testDefaults(self):
         """Test that C++ Control object defaults are correctly used as defaults for Config objects."""
         config = testLib.ConfigObject()
         control = testLib.ControlObject()
-        self.assert_(testLib.checkControl(control, config.foo, config.bar))
+        self.assertTrue(testLib.checkControl(control, config.foo, config.bar))
 
 
 class NestedWrapTest(unittest.TestCase):
@@ -61,12 +61,12 @@ class NestedWrapTest(unittest.TestCase):
     def testMakeControl(self):
         """Test making a C++ Control object from a Config object."""
         config = testLib.OuterConfigObject()
-        self.assert_(isinstance(config.a, testLib.InnerConfigObject))
+        self.assertIsInstance(config.a, testLib.InnerConfigObject)
         config.a.p = 5.0
         config.a.q = 7
         config.b = 2
         control = config.makeControl()
-        self.assert_(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
+        self.assertTrue(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
 
     def testReadControl(self):
         """Test reading the values from a C++ Control object into a Config object."""
@@ -76,19 +76,19 @@ class NestedWrapTest(unittest.TestCase):
         control.b = 3
         config = testLib.OuterConfigObject()
         config.readControl(control)
-        self.assert_(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
+        self.assertTrue(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
 
     def testDefaults(self):
         """Test that C++ Control object defaults are correctly used as defaults for Config objects."""
         config = testLib.OuterConfigObject()
         control = testLib.OuterControlObject()
-        self.assert_(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
+        self.assertTrue(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
 
     def testInt64(self):
         """Test that we can wrap C++ Control objects with int64 members."""
         config = testLib.OuterConfigObject()
         control = testLib.OuterControlObject()
-        self.assert_(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
+        self.assertTrue(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
         self.assertGreater(config.a.q, 1 << 30)
         self.assertGreater(control.a.q, 1 << 30)
 
