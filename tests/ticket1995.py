@@ -27,15 +27,15 @@ import unittest
 import lsst.utils.tests as utilsTests
 import lsst.pex.config as pexConf
 
-class TestConfig(pexConf.Config):
+class PexTestConfig(pexConf.Config):
     list1 = pexConf.ListField(dtype=int, default=[1, 2], doc="list1")
     f1 = pexConf.Field(dtype=float, doc="f1")
     f2 = pexConf.Field(dtype=float, doc="f2")
 
 class EqualityTest(unittest.TestCase):
     def test(self):
-        c1 = TestConfig()
-        c2 = TestConfig()
+        c1 = PexTestConfig()
+        c2 = PexTestConfig()
         self.assertEqual(c1, c2)
         c1.list1 = [1,2,3,4,5]
         self.assertNotEqual(c1, c2)
@@ -44,8 +44,8 @@ class EqualityTest(unittest.TestCase):
 
 class LoadSpecialTest(unittest.TestCase):
     def test(self):
-        c1 = TestConfig()
-        c2 = TestConfig()
+        c1 = PexTestConfig()
+        c2 = PexTestConfig()
         c1.list1 = None
         c1.f1 = float('nan')
         c2.f2 = float('inf')
