@@ -27,7 +27,8 @@ import collections
 from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
 from .comparison import getComparisonName, compareScalars
 
-__all__=["DictField"]
+__all__ = ["DictField"]
+
 
 class Dict(collections.MutableMapping):
     """
@@ -40,74 +41,77 @@ class Dict(collections.MutableMapping):
         self._config = config
         self._dict = {}
         self._history = self._config._history.setdefault(self._field.name, [])
-        self.__doc__=field.doc
+        self.__doc__ = field.doc
         if value is not None:
             try:
                 for k in value:
-                    #do not set history per-item
+                    # do not set history per-item
                     self.__setitem__(k, value[k], at=at, label=label, setHistory=False)
             except TypeError:
-                msg = "Value %s is of incorrect type %s. Mapping type expected."%\
-                        (value, _typeStr(value))
+                msg = "Value %s is of incorrect type %s. Mapping type expected." % \
+                    (value, _typeStr(value))
                 raise FieldValidationError(self._field, self._config, msg)
         if setHistory:
             self._history.append((dict(self._dict), at, label))
-
 
     """
     Read-only history
     """
     history = property(lambda x: x._history)
 
-    def __getitem__(self, k): return self._dict[k]
+    def __getitem__(self, k):
+        return self._dict[k]
 
-    def __len__(self): return len(self._dict)
+    def __len__(self):
+        return len(self._dict)
 
-    def __iter__(self): return iter(self._dict)
+    def __iter__(self):
+        return iter(self._dict)
 
-    def __contains__(self, k): return k in self._dict
+    def __contains__(self, k):
+        return k in self._dict
 
     def __setitem__(self, k, x, at=None, label="setitem", setHistory=True):
         if self._config._frozen:
             msg = "Cannot modify a frozen Config. "\
-                    "Attempting to set item at key %r to value %s"%(k, x)
+                "Attempting to set item at key %r to value %s" % (k, x)
             raise FieldValidationError(self._field, self._config, msg)
 
-        #validate keytype
+        # validate keytype
         k = _autocast(k, self._field.keytype)
         if type(k) != self._field.keytype:
-            msg = "Key %r is of type %s, expected type %s"%\
-                    (k, _typeStr(k), _typeStr(self._field.keytype))
+            msg = "Key %r is of type %s, expected type %s" % \
+                (k, _typeStr(k), _typeStr(self._field.keytype))
             raise FieldValidationError(self._field, self._config, msg)
 
-        #validate itemtype
+        # validate itemtype
         x = _autocast(x, self._field.itemtype)
         if self._field.itemtype is None:
             if type(x) not in self._field.supportedTypes and x is not None:
-                msg ="Value %s at key %r is of invalid type %s" % (x, k, _typeStr(x))
+                msg = "Value %s at key %r is of invalid type %s" % (x, k, _typeStr(x))
                 raise FieldValidationError(self._field, self._config, msg)
         else:
             if type(x) != self._field.itemtype and x is not None:
-                msg ="Value %s at key %r is of incorrect type %s. Expected type %s"%\
+                msg = "Value %s at key %r is of incorrect type %s. Expected type %s" % \
                     (x, k, _typeStr(x), _typeStr(self._field.itemtype))
                 raise FieldValidationError(self._field, self._config, msg)
 
-        #validate item using itemcheck
+        # validate item using itemcheck
         if self._field.itemCheck is not None and not self._field.itemCheck(x):
-            msg="Item at key %r is not a valid value: %s"%(k, x)
+            msg = "Item at key %r is not a valid value: %s" % (k, x)
             raise FieldValidationError(self._field, self._config, msg)
 
         if at is None:
             at = traceback.extract_stack()[:-1]
 
-        self._dict[k]=x
+        self._dict[k] = x
         if setHistory:
             self._history.append((dict(self._dict), at, label))
 
     def __delitem__(self, k, at=None, label="delitem", setHistory=True):
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config,
-                    "Cannot modify a frozen Config")
+                                       "Cannot modify a frozen Config")
 
         del self._dict[k]
         if setHistory:
@@ -115,9 +119,11 @@ class Dict(collections.MutableMapping):
                 at = traceback.extract_stack()[:-1]
             self._history.append((dict(self._dict), at, label))
 
-    def __repr__(self): return repr(self._dict)
+    def __repr__(self):
+        return repr(self._dict)
 
-    def __str__(self): return str(self._dict)
+    def __str__(self):
+        return str(self._dict)
 
     def __setattr__(self, attr, value, at=None, label="assignment"):
         if hasattr(getattr(self.__class__, attr, None), '__set__'):
@@ -128,7 +134,7 @@ class Dict(collections.MutableMapping):
             object.__setattr__(self, attr, value)
         else:
             # We throw everything else.
-            msg = "%s has no attribute %s"%(_typeStr(self._field), attr)
+            msg = "%s has no attribute %s" % (_typeStr(self._field), attr)
             raise FieldValidationError(self._field, self._config, msg)
 
 
@@ -155,14 +161,14 @@ class DictField(Field):
 
     def __init__(self, doc, keytype, itemtype, default=None, optional=False, dictCheck=None, itemCheck=None):
         source = traceback.extract_stack(limit=2)[0]
-        self._setup( doc=doc, dtype=Dict, default=default, check=None,
-                optional=optional, source=source)
+        self._setup(doc=doc, dtype=Dict, default=default, check=None,
+                    optional=optional, source=source)
         if keytype not in self.supportedTypes:
-            raise ValueError("'keytype' %s is not a supported type"%\
-                    _typeStr(keytype))
+            raise ValueError("'keytype' %s is not a supported type" %
+                             _typeStr(keytype))
         elif itemtype is not None and itemtype not in self.supportedTypes:
-            raise ValueError("'itemtype' %s is not a supported type"%\
-                    _typeStr(itemtype))
+            raise ValueError("'itemtype' %s is not a supported type" %
+                             _typeStr(itemtype))
         if dictCheck is not None and not hasattr(dictCheck, "__call__"):
             raise ValueError("'dictCheck' must be callable")
         if itemCheck is not None and not hasattr(itemCheck, "__call__"):
@@ -183,14 +189,13 @@ class DictField(Field):
         value = self.__get__(instance)
         if value is not None and self.dictCheck is not None \
                 and not self.dictCheck(value):
-            msg = "%s is not a valid value"%str(value)
+            msg = "%s is not a valid value" % str(value)
             raise FieldValidationError(self, instance, msg)
-
 
     def __set__(self, instance, value, at=None, label="assignment"):
         if instance._frozen:
             msg = "Cannot modify a frozen Config. "\
-                  "Attempting to set field to value %s"%value
+                  "Attempting to set field to value %s" % value
             raise FieldValidationError(self, instance, msg)
 
         if at is None:
@@ -225,7 +230,7 @@ class DictField(Field):
         name = getComparisonName(
             _joinNamePath(instance1._name, self.name),
             _joinNamePath(instance2._name, self.name)
-            )
+        )
         if not compareScalars("isnone for %s" % name, d1 is None, d2 is None, output=output):
             return False
         if d1 is None and d2 is None:

@@ -28,6 +28,7 @@ from .comparison import compareConfigs, getComparisonName
 
 __all__ = ["ConfigField"]
 
+
 class ConfigField(Field):
     """
     Defines a field which is itself a Config.
@@ -49,13 +50,13 @@ class ConfigField(Field):
 
     def __init__(self, doc, dtype, default=None, check=None):
         if not issubclass(dtype, Config):
-            raise ValueError("dtype=%s is not a subclass of Config" % \
-                    _typeStr(dtype))
+            raise ValueError("dtype=%s is not a subclass of Config" %
+                             _typeStr(dtype))
         if default is None:
             default = dtype
         source = traceback.extract_stack(limit=2)[0]
-        self._setup( doc=doc, dtype=dtype, default=default, check=check,
-                optional=False, source=source)
+        self._setup(doc=doc, dtype=dtype, default=default, check=check,
+                    optional=False, source=source)
 
     def __get__(self, instance, owner=None):
         if instance is None or not isinstance(instance, Config):
@@ -69,13 +70,13 @@ class ConfigField(Field):
 
     def __set__(self, instance, value, at=None, label="assignment"):
         if instance._frozen:
-            raise FieldValidationError(self, instance, \
-                    "Cannot modify a frozen Config")
+            raise FieldValidationError(self, instance,
+                                       "Cannot modify a frozen Config")
         name = _joinNamePath(prefix=instance._name, name=self.name)
 
         if value != self.dtype and type(value) != self.dtype:
-            msg = "Value %s is of incorrect type %s. Expected %s" %\
-                    (value, _typeStr(value), _typeStr(self.dtype))
+            msg = "Value %s is of incorrect type %s. Expected %s" % \
+                (value, _typeStr(value), _typeStr(self.dtype))
             raise FieldValidationError(self, instance, msg)
 
         if at is None:
@@ -84,11 +85,10 @@ class ConfigField(Field):
         oldValue = instance._storage.get(self.name, None)
         if oldValue is None:
             if value == self.dtype:
-                instance._storage[self.name] = self.dtype(
-                        __name=name, __at=at, __label=label)
+                instance._storage[self.name] = self.dtype(__name=name, __at=at, __label=label)
             else:
-                instance._storage[self.name] = self.dtype(
-                        __name=name, __at=at, __label=label, **value._storage)
+                instance._storage[self.name] = self.dtype(__name=name, __at=at,
+                                                          __label=label, **value._storage)
         else:
             if value == self.dtype:
                 value = value()
@@ -117,7 +117,7 @@ class ConfigField(Field):
         value.validate()
 
         if self.check is not None and not self.check(value):
-            msg = "%s is not a valid value"%str(value)
+            msg = "%s is not a valid value" % str(value)
             raise FieldValidationError(self, instance, msg)
 
     def _compare(self, instance1, instance2, shortcut, rtol, atol, output):
@@ -138,5 +138,5 @@ class ConfigField(Field):
         name = getComparisonName(
             _joinNamePath(instance1._name, self.name),
             _joinNamePath(instance2._name, self.name)
-            )
+        )
         return compareConfigs(name, c1, c2, shortcut=shortcut, rtol=rtol, atol=atol, output=output)

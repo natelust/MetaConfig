@@ -23,17 +23,19 @@
 from __future__ import print_function
 import os
 import sys
-sys.path = [os.path.join(os.path.abspath(os.path.dirname(__file__)), "ticket2818helper")] + sys.path
-
 import io
 import unittest
 import lsst.utils.tests
 
-from ticket2818helper.define import BaseConfig
+# Extend path to find the helper code for this test relative to the test file
+sys.path = [os.path.join(os.path.abspath(os.path.dirname(__file__)), "ticket2818helper")] + sys.path
+
+from ticket2818helper.define import BaseConfig  # noqa E402 module level import not at top of file
+
 
 class ImportTest(unittest.TestCase):
     def test(self):
-        from ticket2818helper.another import AnotherConfigurable # Leave this uncommented to demonstrate bug
+        from ticket2818helper.another import AnotherConfigurable  # noqa F401 imported but unused
         config = BaseConfig()
         config.loadFromStream("""from ticket2818helper.another import AnotherConfigurable
 config.test.retarget(AnotherConfigurable)

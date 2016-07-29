@@ -26,6 +26,7 @@ from .config import Field, _typeStr
 
 __all__ = ["ChoiceField"]
 
+
 class ChoiceField(Field):
     """
     Defines a Config Field which allows only a set of values
@@ -36,25 +37,25 @@ class ChoiceField(Field):
     def __init__(self, doc, dtype, allowed, default=None, optional=True):
         self.allowed = dict(allowed)
         if optional and None not in self.allowed:
-            self.allowed[None]="Field is optional"
+            self.allowed[None] = "Field is optional"
 
-        if len(self.allowed)==0:
+        if len(self.allowed) == 0:
             raise ValueError("ChoiceFields must allow at least one choice")
 
         doc += "\nAllowed values:\n"
         for choice, choiceDoc in self.allowed.items():
             if choice is not None and not isinstance(choice, dtype):
-                raise ValueError("ChoiceField's allowed choice %s is of incorrect type %s. Expected %s"%\
-                        (choice, _typeStr(choice), _typeStr(dtype)))
-            doc += "\t%s\t%s\n"%(str(choice), choiceDoc)
+                raise ValueError("ChoiceField's allowed choice %s is of incorrect type %s. Expected %s" %
+                                 (choice, _typeStr(choice), _typeStr(dtype)))
+            doc += "\t%s\t%s\n" % (str(choice), choiceDoc)
 
         Field.__init__(self, doc=doc, dtype=dtype, default=default,
-                check=None, optional=optional)
+                       check=None, optional=optional)
         self.source = traceback.extract_stack(limit=2)[0]
 
     def _validateValue(self, value):
         Field._validateValue(self, value)
         if value not in self.allowed:
-            msg = "Value {} is not allowed.\n\tAllowed values: [{}]".format(
-                      value, ", ".join(str(key) for key in self.allowed))
+            msg = "Value {} is not allowed.\n" \
+                "\tAllowed values: [{}]".format(value, ", ".join(str(key) for key in self.allowed))
             raise ValueError(msg)

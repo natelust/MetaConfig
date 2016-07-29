@@ -29,9 +29,9 @@ import lsst.utils.tests
 import lsst.pex.config as pexConf
 
 
-
 class Config1(pexConf.Config):
     f = pexConf.Field("f", dtype=float, default=5, check=lambda x: x > 0)
+
 
 class Target1(object):
     ConfigClass = Config1
@@ -39,12 +39,15 @@ class Target1(object):
     def __init__(self, config):
         self.f = config.f
 
+
 def Target2(config):
     return config.f
 
+
 class Config2(pexConf.Config):
-    c1=  pexConf.ConfigurableField("c1", target=Target1)
+    c1 = pexConf.ConfigurableField("c1", target=Target1)
     c2 = pexConf.ConfigurableField("c2", target=Target2, ConfigClass=Config1, default=Config1(f=3))
+
 
 class ConfigurableFieldTest(unittest.TestCase):
     def testConstructor(self):
@@ -86,7 +89,7 @@ class ConfigurableFieldTest(unittest.TestCase):
         self.assertEqual(type(c.c2.apply()), Target1)
         self.assertEqual(c.c2.apply().f, 3)
 
-        c.c1.f=2
+        c.c1.f = 2
         self.assertEqual(c.c1.f, 2)
         self.assertRaises(pexConf.FieldValidationError, setattr, c.c1, "f", 0)
 
@@ -96,14 +99,14 @@ class ConfigurableFieldTest(unittest.TestCase):
         c.c1 = Config1
         self.assertEqual(c.c1.f, 5)
 
-        f= Config2(**dict(c.items()))
+        f = Config2(**dict(c.items()))
         self.assertEqual(f.c1.f, c.c1.f)
         self.assertEqual(f.c1.target, c.c1.target)
         self.assertEqual(f.c2.target, c.c2.target)
         self.assertEqual(f.c2.f, c.c2.f)
 
-        c.c2.f=1
-        c.c1.f=100
+        c.c2.f = 1
+        c.c1.f = 100
         f.update(**dict(c.items()))
         self.assertEqual(f.c1.f, c.c1.f)
         self.assertEqual(f.c1.target, c.c1.target)
@@ -117,9 +120,9 @@ class ConfigurableFieldTest(unittest.TestCase):
         c.validate()
 
     def testPersistence(self):
-        c= Config2()
+        c = Config2()
         c.c2.retarget(Target1)
-        c.c2.f=10
+        c.c2.f = 10
         c.save("test.py")
 
         r = Config2()

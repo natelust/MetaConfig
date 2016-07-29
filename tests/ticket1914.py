@@ -26,20 +26,24 @@ import lsst.utils.tests
 import lsst.pex.config as pexConf
 import lsst.utils
 
+
 class Config1(pexConf.Config):
     f = pexConf.Field("Config1.f", float, default=4)
 
+
 class Config2(pexConf.Config):
-    r = pexConf.ConfigChoiceField("Config2.r", {"c1":Config1}, default="c1")
+    r = pexConf.ConfigChoiceField("Config2.r", {"c1": Config1}, default="c1")
+
 
 class Config3(pexConf.Config):
     c = pexConf.ConfigField("Config3.c", Config2)
+
 
 class FieldNameReportingTest(unittest.TestCase):
     def test(self):
         c3 = Config3()
         pex_product_dir = lsst.utils.getPackageDir('pex_config')
-        c3.load(pex_product_dir+ "/tests/config/ticket1914.py")
+        c3.load(pex_product_dir + "/tests/config/ticket1914.py")
 
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):

@@ -26,6 +26,7 @@ import lsst.utils.tests
 
 import testLib
 
+
 class WrapTest(unittest.TestCase):
 
     def testMakeControl(self):
@@ -53,6 +54,7 @@ class WrapTest(unittest.TestCase):
         config = testLib.ConfigObject()
         control = testLib.ControlObject()
         self.assert_(testLib.checkControl(control, config.foo, config.bar))
+
 
 class NestedWrapTest(unittest.TestCase):
 

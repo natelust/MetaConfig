@@ -27,6 +27,7 @@ import unittest
 import lsst.utils.tests
 import lsst.pex.config as pexConfig
 
+
 class ConfigTest(unittest.TestCase):
     def setUp(self):
         """Note: the classes are defined here in order to test the register decorator
@@ -55,16 +56,20 @@ class ConfigTest(unittest.TestCase):
         @pexConfig.registerConfigurable("foo1", self.registry)
         class FooAlg1(object):
             ConfigClass = FooConfig1
+
             def __init__(self, config):
                 self.config = config
+
             def foo(self):
                 pass
         self.fooAlg1Class = FooAlg1
 
         class FooAlg2(object):
             ConfigClass = FooConfig2
+
             def __init__(self, config):
                 self.config = config
+
             def foo(self):
                 pass
         self.registry.register("foo2", FooAlg2, FooConfig2)
@@ -102,6 +107,7 @@ class ConfigTest(unittest.TestCase):
         """Make sure nesting a config with a RegistryField doesn't deep-copy the registry."""
         class MidConfig(pexConfig.Config):
             field = self.registry.makeField("docs for registry field")
+
         class TopConfig(pexConfig.Config):
             middle = pexConfig.ConfigField(dtype=MidConfig, doc="docs for middle")
         self.assert_(MidConfig.field.registry is self.registry)
@@ -117,7 +123,7 @@ class ConfigTest(unittest.TestCase):
         for t in C1.r.typemap:
             self.assertEqual(C1.r.typemap[t], self.registry[t].ConfigClass)
 
-        c=  C1()
+        c = C1()
         c.r = "foo2"
         c.r.apply()
 
@@ -125,7 +131,8 @@ class ConfigTest(unittest.TestCase):
         class C1(pexConfig.Config):
             r = self.registry.makeField("registry field", multi=True, default=[])
         c = C1()
-        def fail(name): # lambda doesn't like |=
+
+        def fail(name):  # lambda doesn't like |=
             c.r.names |= [name]
         self.assertRaises(pexConfig.FieldValidationError, fail, "bar")
 

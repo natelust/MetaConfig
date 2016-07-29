@@ -22,9 +22,10 @@
 import lsst.pex.policy
 import lsst.daf.base
 
+
 def makePropertySet(config):
     def _helper(ps, prefix, dict_):
-        for k,v in dict_.items():
+        for k, v in dict_.items():
             name = prefix + "." + k if prefix is not None else k
             if isinstance(v, dict):
                 _helper(ps, name, v)
@@ -38,10 +39,11 @@ def makePropertySet(config):
     else:
         return None
 
+
 def makePolicy(config):
     def _helper(dict_):
         p = lsst.pex.policy.Policy()
-        for k,v in dict_.items():
+        for k, v in dict_.items():
             if isinstance(v, dict):
                 p.set(k, _helper(v))
             elif isinstance(v, list):

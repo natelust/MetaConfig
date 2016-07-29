@@ -31,10 +31,12 @@ import numpy
 
 __all__ = ("getComparisonName", "compareScalars", "compareConfigs")
 
+
 def getComparisonName(name1, name2):
     if name1 != name2:
         return "%s / %s" % (name1, name2)
     return name1
+
 
 def compareScalars(name, v1, v2, output, rtol=1E-8, atol=1E-8, dtype=None):
     """Helper function for Config.compare; used to compare two scalar values for equality.
@@ -60,6 +62,7 @@ def compareScalars(name, v1, v2, output, rtol=1E-8, atol=1E-8, dtype=None):
     if not result and output is not None:
         output("Inequality in %s: %r != %r" % (name, v1, v2))
     return result
+
 
 def compareConfigs(name, c1, c2, shortcut=True, rtol=1E-8, atol=1E-8, output=None):
     """Helper function for Config.compare; used to compare two Configs for equality.

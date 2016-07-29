@@ -34,28 +34,32 @@ import pickle
 
 GLOBAL_REGISTRY = {}
 
+
 class Simple(pexConfig.Config):
     i = pexConfig.Field("integer test", int, optional=True)
     f = pexConfig.Field("float test", float, default=3.0)
     b = pexConfig.Field("boolean test", bool, default=False, optional=False)
     c = pexConfig.ChoiceField("choice test", str, default="Hello",
-            allowed={"Hello":"First choice", "World":"second choice"})
-    r = pexConfig.RangeField("Range test", float, default = 3.0, optional=False,
-            min=3.0, inclusiveMin=True)
-    l = pexConfig.ListField("list test", int, default=[1,2,3], maxLength=5,
-        itemCheck=lambda x: x is not None and x>0)
-    d = pexConfig.DictField("dict test", str, str, default={"key":"value"},
-            itemCheck=lambda x: x.startswith('v'))
+                              allowed={"Hello": "First choice", "World": "second choice"})
+    r = pexConfig.RangeField("Range test", float, default=3.0, optional=False,
+                             min=3.0, inclusiveMin=True)
+    l = pexConfig.ListField("list test", int, default=[1, 2, 3], maxLength=5,
+                            itemCheck=lambda x: x is not None and x > 0)
+    d = pexConfig.DictField("dict test", str, str, default={"key": "value"},
+                            itemCheck=lambda x: x.startswith('v'))
     n = pexConfig.Field("nan test", float, default=float("NAN"))
 
 GLOBAL_REGISTRY["AAA"] = Simple
 
+
 class InnerConfig(pexConfig.Config):
-    f = pexConfig.Field("Inner.f", float, default=0.0, check = lambda x: x >= 0, optional=False)
+    f = pexConfig.Field("Inner.f", float, default=0.0, check=lambda x: x >= 0, optional=False)
 GLOBAL_REGISTRY["BBB"] = InnerConfig
+
 
 class OuterConfig(InnerConfig, pexConfig.Config):
     i = pexConfig.ConfigField("Outer.i", InnerConfig)
+
     def __init__(self):
         pexConfig.Config.__init__(self)
         self.i.f = 5.0
@@ -92,7 +96,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.simple.f, 3.0)
         self.assertEqual(self.simple.b, False)
         self.assertEqual(self.simple.c, "Hello")
-        self.assertEqual(list(self.simple.l), [1,2,3])
+        self.assertEqual(list(self.simple.l), [1, 2, 3])
         self.assertEqual(self.simple.d["key"], "value")
         self.assertEqual(self.inner.f, 0.0)
 
@@ -104,17 +108,16 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.comp.r.active.f, 3.0)
         self.assertEqual(self.comp.r["BBB"].f, 0.0)
 
-
     def testValidate(self):
         self.simple.validate()
 
         self.inner.validate()
-        self.assertRaises(ValueError, setattr, self.outer.i, "f",-5)
-        self.outer.i.f=10.
+        self.assertRaises(ValueError, setattr, self.outer.i, "f", -5)
+        self.outer.i.f = 10.
         self.outer.validate()
 
         try:
-            self.simple.d["failKey"]="failValue"
+            self.simple.d["failKey"] = "failValue"
         except pexConfig.FieldValidationError:
             pass
         except:
@@ -127,9 +130,9 @@ class ConfigTest(unittest.TestCase):
         self.assertRaises(ValueError, self.outer.validate)
 
         self.comp.validate()
-        self.comp.r= None
+        self.comp.r = None
         self.assertRaises(ValueError, self.comp.validate)
-        self.comp.r="BBB"
+        self.comp.r = "BBB"
         self.comp.validate()
 
     def testRangeFieldConstructor(self):
@@ -143,16 +146,20 @@ class ConfigTest(unittest.TestCase):
                 # should not raise
                 class Cfg1(pexConfig.Config):
                     r1 = pexConfig.RangeField(doc="", dtype=int,
-                        default=val, min=val, max=val, inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+                                              default=val, min=val, max=val, inclusiveMin=inclusiveMin,
+                                              inclusiveMax=inclusiveMax)
                     r2 = pexConfig.RangeField(doc="", dtype=float,
-                        default=val, min=val, max=val, inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+                                              default=val, min=val, max=val, inclusiveMin=inclusiveMin,
+                                              inclusiveMax=inclusiveMax)
                 Cfg1()
             else:
                 # raise while constructing the RangeField (hence cannot make it part of a Config)
                 self.assertRaises(ValueError, pexConfig.RangeField, doc="", dtype=int,
-                    default=val, min=val, max=val, inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+                                  default=val, min=val, max=val, inclusiveMin=inclusiveMin,
+                                  inclusiveMax=inclusiveMax)
                 self.assertRaises(ValueError, pexConfig.RangeField, doc="", dtype=float,
-                    default=val, min=val, max=val, inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+                                  default=val, min=val, max=val, inclusiveMin=inclusiveMin,
+                                  inclusiveMax=inclusiveMax)
 
     def testRangeFieldDefault(self):
         """Test RangeField's checking of the default value
@@ -167,12 +174,13 @@ class ConfigTest(unittest.TestCase):
         ):
             class Cfg1(pexConfig.Config):
                 r = pexConfig.RangeField(doc="", dtype=int,
-                    default=val, min=minVal, max=maxVal,
-                    inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+                                         default=val, min=minVal, max=maxVal,
+                                         inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+
             class Cfg2(pexConfig.Config):
                 r2 = pexConfig.RangeField(doc="", dtype=float,
-                    default=val, min=minVal, max=maxVal,
-                    inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+                                          default=val, min=minVal, max=maxVal,
+                                          inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
         if shouldRaise:
             self.assertRaises(pexConfig.FieldValidationError, Cfg1)
             self.assertRaises(pexConfig.FieldValidationError, Cfg2)
@@ -181,9 +189,9 @@ class ConfigTest(unittest.TestCase):
             Cfg2()
 
     def testSave(self):
-        self.comp.r="BBB"
-        self.comp.p="AAA"
-        self.comp.c.f=5.
+        self.comp.r = "BBB"
+        self.comp.p = "AAA"
+        self.comp.c.f = 5.
         self.comp.save("roundtrip.test")
 
         roundTrip = Complex()
@@ -194,7 +202,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
 
         del roundTrip
-        #test saving to an open file
+        # test saving to an open file
         outfile = open("roundtrip.test", "wb")
         self.comp.saveToStream(outfile)
         outfile.close()
@@ -225,18 +233,20 @@ class ConfigTest(unittest.TestCase):
     def testInheritance(self):
         class AAA(pexConfig.Config):
             a = pexConfig.Field("AAA.a", int, default=4)
+
         class BBB(AAA):
             b = pexConfig.Field("BBB.b", int, default=3)
+
         class CCC(BBB):
             c = pexConfig.Field("CCC.c", int, default=2)
 
-        #test multi-level inheritance
-        c= CCC()
+        # test multi-level inheritance
+        c = CCC()
         self.assertEqual("a" in c.toDict(), True)
         self.assertEqual(c._fields["a"].dtype, int)
         self.assertEqual(c.a, 4)
 
-        #test conflicting multiple inheritance
+        # test conflicting multiple inheritance
         class DDD(pexConfig.Config):
             a = pexConfig.Field("DDD.a", float, default=0.0)
 
@@ -255,9 +265,10 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual("a" in f.toDict(), True)
         self.assertEqual(f.a, 4)
 
-        #test inheritance from non Config objects
+        # test inheritance from non Config objects
         class GGG(object):
             a = pexConfig.Field("AAA.a", float, default=10.)
+
         class HHH(GGG, AAA):
             pass
         h = HHH()
@@ -265,11 +276,11 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual("a" in h.toDict(), True)
         self.assertEqual(h.a, 10.0)
 
-        #test partial Field redefinition
+        # test partial Field redefinition
 
         class III(AAA):
             pass
-        III.a.default=5
+        III.a.default = 5
 
         self.assertEqual(III.a.default, 5)
         self.assertEqual(AAA.a.default, 4)
@@ -294,6 +305,7 @@ class ConfigTest(unittest.TestCase):
 
         ps = pexConfig.makePropertySet(self.comp)
         self.assertEqual(ps.get("c.f"), self.comp.c.f)
+
     def testFreeze(self):
         self.comp.freeze()
 
@@ -303,7 +315,7 @@ class ConfigTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp.p["AAA"], "f", 5.0)
 
     def checkImportRoundTrip(self, importStatement, searchString, shouldBeThere):
-        self.comp.c.f=5.
+        self.comp.c.f = 5.
 
         # Generate a Config through loading
         stream = io.BytesIO()
@@ -323,9 +335,8 @@ class ConfigTest(unittest.TestCase):
         else:
             self.assertFalse(re.search(searchString, streamStr))
 
-
     def testImports(self):
-        importing = "import lsst.daf.base.citizen\n" # A module not used by anything else, but which exists
+        importing = "import lsst.daf.base.citizen\n"  # A module not used by anything else, but which exists
         self.checkImportRoundTrip(importing, importing, True)
 
     def testBadImports(self):
@@ -361,7 +372,9 @@ except ImportError:
         self.assert_(self.simple == simple2)
         self.assert_(simple2 == self.simple)
         outList = []
-        outFunc = lambda msg: outList.append(msg)
+
+        def outFunc(msg):
+            outList.append(msg)
         simple2.b = True
         simple2.l.append(4)
         simple2.d["foo"] = "var"

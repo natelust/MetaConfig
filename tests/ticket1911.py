@@ -27,12 +27,14 @@ import unittest
 import lsst.utils.tests
 import lsst.pex.config as pexConf
 
+
 class SubConfigDefaultsTest(unittest.TestCase):
 
     def setUp(self):
         class Configurable(object):
             class ConfigClass(pexConf.Config):
                 v = pexConf.Field(dtype=int, doc="dummy int field for registry configurable", default=0)
+
             def __init__(self, cfg):
                 self.value = cfg.v
         self.registry = pexConf.makeRegistry("registry for Configurable", Configurable.ConfigClass)
@@ -43,10 +45,12 @@ class SubConfigDefaultsTest(unittest.TestCase):
         class Config1(pexConf.Config):
             r1 = self.registry.makeField("single-item registry field")
             r2 = self.registry.makeField("single-item registry field", multi=True)
+
             def setDefaults(self):
                 self.r1.name = "C1"
                 self.r2.names = ["C2"]
         typemap = {"B": Config1}
+
         class Config2(pexConf.Config):
             c = pexConf.ConfigField(dtype=Config1, doc="holder for Config1")
             b = pexConf.ConfigChoiceField(typemap=typemap, doc="choice holder for Config1")

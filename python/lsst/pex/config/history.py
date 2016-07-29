@@ -27,28 +27,28 @@ import os
 import re
 import sys
 
-#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 
 class Color(object):
     categories = dict(
-        NAME = "blue",
-        VALUE = "yellow",
-        FILE = "green",
-        TEXT = "red",
-        FUNCTION_NAME = "blue",
-        )
+        NAME="blue",
+        VALUE="yellow",
+        FILE="green",
+        TEXT="red",
+        FUNCTION_NAME="blue",
+    )
 
     colors = {
-        "black"  : 0,
-        "red"    : 1,
-        "green"  : 2,
-        "yellow" : 3,
-        "blue"   : 4,
+        "black": 0,
+        "red": 1,
+        "green": 2,
+        "yellow": 3,
+        "blue": 4,
         "magenta": 5,
-        "cyan"   : 6,
-        "white"  : 7,
-        }
+        "cyan": 6,
+        "white": 7,
+    }
 
     _colorize = True
 
@@ -114,7 +114,8 @@ def _colorize(text, category):
     text = Color(text, category)
     return str(text)
 
-#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 
 class StackFrame(object):
     def __init__(self, stackTrace):
@@ -125,7 +126,8 @@ class StackFrame(object):
 
         self.fileName = re.sub(r'.*/python/lsst/', "", self.fileName)
 
-#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 
 def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
     """Format the history record for config.name"""
@@ -147,11 +149,11 @@ def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
 
             line = []
             if writeSourceLine:
-                line.append(["%s" % ("%s:%d" % (frame.fileName, frame.lineNumber)), "FILE",])
+                line.append(["%s" % ("%s:%d" % (frame.fileName, frame.lineNumber)), "FILE", ])
 
-            line.append([frame.text, "TEXT",])
+            line.append([frame.text, "TEXT", ])
             if False:
-                line.append([frame.functionName, "FUNCTION_NAME",])
+                line.append([frame.functionName, "FUNCTION_NAME", ])
 
             output.append(line)
 
@@ -170,7 +172,7 @@ def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
     # actually generate the config history
     #
     msg = []
-    fullname = "%s.%s" %(config._name, name) if config._name is not None else name
+    fullname = "%s.%s" % (config._name, name) if config._name is not None else name
     msg.append(_colorize(re.sub(r"^root\.", "", fullname), "NAME"))
     for value, output in outputs:
         line = prefix + _colorize("%-*s" % (valueLength, value), "VALUE") + " "
@@ -184,4 +186,3 @@ def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
         msg.append(line)
 
     return "\n".join(msg)
-

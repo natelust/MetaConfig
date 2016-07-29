@@ -25,29 +25,35 @@ import unittest
 import lsst.utils.tests
 import lsst.pex.config as pexConfig
 
+
 def isSorted(l):
-    if len(l)<=1:
+    if len(l) <= 1:
         return True
 
     p = l[0]
     for x in l[1:]:
         if x < p:
             return False
-        p=x
+        p = x
     return True
 
+
 def isPositive(x):
-    return x>0
+    return x > 0
+
 
 class Config1(pexConfig.Config):
-    l1 = pexConfig.ListField("l1", int, minLength=2, maxLength=5, default=[1,2,3], itemCheck=isPositive)
-    l2 = pexConfig.ListField("l2", int, length = 3, default=[1,2,3], listCheck=isSorted, itemCheck=isPositive)
-    l3 = pexConfig.ListField("l3", int, length = 3, default=None, optional=True, itemCheck=isPositive)
-    l4 = pexConfig.ListField("l4", int, length = 3, default=None, itemCheck=isPositive)
+    l1 = pexConfig.ListField("l1", int, minLength=2, maxLength=5, default=[1, 2, 3], itemCheck=isPositive)
+    l2 = pexConfig.ListField("l2", int, length=3, default=[1, 2, 3], listCheck=isSorted,
+                             itemCheck=isPositive)
+    l3 = pexConfig.ListField("l3", int, length=3, default=None, optional=True, itemCheck=isPositive)
+    l4 = pexConfig.ListField("l4", int, length=3, default=None, itemCheck=isPositive)
+
 
 class Config2(pexConfig.Config):
-    lf= pexConfig.ListField("lf", float, default=[1,2,3])
+    lf = pexConfig.ListField("lf", float, default=[1, 2, 3])
     ls = pexConfig.ListField("ls", str, default=["hi"])
+
 
 class ListFieldTest(unittest.TestCase):
     def testConstructor(self):
@@ -89,54 +95,59 @@ class ListFieldTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l1", [-1, -2, -3])
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l1", [1, 2, 0])
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l1", [1, 2, None])
-        c.l1 = None; c.l1 = [1, 1]; c.l1 = [1,1,1]; c.l1 = [1,1,1,1]; c.l1= [1,1,1,1,1]
-
+        c.l1 = None
+        c.l1 = [1, 1]
+        c.l1 = [1, 1, 1]
+        c.l1 = [1, 1, 1, 1]
+        c.l1 = [1, 1, 1, 1, 1]
 
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l2", [1, 2, None])
-        c.l2 = None; c.l2 = [1,2,3];
+        c.l2 = None
+        c.l2 = [1, 2, 3]
 
-        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l3", [0,3,2])
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l3", [0, 3, 2])
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l3", [1, 2, None])
-        c.l3 = None; c.l3 = [1,1,1]
+        c.l3 = None
+        c.l3 = [1, 1, 1]
 
-        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l4", [0,3,2])
+        self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l4", [0, 3, 2])
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "l4", [1, 2, None])
-        c.l4 = None; c.l4 = [1,1,1]
+        c.l4 = None
+        c.l4 = [1, 1, 1]
 
     def testValidate(self):
         c = Config1()
         self.assertRaises(pexConfig.FieldValidationError, Config1.validate, c)
 
-        c.l4 = [1,2,3]
+        c.l4 = [1, 2, 3]
         c.validate()
 
     def testInPlaceModification(self):
-        c= Config1()
+        c = Config1()
         self.assertRaises(pexConfig.FieldValidationError, c.l1.__setitem__, 2, 0)
-        c.l1[2]=10
-        self.assertEqual(c.l1, [1,2,10])
-        self.assertEqual((1,2, 10), c.l1)
+        c.l1[2] = 10
+        self.assertEqual(c.l1, [1, 2, 10])
+        self.assertEqual((1, 2, 10), c.l1)
 
         c.l1.insert(2, 20)
-        self.assertEqual(c.l1, [1,2, 20, 10])
+        self.assertEqual(c.l1, [1, 2, 20, 10])
         c.l1.append(30)
-        self.assertEqual(c.l1, [1,2, 20, 10, 30])
-        c.l1.extend([4,5,6])
-        self.assertEqual(c.l1, [1,2, 20, 10, 30, 4,5,6])
+        self.assertEqual(c.l1, [1, 2, 20, 10, 30])
+        c.l1.extend([4, 5, 6])
+        self.assertEqual(c.l1, [1, 2, 20, 10, 30, 4, 5, 6])
 
     def testCastAndTypes(self):
         c = Config2()
         self.assertEqual(c.lf, [1., 2., 3.])
 
-        c.lf[2]=10
-        self.assertEqual(c.lf, [1.,2.,10.])
-
+        c.lf[2] = 10
+        self.assertEqual(c.lf, [1., 2., 10.])
 
         c.ls.append("foo")
         self.assertEqual(c.ls, ["hi", "foo"])
 
     def testNoArbitraryAttributes(self):
-        c= Config1()
+        c = Config1()
         self.assertRaises(pexConfig.FieldValidationError, setattr, c.l1, "should", "fail")
 
 

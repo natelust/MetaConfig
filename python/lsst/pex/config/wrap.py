@@ -46,6 +46,7 @@ _dtypeMap = {
 
 _containerRegex = re.compile(r"(std::)?(vector|list)<\s*(?P<type>[a-z0-9_:]+)\s*>")
 
+
 def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     """A function that creates a Python config class that matches a  C++ control object class.
 
@@ -129,7 +130,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
             raise ValueError("Cannot guess appropriate Config class name for %s." % ctrl)
         name = ctrl.__name__.replace("Control", "Config")
     if cls is None:
-        cls = type(name, (base,), {"__doc__":doc})
+        cls = type(name, (base,), {"__doc__": doc})
         if module is not None:
             # Not only does setting __module__ make Python pretty-printers more useful,
             # it's also necessary if we want to pickle Config objects.
@@ -183,6 +184,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
                     if dtype is None:
                         raise TypeError("Could not parse field type '%s'." % ctype)
                     fields[k] = FieldCls(doc=doc, dtype=dtype, optional=True)
+
     # Define a number of methods to put in the new Config class.  Note that these are "closures";
     # they have access to local variables defined in the makeConfigClass function (like the fields dict).
     def makeControl(self):
@@ -199,13 +201,15 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
             if value is not None:
                 setattr(r, k, value)
         return r
+
     def readControl(self, control, __at=None, __label="readControl", __reset=False):
         """Read values from a C++ Control object and assign them to self's fields.
 
         The __at, __label, and __reset arguments are for internal use only; they are used to
         remove internal calls from the history.
         """
-        if __at is None: __at = traceback.extract_stack()[:-1]
+        if __at is None:
+            __at = traceback.extract_stack()[:-1]
         values = {}
         for k, f in fields.items():
             if isinstance(f, ConfigField):
@@ -216,12 +220,14 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
         if __reset:
             self._history = {}
         self.update(__at=__at, __label=__label, **values)
+
     def validate(self):
         """Validate the config object by constructing a control object and using
         a C++ validate() implementation."""
         super(cls, self).validate()
         r = self.makeControl()
         r.validate()
+
     def setDefaults(self):
         """Initialize the config object, using the Control objects default ctor
         to provide defaults."""
@@ -232,7 +238,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
             self.readControl(r, __at=[(ctrl.__name__ + " C++", 0, "setDefaults", "")], __label="defaults",
                              __reset=True)
         except:
-            pass # if we can't instantiate the Control, don't set defaults
+            pass  # if we can't instantiate the Control, don't set defaults
 
     ctrl.ConfigClass = cls
     cls.Control = ctrl
@@ -245,6 +251,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
         if not hasattr(cls, k):
             setattr(cls, k, field)
     return cls
+
 
 def wrap(ctrl):
     """A decorator that adds fields from a C++ control class to a Python config class.

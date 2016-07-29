@@ -26,35 +26,36 @@ import unittest
 import lsst.utils.tests
 import lsst.pex.config as pexConfig
 
+
 class Config1(pexConfig.Config):
-    f = pexConfig.Field(doc="Config1.f",dtype=int, default=4)
+    f = pexConfig.Field(doc="Config1.f", dtype=int, default=4)
 
     def validate(self):
         pexConfig.Config.validate(self)
         if self.f <= 0:
             raise pexConfig.FieldValidationError(Config1.f, self, "f should be > 0")
 
-class Config2(pexConfig.Config):
-    f = pexConfig.Field(doc="Config2.f",dtype=float, default=0.5, check=lambda x: x>0)
 
-TYPEMAP={"AAA":Config1, "BBB":Config2, "CCC":Config1}
+class Config2(pexConfig.Config):
+    f = pexConfig.Field(doc="Config2.f", dtype=float, default=0.5, check=lambda x: x > 0)
+
+
+TYPEMAP = {"AAA": Config1, "BBB": Config2, "CCC": Config1}
+
+
 class Config3(pexConfig.Config):
-    a= pexConfig.ConfigChoiceField(
-            doc="single non-optional",
-            typemap=TYPEMAP,
-            default = "AAA", multi=False, optional=False)
-    b= pexConfig.ConfigChoiceField(
-            doc="single optional",
-            typemap=TYPEMAP,
-            default = "AAA", multi=False, optional=True)
-    c= pexConfig.ConfigChoiceField(
-            doc="multi non-optional",
-            typemap=TYPEMAP,
-            default = ["AAA"], multi=True, optional=False)
-    d= pexConfig.ConfigChoiceField(
-            doc="multi optional",
-            typemap=TYPEMAP,
-            default = ["AAA"], multi=True, optional=True)
+    a = pexConfig.ConfigChoiceField(doc="single non-optional",
+                                    typemap=TYPEMAP,
+                                    default="AAA", multi=False, optional=False)
+    b = pexConfig.ConfigChoiceField(doc="single optional",
+                                    typemap=TYPEMAP,
+                                    default="AAA", multi=False, optional=True)
+    c = pexConfig.ConfigChoiceField(doc="multi non-optional",
+                                    typemap=TYPEMAP,
+                                    default=["AAA"], multi=True, optional=False)
+    d = pexConfig.ConfigChoiceField(doc="multi optional",
+                                    typemap=TYPEMAP,
+                                    default=["AAA"], multi=True, optional=True)
 
 
 class ConfigChoiceFieldTest(unittest.TestCase):
@@ -70,12 +71,11 @@ class ConfigChoiceFieldTest(unittest.TestCase):
         self.assertEqual(self.config.a["AAA"].f, 4)
         self.assertEqual(self.config.a["BBB"].f, 0.5)
 
-
     def testSave(self):
-        self.config.a["AAA"].f=1
-        self.config.a["BBB"].f= 1.0
-        self.config.a="BBB"
-        path ="choiceFieldTest.config"
+        self.config.a["AAA"].f = 1
+        self.config.a["BBB"].f = 1.0
+        self.config.a = "BBB"
+        path = "choiceFieldTest.config"
         self.config.save(path)
         roundtrip = Config3()
         roundtrip.load(path)
@@ -87,17 +87,16 @@ class ConfigChoiceFieldTest(unittest.TestCase):
 
     def testValidate(self):
         self.config.validate()
-        self.config.a="AAA"
-        self.config.a["AAA"].f=0
+        self.config.a = "AAA"
+        self.config.a["AAA"].f = 0
 
         self.assertRaises(pexConfig.FieldValidationError, self.config.validate)
 
-        self.config.a="BBB"
+        self.config.a = "BBB"
         self.config.validate()
 
-        self.config.a=None
+        self.config.a = None
         self.assertRaises(pexConfig.FieldValidationError, self.config.validate)
-
 
     def testFreeze(self):
         self.config.freeze()
@@ -108,7 +107,7 @@ class ConfigChoiceFieldTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.config.a, "should", "fail")
 
     def testSelectionSet(self):
-        #test in place modification
+        # test in place modification
         self.config.c.names.add("BBB")
         self.assertEqual(set(self.config.c.names), set(["AAA", "BBB"]))
         self.config.c.names.remove("AAA")
@@ -116,22 +115,21 @@ class ConfigChoiceFieldTest(unittest.TestCase):
         self.assertRaises(KeyError, self.config.c.names.remove, "AAA")
         self.config.c.names.discard("AAA")
 
-        #test bad assignment
-        self.assertRaises(
-                pexConfig.FieldValidationError,
-                setattr, self.config.c, "names", "AAA")
-        self.config.c.names=["AAA"]
+        # test bad assignment
+        self.assertRaises(pexConfig.FieldValidationError,
+                          setattr, self.config.c, "names", "AAA")
+        self.config.c.names = ["AAA"]
 
     def testNoneValue(self):
-        self.config.a=None
+        self.config.a = None
         self.assertRaises(pexConfig.FieldValidationError, self.config.validate)
-        self.config.a="AAA"
-        self.config.b=None
+        self.config.a = "AAA"
+        self.config.b = None
         self.config.validate()
-        self.config.c=None
+        self.config.c = None
         self.assertRaises(pexConfig.FieldValidationError, self.config.validate)
-        self.config.c=["AAA"]
-        self.config.d=None
+        self.config.c = ["AAA"]
+        self.config.d = None
         self.config.validate()
 
 

@@ -29,6 +29,7 @@ from .configChoiceField import ConfigInstanceDict, ConfigChoiceField
 
 __all__ = ("Registry", "makeRegistry", "RegistryField", "registerConfig", "registerConfigurable")
 
+
 class ConfigurableWrapper(object):
     """A wrapper for configurables
 
@@ -105,17 +106,25 @@ class Registry(collections.Mapping):
         else:
             wrapper = ConfigurableWrapper(target, ConfigClass)
         if not issubclass(wrapper.ConfigClass, self._configBaseType):
-            raise TypeError("ConfigClass=%s is not a subclass of %r" % \
-                    (_typeStr(wrapper.ConfigClass), _typeStr(self._configBaseType)))
+            raise TypeError("ConfigClass=%s is not a subclass of %r" %
+                            (_typeStr(wrapper.ConfigClass), _typeStr(self._configBaseType)))
         self._dict[name] = wrapper
 
-    def __getitem__(self, key): return self._dict[key]
-    def __len__(self): return len(self._dict)
-    def __iter__(self): return iter(self._dict)
-    def __contains__(self, key): return key in self._dict
+    def __getitem__(self, key):
+        return self._dict[key]
+
+    def __len__(self):
+        return len(self._dict)
+
+    def __iter__(self):
+        return iter(self._dict)
+
+    def __contains__(self, key):
+        return key in self._dict
 
     def makeField(self, doc, default=None, optional=False, multi=False):
         return RegistryField(doc, self, default, optional, multi)
+
 
 class RegistryAdaptor(collections.Mapping):
     """Private class that makes a Registry behave like the thing a ConfigChoiceField expects."""
@@ -123,10 +132,18 @@ class RegistryAdaptor(collections.Mapping):
     def __init__(self, registry):
         self.registry = registry
 
-    def __getitem__(self, k): return self.registry[k].ConfigClass
-    def __iter__(self): return iter(self.registry)
-    def __len__(self): return len(self.registry)
-    def __contains__(self, k): return k in self.registry
+    def __getitem__(self, k):
+        return self.registry[k].ConfigClass
+
+    def __iter__(self):
+        return iter(self.registry)
+
+    def __len__(self):
+        return len(self.registry)
+
+    def __contains__(self, k):
+        return k in self.registry
+
 
 class RegistryInstanceDict(ConfigInstanceDict):
     def __init__(self, config, field):
@@ -136,14 +153,14 @@ class RegistryInstanceDict(ConfigInstanceDict):
     def _getTarget(self):
         if self._field.multi:
             raise FieldValidationError(self._field, self._config,
-                    "Multi-selection field has no attribute 'target'")
+                                       "Multi-selection field has no attribute 'target'")
         return self._field.typemap.registry[self._selection]
     target = property(_getTarget)
 
     def _getTargets(self):
         if not self._field.multi:
             raise FieldValidationError(self._field, self._config,
-                    "Single-selection field has no attribute 'targets'")
+                                       "Single-selection field has no attribute 'targets'")
         return [self._field.typemap.registry[c] for c in self._selection]
     targets = property(_getTargets)
 
@@ -157,7 +174,7 @@ class RegistryInstanceDict(ConfigInstanceDict):
         """
         if self.active is None:
             msg = "No selection has been made.  Options: %s" % \
-                    (" ".join(list(self._field.typemap.registry.keys())))
+                (" ".join(list(self._field.typemap.registry.keys())))
             raise FieldValidationError(self._field, self._config, msg)
         if self._field.multi:
             retvals = []
@@ -166,11 +183,13 @@ class RegistryInstanceDict(ConfigInstanceDict):
             return retvals
         else:
             return self._field.typemap.registry[self.name](*args, config=self[self.name], **kw)
+
     def __setattr__(self, attr, value):
-        if attr =="registry":
+        if attr == "registry":
             object.__setattr__(self, attr, value)
         else:
             ConfigInstanceDict.__setattr__(self, attr, value)
+
 
 class RegistryField(ConfigChoiceField):
     instanceDictClass = RegistryInstanceDict
@@ -186,10 +205,11 @@ class RegistryField(ConfigChoiceField):
             constructor signature!
         """
         other = type(self)(doc=self.doc, registry=self.registry,
-                default=copy.deepcopy(self.default),
-                optional=self.optional, multi=self.multi)
-        other.source=self.source
+                           default=copy.deepcopy(self.default),
+                           optional=self.optional, multi=self.multi)
+        other.source = self.source
         return other
+
 
 def makeRegistry(doc, configBaseType=Config):
     """A convenience function to create a new registry.
@@ -200,6 +220,7 @@ def makeRegistry(doc, configBaseType=Config):
     cls = type("Registry", (Registry,), {"__doc__": doc})
     return cls(configBaseType=configBaseType)
 
+
 def registerConfigurable(name, registry, ConfigClass=None):
     """A decorator that adds a class as a configurable in a Registry.
 
@@ -209,6 +230,7 @@ def registerConfigurable(name, registry, ConfigClass=None):
         registry.register(name, target=cls, ConfigClass=ConfigClass)
         return cls
     return decorate
+
 
 def registerConfig(name, registry, target):
     """A decorator that adds a class as a ConfigClass in a Registry, and associates it with the given
