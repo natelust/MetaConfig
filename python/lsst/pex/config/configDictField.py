@@ -72,9 +72,9 @@ class ConfigDict(Dict):
             if setHistory:
                 self.history.append(("Added item at key %s" % k, at, label))
         else:
-            if value == dtype:
-                value = dtype()
-            oldValue.update(__at=at, __label=label, **value._storage)
+            if x == dtype:
+                x = dtype()
+            oldValue.update(__at=at, __label=label, **x._storage)
             if setHistory:
                 self.history.append(("Modified item at key %s" % k, at, label))
 
