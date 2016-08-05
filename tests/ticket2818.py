@@ -20,37 +20,40 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+from __future__ import print_function
 import os
 import sys
-sys.path = [os.path.join(os.path.abspath(os.path.dirname(__file__)), "ticket2818")] + sys.path
-
 import io
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 
-from ticket2818.define import BaseConfig
+# Extend path to find the helper code for this test relative to the test file
+sys.path = [os.path.join(os.path.abspath(os.path.dirname(__file__)), "ticket2818helper")] + sys.path
+
+from ticket2818helper.define import BaseConfig  # noqa E402 module level import not at top of file
+
 
 class ImportTest(unittest.TestCase):
     def test(self):
-        from ticket2818.another import AnotherConfigurable # Leave this uncommented to demonstrate bug
+        from ticket2818helper.another import AnotherConfigurable  # noqa F401 imported but unused
         config = BaseConfig()
-        config.loadFromStream("""from ticket2818.another import AnotherConfigurable
+        config.loadFromStream("""from ticket2818helper.another import AnotherConfigurable
 config.test.retarget(AnotherConfigurable)
 """)
-        stream = io.BytesIO()
+        stream = io.StringIO()
         config.saveToStream(stream)
-        print stream.getvalue()
-        self.assertTrue("import ticket2818.another" in stream.getvalue())
+        values = stream.getvalue()
+        print(values)
+        self.assertIn("import ticket2818helper.another", values)
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(ImportTest)
-    suites += unittest.makeSuite(utilsTests.MemoryTestCase)
-    return unittest.TestSuite(suites)
 
-def run(exit=False):
-    utilsTests.run(suite(), exit)
+class TestMemory(lsst.utils.tests.MemoryTestCase):
+    pass
 
-if __name__=='__main__':
-    run(True)
+
+def setup_module(module):
+    lsst.utils.tests.init()
+
+if __name__ == "__main__":
+    lsst.utils.tests.init()
+    unittest.main()

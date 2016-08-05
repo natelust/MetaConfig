@@ -1,7 +1,7 @@
-# 
+#
 # LSST Data Management System
 # Copyright 2008-2013 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -9,14 +9,14 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 """
@@ -31,10 +31,12 @@ import numpy
 
 __all__ = ("getComparisonName", "compareScalars", "compareConfigs")
 
+
 def getComparisonName(name1, name2):
     if name1 != name2:
         return "%s / %s" % (name1, name2)
     return name1
+
 
 def compareScalars(name, v1, v2, output, rtol=1E-8, atol=1E-8, dtype=None):
     """Helper function for Config.compare; used to compare two scalar values for equality.
@@ -60,6 +62,7 @@ def compareScalars(name, v1, v2, output, rtol=1E-8, atol=1E-8, dtype=None):
     if not result and output is not None:
         output("Inequality in %s: %r != %r" % (name, v1, v2))
     return result
+
 
 def compareConfigs(name, c1, c2, shortcut=True, rtol=1E-8, atol=1E-8, output=None):
     """Helper function for Config.compare; used to compare two Configs for equality.
@@ -96,7 +99,7 @@ def compareConfigs(name, c1, c2, shortcut=True, rtol=1E-8, atol=1E-8, output=Non
             output("Config types do not match for %s: %s != %s" % (name, type(c1), type(c2)))
         return False
     equal = True
-    for field in c1._fields.itervalues():
+    for field in c1._fields.values():
         result = field._compare(c1, c2, shortcut=shortcut, rtol=rtol, atol=atol, output=output)
         if not result and shortcut:
             return False

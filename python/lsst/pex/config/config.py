@@ -1,7 +1,7 @@
-# 
+#
 # LSST Data Management System
 # Copyright 2008-2015 AURA/LSST.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -9,16 +9,21 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
+from __future__ import print_function
+oldStringType = str  # Need to keep hold of original str type
+from builtins import str
+from builtins import object
+from past.builtins import long
 
 import os
 import io
@@ -29,8 +34,10 @@ import copy
 import tempfile
 
 from .comparison import getComparisonName, compareScalars, compareConfigs
+from future.utils import with_metaclass
 
 __all__ = ("Config", "Field", "FieldValidationError")
+
 
 def _joinNamePath(prefix=None, name=None, index=None):
     """
@@ -44,20 +51,22 @@ def _joinNamePath(prefix=None, name=None, index=None):
         name = prefix + "." + name
 
     if index is not None:
-        return "%s[%r]"%(name, index)
+        return "%s[%r]" % (name, index)
     else:
         return name
+
 
 def _autocast(x, dtype):
     """
     If appropriate perform type casting of value x to type dtype,
     otherwise return the original value x
     """
-    if dtype==float and type(x)==int:
+    if dtype == float and isinstance(x, int):
         return float(x)
-    if dtype==int and type(x)==long:
+    if dtype == int and isinstance(x, long):
         return int(x)
     return x
+
 
 def _typeStr(x):
     """
@@ -70,10 +79,11 @@ def _typeStr(x):
         xtype = x
     else:
         xtype = type(x)
-    if xtype.__module__ == '__builtin__':
+    if (sys.version_info.major <= 2 and xtype.__module__ == '__builtin__') or xtype.__module__ == 'builtins':
         return xtype.__name__
     else:
-        return "%s.%s"%(xtype.__module__, xtype.__name__)
+        return "%s.%s" % (xtype.__module__, xtype.__name__)
+
 
 class ConfigMeta(type):
     """A metaclass for Config
@@ -87,20 +97,21 @@ class ConfigMeta(type):
         type.__init__(self, name, bases, dict_)
         self._fields = {}
         self._source = traceback.extract_stack(limit=2)[0]
+
         def getFields(classtype):
             fields = {}
-            bases=list(classtype.__bases__)
+            bases = list(classtype.__bases__)
             bases.reverse()
             for b in bases:
                 fields.update(getFields(b))
 
-            for k, v in classtype.__dict__.iteritems():
+            for k, v in classtype.__dict__.items():
                 if isinstance(v, Field):
                     fields[k] = v
             return fields
 
         fields = getFields(self)
-        for k, v in fields.iteritems():
+        for k, v in fields.items():
             setattr(self, k, copy.deepcopy(v))
 
     def __setattr__(self, name, value):
@@ -108,6 +119,7 @@ class ConfigMeta(type):
             value.name = name
             self._fields[name] = value
         type.__setattr__(self, name, value)
+
 
 class FieldValidationError(ValueError):
     """
@@ -122,17 +134,18 @@ class FieldValidationError(ValueError):
     def __init__(self, field, config, msg):
         self.fieldType = type(field)
         self.fieldName = field.name
-        self.fullname  = _joinNamePath(config._name, field.name)
+        self.fullname = _joinNamePath(config._name, field.name)
         self.history = config.history.setdefault(field.name, [])
         self.fieldSource = field.source
         self.configSource = config._source
-        error="%s '%s' failed validation: %s\n"\
+        error = "%s '%s' failed validation: %s\n"\
                 "For more information read the Field definition at:\n%s"\
-                "And the Config definition at:\n%s"%\
-              (self.fieldType.__name__, self.fullname, msg,
-                      traceback.format_list([self.fieldSource])[0],
-                      traceback.format_list([self.configSource])[0])
+                "And the Config definition at:\n%s" % \
+            (self.fieldType.__name__, self.fullname, msg,
+             traceback.format_list([self.fieldSource])[0],
+             traceback.format_list([self.configSource])[0])
         ValueError.__init__(self, error)
+
 
 class Field(object):
     """A field in a a Config.
@@ -143,7 +156,9 @@ class Field(object):
     class Example(Config):
         myInt = Field(int, "an integer field!", default=0)
     """
-    supportedTypes=(str, bool, float, int, complex)
+    # Must be able to support str and future str as we can not guarantee that
+    # code will pass in a future str type on Python 2
+    supportedTypes = set((str, oldStringType, bool, float, int, complex))
 
     def __init__(self, doc, dtype, default=None, check=None, optional=False):
         """Initialize a Field.
@@ -158,7 +173,7 @@ class Field(object):
         optional --- When False, Config validate() will fail if value is None
         """
         if dtype not in self.supportedTypes:
-            raise ValueError("Unsupported Field dtype %s"%_typeStr(dtype))
+            raise ValueError("Unsupported Field dtype %s" % _typeStr(dtype))
         source = traceback.extract_stack(limit=2)[0]
         self._setup(doc=doc, dtype=dtype, default=default, check=check, optional=optional, source=source)
 
@@ -220,11 +235,11 @@ class Field(object):
             return
 
         if not isinstance(value, self.dtype):
-            msg = "Value %s is of incorrect type %s. Expected type %s"%\
-                    (value, _typeStr(value), _typeStr(self.dtype))
+            msg = "Value %s is of incorrect type %s. Expected type %s" % \
+                (value, _typeStr(value), _typeStr(self.dtype))
             raise TypeError(msg)
         if self.check is not None and not self.check(value):
-            msg = "Value %s is not a valid value"%str(value)
+            msg = "Value %s is not a valid value" % str(value)
             raise ValueError(msg)
 
     def save(self, outfile, instance):
@@ -242,9 +257,9 @@ class Field(object):
         doc = "# " + str(self.doc).replace("\n", "\n# ")
         if isinstance(value, float) and (math.isinf(value) or math.isnan(value)):
             # non-finite numbers need special care
-            print >> outfile, "%s\n%s=float('%r')\n" % (doc, fullname, value)
+            outfile.write(u"{}\n{}=float('{!r}')\n\n".format(doc, fullname, value))
         else:
-            print >> outfile, "%s\n%s=%r\n" % (doc, fullname, value)
+            outfile.write(u"{}\n{}={!r}\n\n".format(doc, fullname, value))
 
     def toDict(self, instance):
         """
@@ -310,8 +325,8 @@ class Field(object):
             value = _autocast(value, self.dtype)
             try:
                 self._validateValue(value)
-            except BaseException, e:
-                raise FieldValidationError(self, instance, e.message)
+            except BaseException as e:
+                raise FieldValidationError(self, instance, str(e))
 
         instance._storage[self.name] = value
         if at is None:
@@ -348,8 +363,9 @@ class Field(object):
         name = getComparisonName(
             _joinNamePath(instance1._name, self.name),
             _joinNamePath(instance2._name, self.name)
-            )
+        )
         return compareScalars(name, v1, v2, dtype=self.dtype, rtol=rtol, atol=atol, output=output)
+
 
 class RecordingImporter(object):
     """An Importer (for sys.meta_path) that records which modules are being imported.
@@ -374,7 +390,7 @@ class RecordingImporter(object):
 
     def __exit__(self, *args):
         self.uninstall()
-        return False # Don't suppress exceptions
+        return False  # Don't suppress exceptions
 
     def uninstall(self):
         """Uninstall the Importer"""
@@ -392,7 +408,8 @@ class RecordingImporter(object):
         """Return the set of modules that were imported."""
         return self._modules
 
-class Config(object):
+
+class Config(with_metaclass(ConfigMeta, object)):
     """Base class for control objects.
 
     A Config object will usually have several Field instances as class
@@ -403,8 +420,6 @@ class Config(object):
     Config also emulates a dict of field name: field value
     """
 
-    __metaclass__ = ConfigMeta
-
     def __iter__(self):
         """!Iterate over fields
         """
@@ -413,30 +428,32 @@ class Config(object):
     def keys(self):
         """!Return the list of field names
         """
-        return self._storage.keys()
+        return list(self._storage.keys())
+
     def values(self):
         """!Return the list of field values
         """
-        return self._storage.values()
+        return list(self._storage.values())
+
     def items(self):
         """!Return the list of (field name, field value) pairs
         """
-        return self._storage.items()
+        return list(self._storage.items())
 
     def iteritems(self):
         """!Iterate over (field name, field value) pairs
         """
-        return self._storage.iteritems()
+        return iter(self._storage.items())
 
     def itervalues(self):
         """!Iterate over field values
         """
-        return self.storage.itervalues()
+        return iter(self.storage.values())
 
     def iterkeys(self):
         """!Iterate over field names
         """
-        return self.storage.iterkeys()
+        return iter(self.storage.keys())
 
     def __contains__(self, name):
         """!Return True if the specified field exists in this config
@@ -462,14 +479,14 @@ class Config(object):
         kw.pop("__label", "default")
 
         instance = object.__new__(cls)
-        instance._frozen=False
-        instance._name=name
+        instance._frozen = False
+        instance._name = name
         instance._storage = {}
         instance._history = {}
         instance._imports = set()
         # load up defaults
-        for field in instance._fields.itervalues():
-            instance._history[field.name]=[]
+        for field in instance._fields.values():
+            instance._history[field.name] = []
             field.__set__(instance, field.default, at=at+[field.source], label="default")
         # set custom default-overides
         instance.setDefaults()
@@ -483,9 +500,10 @@ class Config(object):
         We need to condense and reconstitute the Config, since it may contain lambdas
         (as the 'check' elements) that cannot be pickled.
         """
-        stream = io.BytesIO()
+        # The stream must be in characters to match the API but pickle requires bytes
+        stream = io.StringIO()
         self.saveToStream(stream)
-        return (unreduceConfig, (self.__class__, stream.getvalue()))
+        return (unreduceConfig, (self.__class__, stream.getvalue().encode()))
 
     def setDefaults(self):
         """
@@ -507,12 +525,12 @@ class Config(object):
         at = kw.pop("__at", traceback.extract_stack()[:-1])
         label = kw.pop("__label", "update")
 
-        for name, value in kw.iteritems():
+        for name, value in kw.items():
             try:
                 field = self._fields[name]
                 field.__set__(self, value, at=at, label=label)
             except KeyError:
-                raise KeyError("No field of name %s exists in config type %s"%(name, _typeStr(self)))
+                raise KeyError("No field of name %s exists in config type %s" % (name, _typeStr(self)))
 
     def load(self, filename, root="config"):
         """!Modify this config in place by executing the Python code in the named file.
@@ -527,7 +545,7 @@ class Config(object):
         root="root" instead of root="config" will be loaded with a warning printed to sys.stderr.
         This feature will be removed at some point.
         """
-        with open(filename) as f:
+        with open(filename, "r") as f:
             code = compile(f.read(), filename=filename, mode="exec")
             self.loadFromStream(stream=code, root=root)
 
@@ -549,7 +567,7 @@ class Config(object):
         with RecordingImporter() as importer:
             try:
                 local = {root: self}
-                exec stream in {}, local
+                exec(stream, {}, local)
             except NameError as e:
                 if root == "config" and "root" in e.args[0]:
                     if filename is None:
@@ -558,10 +576,10 @@ class Config(object):
                         filename = getattr(stream, "co_filename", None)
                         if filename is None:
                             filename = getattr(stream, "name", "?")
-                    sys.stderr.write("Config override file %r" % (filename,) + \
-                        " appears to use 'root' instead of 'config'; trying with 'root'")
+                    sys.stderr.write(u"Config override file %r" % (filename,) +
+                                     u" appears to use 'root' instead of 'config'; trying with 'root'")
                     local = {"root": self}
-                    exec stream in {}, local
+                    exec(stream, {}, local)
                 else:
                     raise
 
@@ -574,14 +592,14 @@ class Config(object):
         @param[in] root  name to use for the root config variable; the same value must be used when loading
         """
         d = os.path.dirname(filename)
-        with tempfile.NamedTemporaryFile(delete=False, dir=d) as outfile:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, dir=d) as outfile:
             self.saveToStream(outfile, root)
             os.rename(outfile.name, filename)
 
     def saveToStream(self, outfile, root="config"):
         """!Save a python script to a stream, which, when loaded, reproduces this Config
 
-        @param outfile [inout] open file object to which to write the config
+        @param outfile [inout] open file object to which to write the config. Accepts strings not bytes.
         @param root [in] name to use for the root config variable; the same value must be used when loading
         """
         tmp = self._name
@@ -589,9 +607,11 @@ class Config(object):
         try:
             configType = type(self)
             typeString = _typeStr(configType)
-            print >> outfile, "import %s" % (configType.__module__)
-            print >> outfile, "assert type(%s)==%s, 'config is of type %%s.%%s" % (root, typeString), \
-                "instead of %s' %% (type(%s).__module__, type(%s).__name__)" % (typeString, root, root)
+            outfile.write(u"import {}\n".format(configType.__module__))
+            outfile.write(u"assert type({})=={}, 'config is of type %s.%s ".format(root, typeString))
+            outfile.write(u"instead of {}' % (type({}).__module__, type({}).__name__)\n".format(typeString,
+                                                                                               root,
+                                                                                               root))
             self._save(outfile)
         finally:
             self._rename(tmp)
@@ -599,8 +619,8 @@ class Config(object):
     def freeze(self):
         """!Make this Config and all sub-configs read-only
         """
-        self._frozen=True
-        for field in self._fields.itervalues():
+        self._frozen = True
+        for field in self._fields.values():
             field.freeze(self)
 
     def _save(self, outfile):
@@ -608,8 +628,8 @@ class Config(object):
         """
         for imp in self._imports:
             if imp in sys.modules and sys.modules[imp] is not None:
-                print >> outfile, "import %s" % imp
-        for field in self._fields.itervalues():
+                outfile.write(u"import {}\n".format(imp))
+        for field in self._fields.values():
             field.save(outfile, self)
 
     def toDict(self):
@@ -619,7 +639,7 @@ class Config(object):
         Field type, you may need to implement your own toDict method.
         """
         dict_ = {}
-        for name, field in self._fields.iteritems():
+        for name, field in self._fields.items():
             dict_[name] = field.toDict(self)
         return dict_
 
@@ -632,7 +652,7 @@ class Config(object):
         Field type, you may need to implement your own rename method.
         """
         self._name = name
-        for field in self._fields.itervalues():
+        for field in self._fields.values():
             field.rename(self)
 
     def validate(self):
@@ -649,7 +669,7 @@ class Config(object):
         Inter-field relationships should only be checked in derived Config
         classes after calling this method, and base validation is complete
         """
-        for field in self._fields.itervalues():
+        for field in self._fields.values():
             field.validate(self)
 
     def formatHistory(self, name, **kwargs):
@@ -680,7 +700,7 @@ class Config(object):
         """
         if attr in self._fields:
             if at is None:
-                at=traceback.extract_stack()[:-1]
+                at = traceback.extract_stack()[:-1]
             # This allows Field descriptors to work.
             self._fields[attr].__set__(self, value, at=at, label=label)
         elif hasattr(getattr(self.__class__, attr, None), '__set__'):
@@ -691,12 +711,12 @@ class Config(object):
             self.__dict__[attr] = value
         else:
             # We throw everything else.
-            raise AttributeError("%s has no attribute %s"%(_typeStr(self), attr))
+            raise AttributeError("%s has no attribute %s" % (_typeStr(self), attr))
 
     def __delattr__(self, attr, at=None, label="deletion"):
         if attr in self._fields:
             if at is None:
-                at=traceback.extract_stack()[:-1]
+                at = traceback.extract_stack()[:-1]
             self._fields[attr].__delete__(self, at=at, label=label)
         else:
             object.__delattr__(self, attr)
@@ -723,8 +743,8 @@ class Config(object):
     def __repr__(self):
         return "%s(%s)" % (
             _typeStr(self),
-            ", ".join("%s=%r" % (k, v) for k, v in self.toDict().iteritems() if v is not None)
-            )
+            ", ".join("%s=%r" % (k, v) for k, v in self.toDict().items() if v is not None)
+        )
 
     def compare(self, other, shortcut=True, rtol=1E-8, atol=1E-8, output=None):
         """!Compare two Configs for equality; return True if equal
@@ -746,6 +766,7 @@ class Config(object):
         name = getComparisonName(name1, name2)
         return compareConfigs(name, self, other, shortcut=shortcut,
                               rtol=rtol, atol=atol, output=output)
+
 
 def unreduceConfig(cls, stream):
     config = cls()

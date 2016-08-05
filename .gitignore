@@ -1,6 +1,7 @@
 .sconsign.dblite
 config.log
 .sconf_temp
+_build.*
 *.dylib
 *.o
 *.os
@@ -10,9 +11,11 @@ config.log
 *_wrap.cc
 *Lib.py
 doc/html
+doc/xml
 doc/*.tag
 doc/doxygen.conf
 tests/.tests
+tests/.cache
 version.py
 
 roundtrip.test

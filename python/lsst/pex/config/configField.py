@@ -1,7 +1,7 @@
-# 
+#
 # LSST Data Management System
 # Copyright 2008-2013 LSST Corporation.
-# 
+#
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
 #
@@ -9,22 +9,25 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
-# You should have received a copy of the LSST License Statement and 
-# the GNU General Public License along with this program.  If not, 
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+from builtins import str
+
 import traceback
 
 from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr
 from .comparison import compareConfigs, getComparisonName
 
 __all__ = ["ConfigField"]
+
 
 class ConfigField(Field):
     """
@@ -34,12 +37,12 @@ class ConfigField(Field):
 
     Note that dtype must be a subclass of Config.
 
-    If default=None, the field will default to a default-constructed 
+    If default=None, the field will default to a default-constructed
     instance of dtype.
 
-    Additionally, to allow for fewer deep-copies, assigning an instance of 
-    ConfigField to dtype itself, is considered equivalent to assigning a 
-    default-constructed sub-config. This means that the argument default can be 
+    Additionally, to allow for fewer deep-copies, assigning an instance of
+    ConfigField to dtype itself, is considered equivalent to assigning a
+    default-constructed sub-config. This means that the argument default can be
     dtype, as well as an instance of dtype.
 
     Assigning to ConfigField will update all of the fields in the config.
@@ -47,14 +50,14 @@ class ConfigField(Field):
 
     def __init__(self, doc, dtype, default=None, check=None):
         if not issubclass(dtype, Config):
-            raise ValueError("dtype=%s is not a subclass of Config" % \
-                    _typeStr(dtype))
+            raise ValueError("dtype=%s is not a subclass of Config" %
+                             _typeStr(dtype))
         if default is None:
             default = dtype
         source = traceback.extract_stack(limit=2)[0]
-        self._setup( doc=doc, dtype=dtype, default=default, check=check, 
-                optional=False, source=source)
-  
+        self._setup(doc=doc, dtype=dtype, default=default, check=check,
+                    optional=False, source=source)
+
     def __get__(self, instance, owner=None):
         if instance is None or not isinstance(instance, Config):
             return self
@@ -67,26 +70,25 @@ class ConfigField(Field):
 
     def __set__(self, instance, value, at=None, label="assignment"):
         if instance._frozen:
-            raise FieldValidationError(self, instance, \
-                    "Cannot modify a frozen Config")
+            raise FieldValidationError(self, instance,
+                                       "Cannot modify a frozen Config")
         name = _joinNamePath(prefix=instance._name, name=self.name)
 
         if value != self.dtype and type(value) != self.dtype:
-            msg = "Value %s is of incorrect type %s. Expected %s" %\
-                    (value, _typeStr(value), _typeStr(self.dtype))
+            msg = "Value %s is of incorrect type %s. Expected %s" % \
+                (value, _typeStr(value), _typeStr(self.dtype))
             raise FieldValidationError(self, instance, msg)
-        
+
         if at is None:
             at = traceback.extract_stack()[:-1]
 
         oldValue = instance._storage.get(self.name, None)
         if oldValue is None:
             if value == self.dtype:
-                instance._storage[self.name] = self.dtype(
-                        __name=name, __at=at, __label=label)
+                instance._storage[self.name] = self.dtype(__name=name, __at=at, __label=label)
             else:
-                instance._storage[self.name] = self.dtype(
-                        __name=name, __at=at, __label=label, **value._storage)
+                instance._storage[self.name] = self.dtype(__name=name, __at=at,
+                                                          __label=label, **value._storage)
         else:
             if value == self.dtype:
                 value = value()
@@ -97,7 +99,7 @@ class ConfigField(Field):
     def rename(self, instance):
         value = self.__get__(instance)
         value._rename(_joinNamePath(instance._name, self.name))
-        
+
     def save(self, outfile, instance):
         value = self.__get__(instance)
         value._save(outfile)
@@ -109,13 +111,13 @@ class ConfigField(Field):
     def toDict(self, instance):
         value = self.__get__(instance)
         return value.toDict()
-    
+
     def validate(self, instance):
         value = self.__get__(instance)
         value.validate()
 
         if self.check is not None and not self.check(value):
-            msg = "%s is not a valid value"%str(value)
+            msg = "%s is not a valid value" % str(value)
             raise FieldValidationError(self, instance, msg)
 
     def _compare(self, instance1, instance2, shortcut, rtol, atol, output):
@@ -136,5 +138,5 @@ class ConfigField(Field):
         name = getComparisonName(
             _joinNamePath(instance1._name, self.name),
             _joinNamePath(instance2._name, self.name)
-            )
+        )
         return compareConfigs(name, c1, c2, shortcut=shortcut, rtol=rtol, atol=atol, output=output)
