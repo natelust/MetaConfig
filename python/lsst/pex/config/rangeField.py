@@ -36,7 +36,7 @@ class RangeField(Field):
 
     """
 
-    supportedTypes = (int, float)
+    supportedTypes = set((int, float))
 
     def __init__(self, doc, dtype, default=None, optional=False,
                  min=None, max=None, inclusiveMin=True, inclusiveMax=False):

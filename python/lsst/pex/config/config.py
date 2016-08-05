@@ -158,7 +158,7 @@ class Field(object):
     """
     # Must be able to support str and future str as we can not guarantee that
     # code will pass in a future str type on Python 2
-    supportedTypes = (str, oldStringType, bool, float, int, complex)
+    supportedTypes = set((str, oldStringType, bool, float, int, complex))
 
     def __init__(self, doc, dtype, default=None, check=None, optional=False):
         """Initialize a Field.
