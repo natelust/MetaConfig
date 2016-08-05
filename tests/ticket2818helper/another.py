@@ -1,4 +1,4 @@
-from ticket2818.define import TestConfig, TestConfigurable
+from ticket2818helper.define import TestConfig, TestConfigurable
 
 class AnotherConfig(TestConfig):
     pass

@@ -23,26 +23,26 @@
 from __future__ import print_function
 import os
 import sys
-sys.path = [os.path.join(os.path.abspath(os.path.dirname(__file__)), "ticket2818")] + sys.path
+sys.path = [os.path.join(os.path.abspath(os.path.dirname(__file__)), "ticket2818helper")] + sys.path
 
 import io
 import unittest
 import lsst.utils.tests as utilsTests
 
-from ticket2818.define import BaseConfig
+from ticket2818helper.define import BaseConfig
 
 class ImportTest(unittest.TestCase):
     def test(self):
-        from ticket2818.another import AnotherConfigurable # Leave this uncommented to demonstrate bug
+        from ticket2818helper.another import AnotherConfigurable # Leave this uncommented to demonstrate bug
         config = BaseConfig()
-        config.loadFromStream("""from ticket2818.another import AnotherConfigurable
+        config.loadFromStream("""from ticket2818helper.another import AnotherConfigurable
 config.test.retarget(AnotherConfigurable)
 """)
         stream = io.BytesIO()
         config.saveToStream(stream)
         values = stream.getvalue().decode()
         print(values)
-        self.assertTrue("import ticket2818.another" in values)
+        self.assertTrue("import ticket2818helper.another" in values)
 
 def suite():
     utilsTests.init()
