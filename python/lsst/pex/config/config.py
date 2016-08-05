@@ -61,9 +61,9 @@ def _autocast(x, dtype):
     If appropriate perform type casting of value x to type dtype,
     otherwise return the original value x
     """
-    if dtype == float and type(x) == int:
+    if dtype == float and isinstance(x, int):
         return float(x)
-    if dtype == int and type(x) == long:
+    if dtype == int and isinstance(x, long):
         return int(x)
     return x
 
