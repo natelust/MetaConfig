@@ -19,7 +19,6 @@
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
-from __future__ import print_function
 oldStringType = str  # Need to keep hold of original str type
 from builtins import str
 from builtins import object
@@ -373,7 +372,7 @@ class RecordingImporter(object):
     Objects also act as Context Managers, so you can:
         with RecordingImporter() as importer:
             import stuff
-        print "Imported: " + importer.getModules()
+        print("Imported: " + importer.getModules())
     This ensures it is properly uninstalled when done.
 
     This class makes no effort to do any importing itself.
