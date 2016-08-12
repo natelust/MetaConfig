@@ -64,6 +64,8 @@ def _autocast(x, dtype):
         return float(x)
     if dtype == int and isinstance(x, long):
         return int(x)
+    if isinstance(x, str):
+        return oldStringType(x)
     return x
 
 
@@ -173,6 +175,11 @@ class Field(object):
         """
         if dtype not in self.supportedTypes:
             raise ValueError("Unsupported Field dtype %s" % _typeStr(dtype))
+
+        # Use standard string type if we are given a future str
+        if dtype == str:
+            dtype = oldStringType
+
         source = traceback.extract_stack(limit=2)[0]
         self._setup(doc=doc, dtype=dtype, default=default, check=check, optional=optional, source=source)
 
