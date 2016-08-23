@@ -19,6 +19,7 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+oldStringType = str  # Need to keep hold of original str type
 from builtins import str
 import traceback
 
@@ -41,6 +42,10 @@ class ChoiceField(Field):
 
         if len(self.allowed) == 0:
             raise ValueError("ChoiceFields must allow at least one choice")
+
+        # Use standard string type if we are given a future str
+        if dtype == str:
+            dtype = oldStringType
 
         doc += "\nAllowed values:\n"
         for choice, choiceDoc in self.allowed.items():
