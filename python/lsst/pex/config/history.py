@@ -31,6 +31,16 @@ import sys
 
 
 class Color(object):
+    """Control whether strings should be coloured
+
+    The usual usage is `Color(string, category)` which returns a string that
+    may be printed; categories are given by the keys of Color.categories
+
+    Color.colorize() may be used to set or retrieve whether the user wants
+    colour; it always returns False when sys.stdout is not attached to a
+    terminal.
+    """
+
     categories = dict(
         NAME="blue",
         VALUE="yellow",
@@ -77,7 +87,13 @@ class Color(object):
 
     @staticmethod
     def colorize(val=None):
-        """Should I colour strings?  With an argument, set the value"""
+        """Should I colour strings?  With an argument, set the value
+
+        The value is usually a bool, but it may be a dict which is used
+        to modify Color.categories
+
+        N.b. only strings written to a terminal are colourized
+        """
 
         if val is not None:
             Color._colorize = val
@@ -96,7 +112,7 @@ class Color(object):
                 if unknown:
                     print("Unknown colourizing category: %s" % " ".join(unknown), file=sys.stderr)
 
-        return Color._colorize
+        return Color._colorize if sys.stdout.isatty() else False
 
     def __str__(self):
         if not self.colorize():
