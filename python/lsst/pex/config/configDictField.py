@@ -23,7 +23,7 @@ from __future__ import print_function
 
 import traceback
 
-from .config import Config, FieldValidationError, _typeStr, _joinNamePath
+from .config import Config, FieldValidationError, _autocast, _typeStr, _joinNamePath
 from .dictField import Dict, DictField
 from .comparison import compareConfigs, compareScalars, getComparisonName
 
@@ -48,6 +48,7 @@ class ConfigDict(Dict):
             raise FieldValidationError(self._field, self._config, msg)
 
         # validate keytype
+        k = _autocast(k, self._field.keytype)
         if type(k) != self._field.keytype:
             msg = "Key %r is of type %s, expected type %s" % \
                 (k, _typeStr(k), _typeStr(self._field.keytype))

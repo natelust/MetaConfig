@@ -81,7 +81,7 @@ class DictFieldTest(unittest.TestCase):
         c.d4 = d
         self.assertEqual(c.d4, d)
         c.d4["a"] = 12
-        c.d4["b"] = "three"
+        c.d4[u"b"] = "three"
         c.d4["c"] = None
         self.assertEqual(c.d4["a"], 12)
         self.assertEqual(c.d4["b"], "three")
