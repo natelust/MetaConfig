@@ -79,7 +79,7 @@ class ConfigDictFieldTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "d1", {"a": 0})
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "d1", [1.2, 3, 4])
         c.d1 = None
-        c.d1 = {"a": Config1, "b": Config1()}
+        c.d1 = {"a": Config1, u"b": Config1()}
 
     def testValidate(self):
         c = Config2()
