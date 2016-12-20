@@ -31,6 +31,7 @@ import sys
 import math
 import copy
 import tempfile
+import shutil
 
 from .comparison import getComparisonName, compareScalars, compareConfigs
 from future.utils import with_metaclass
@@ -600,7 +601,16 @@ class Config(with_metaclass(ConfigMeta, object)):
         d = os.path.dirname(filename)
         with tempfile.NamedTemporaryFile(mode="w", delete=False, dir=d) as outfile:
             self.saveToStream(outfile, root)
-            os.rename(outfile.name, filename)
+            # tempfile is hardcoded to create files with mode '0600'
+            # for an explantion of these antics see:
+            # https://stackoverflow.com/questions/10291131/how-to-use-os-umask-in-python
+            umask = os.umask(0o077)
+            os.umask(umask)
+            os.chmod(outfile.name, (~umask & 0o666))
+            # chmod before the move so we get quasi-atomic behavior if the
+            # source and dest. are on the same filesystem.
+            # os.rename may not work across filesystems
+            shutil.move(outfile.name, filename)
 
     def saveToStream(self, outfile, root="config"):
         """!Save a python script to a stream, which, when loaded, reproduces this Config
