@@ -23,6 +23,8 @@ oldStringType = str  # Need to keep hold of original str type
 from builtins import str
 from builtins import object
 from past.builtins import long
+from past.builtins import basestring
+from past.builtins import unicode 
 
 import os
 import io
@@ -160,7 +162,7 @@ class Field(object):
     """
     # Must be able to support str and future str as we can not guarantee that
     # code will pass in a future str type on Python 2
-    supportedTypes = set((str, oldStringType, bool, float, int, complex))
+    supportedTypes = set((str, unicode, basestring, oldStringType, bool, float, int, complex))
 
     def __init__(self, doc, dtype, default=None, check=None, optional=False):
         """Initialize a Field.

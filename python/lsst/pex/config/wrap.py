@@ -27,13 +27,13 @@ import importlib
 import traceback
 
 from .config import Config, Field
-from .listField import ListField
+from .listField import ListField, List
 from .configField import ConfigField
 
 __all__ = ("wrap", "makeConfigClass")
 
 # Mapping from C++ types to Python type: assumes we can round-trip between these using
-# the usual Swig converters, but doesn't require they be binary equivalent under-the-hood
+# the usual pybind11 converters, but doesn't require they be binary equivalent under-the-hood
 # or anything.
 _dtypeMap = {
     "bool": bool,
@@ -41,7 +41,7 @@ _dtypeMap = {
     "double": float,
     "float": float,
     "std::int64_t": int,
-    "std::string": str
+    "std::string": basestring 
 }
 
 _containerRegex = re.compile(r"(std::)?(vector|list)<\s*(?P<type>[a-z0-9_:]+)\s*>")
@@ -79,33 +79,24 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     struct FooControl {
         LSST_CONTROL_FIELD(bar, int, "documentation for field 'bar'");
         LSST_CONTROL_FIELD(baz, double, "documentation for field 'baz'");
-        LSST_NESTED_CONTROL_FIELD(zot, mySwigLib, InnerControl, "documentation for field 'zot'");
+        LSST_NESTED_CONTROL_FIELD(zot, myWrappedLib, InnerControl, "documentation for field 'zot'");
 
         FooControl() : bar(0), baz(0.0) {}
     };
     @endcode
 
 
-    You can use LSST_NESTED_CONTROL_FIELD to nest control objects.  Now, Swig those control objects as
+    You can use LSST_NESTED_CONTROL_FIELD to nest control objects.  Now, wrap those control objects as
     you would any other C++ class, but make sure you include lsst/pex/config.h before including the header
     file where the control object class is defined:
-    @code
-    // mySwigLib.i
-    %{
-    #include "myHeader.h"
-    %}
-
-    %include "lsst/pex/config.h"
-    %include "myHeader.h"
-    @endcode
 
     Now, in Python, do this:
 
     @code
-    import mySwigLib
+    import myWrappedLib
     import lsst.pex.config
-    InnerConfig = lsst.pex.config.makeConfigClass(mySwigLib.InnerControl)
-    FooConfig = lsst.pex.config.makeConfigClass(mySwigLib.FooControl)
+    InnerConfig = lsst.pex.config.makeConfigClass(myWrappedLib.InnerControl)
+    FooConfig = lsst.pex.config.makeConfigClass(myWrappedLib.FooControl)
     @endcode
 
     This will add fully-fledged "bar", "baz", and "zot" fields to FooConfig, set
@@ -199,7 +190,10 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
             if isinstance(f, ConfigField):
                 value = value.makeControl()
             if value is not None:
-                setattr(r, k, value)
+                if isinstance(value, List):
+                    setattr(r, k, value._list)
+                else:
+                    setattr(r, k, value)
         return r
 
     def readControl(self, control, __at=None, __label="readControl", __reset=False):
