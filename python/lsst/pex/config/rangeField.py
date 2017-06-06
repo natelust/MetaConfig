@@ -19,9 +19,8 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-import traceback
-
 from .config import Field, _typeStr
+from .callStack import getStackFrame
 
 
 __all__ = ["RangeField"]
@@ -42,7 +41,7 @@ class RangeField(Field):
                  min=None, max=None, inclusiveMin=True, inclusiveMax=False):
         if dtype not in self.supportedTypes:
             raise ValueError("Unsupported RangeField dtype %s" % (_typeStr(dtype)))
-        source = traceback.extract_stack(limit=2)[0]
+        source = getStackFrame()
         if min is None and max is None:
             raise ValueError("min and max cannot both be None")
 

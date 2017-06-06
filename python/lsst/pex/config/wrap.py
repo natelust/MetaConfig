@@ -24,11 +24,11 @@ from past.builtins import basestring
 import inspect
 import re
 import importlib
-import traceback
 
 from .config import Config, Field
 from .listField import ListField, List
 from .configField import ConfigField
+from .callStack import getCallStack
 
 __all__ = ("wrap", "makeConfigClass")
 
@@ -203,7 +203,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
         remove internal calls from the history.
         """
         if __at is None:
-            __at = traceback.extract_stack()[:-1]
+            __at = getCallStack()
         values = {}
         for k, f in fields.items():
             if isinstance(f, ConfigField):
