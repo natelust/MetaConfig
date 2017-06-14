@@ -25,6 +25,7 @@ import unittest
 import lsst.utils.tests
 
 import testLib
+import pickle
 
 
 class WrapTest(unittest.TestCase):
@@ -51,6 +52,13 @@ class WrapTest(unittest.TestCase):
         config = testLib.ConfigObject()
         control = testLib.ControlObject()
         self.assertTrue(testLib.checkControl(control, config.foo, config.bar.list()))
+
+    def testPickle(self):
+        """Test that C++ Control object pickles correctly"""
+        config = testLib.ConfigObject()
+        new = pickle.loads(pickle.dumps(config))
+        self.assertTrue(config.compare(new))
+        self.assertTrue(new.compare(config))
 
 
 class NestedWrapTest(unittest.TestCase):
