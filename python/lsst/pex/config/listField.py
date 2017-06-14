@@ -23,11 +23,11 @@ from builtins import zip
 from builtins import str
 from builtins import range
 
-import traceback
 import collections
 
 from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
 from .comparison import compareScalars, getComparisonName
+from .callStack import getCallStack, getStackFrame
 
 __all__ = ["ListField"]
 
@@ -93,7 +93,7 @@ class List(collections.MutableSequence):
         self._list[i] = x
         if setHistory:
             if at is None:
-                at = traceback.extract_stack()[:-1]
+                at = getCallStack()
             self.history.append((list(self._list), at, label))
 
     def __getitem__(self, i):
@@ -106,7 +106,7 @@ class List(collections.MutableSequence):
         del self._list[i]
         if setHistory:
             if at is None:
-                at = traceback.extract_stack()[:-1]
+                at = getCallStack()
             self.history.append((list(self._list), at, label))
 
     def __iter__(self):
@@ -114,7 +114,7 @@ class List(collections.MutableSequence):
 
     def insert(self, i, x, at=None, label="insert", setHistory=True):
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
         self.__setitem__(slice(i, i), [x], at=at, label=label, setHistory=setHistory)
 
     def __repr__(self):
@@ -190,7 +190,7 @@ class ListField(Field):
         if itemCheck is not None and not hasattr(itemCheck, "__call__"):
             raise ValueError("'itemCheck' must be callable")
 
-        source = traceback.extract_stack(limit=2)[0]
+        source = getStackFrame()
         self._setup(doc=doc, dtype=List, default=default, check=None, optional=optional, source=source)
         self.listCheck = listCheck
         self.itemCheck = itemCheck
@@ -228,7 +228,7 @@ class ListField(Field):
             raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
 
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
 
         if value is not None:
             value = List(instance, self, value, at, label)

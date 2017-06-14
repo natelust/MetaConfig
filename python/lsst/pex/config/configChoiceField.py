@@ -22,12 +22,12 @@
 from __future__ import print_function
 from builtins import str
 
-import traceback
 import copy
 import collections
 
 from .config import Config, Field, FieldValidationError, _typeStr, _joinNamePath
 from .comparison import getComparisonName, compareScalars, compareConfigs
+from .callStack import getCallStack, getStackFrame
 
 __all__ = ["ConfigChoiceField"]
 
@@ -43,7 +43,7 @@ class SelectionSet(collections.MutableSet):
     """
     def __init__(self, dict_, value, at=None, label="assignment", setHistory=True):
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
         self._dict = dict_
         self._field = self._dict._field
         self._config = self._dict._config
@@ -70,7 +70,7 @@ class SelectionSet(collections.MutableSet):
                                        "Cannot modify a frozen Config")
 
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
 
         if value not in self._dict:
             # invoke __getitem__ to make sure it's present
@@ -88,7 +88,7 @@ class SelectionSet(collections.MutableSet):
             return
 
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
 
         self.__history.append(("removed %s from selection" % value, at, "selection"))
         self._set.discard(value)
@@ -140,7 +140,7 @@ class ConfigInstanceDict(collections.Mapping):
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
 
         if at is None:
-            at = traceback.extract_stack()[:-2]
+            at = getCallStack(1)
 
         if value is None:
             self._selection = None
@@ -227,7 +227,8 @@ class ConfigInstanceDict(collections.Mapping):
                                            "Unknown key %r in Registry/ConfigChoiceField" % k)
             name = _joinNamePath(self._config._name, self._field.name, k)
             if at is None:
-                at = traceback.extract_stack()[:-1] + [dtype._source]
+                at = getCallStack()
+                at.insert(0, dtype._source)
             value = self._dict.setdefault(k, dtype(__name=name, __at=at, __label=label))
         return value
 
@@ -246,7 +247,7 @@ class ConfigInstanceDict(collections.Mapping):
             raise FieldValidationError(self._field, self._config, msg)
 
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
         name = _joinNamePath(self._config._name, self._field.name, k)
         oldValue = self._dict.get(k, None)
         if oldValue is None:
@@ -318,7 +319,7 @@ class ConfigChoiceField(Field):
     instanceDictClass = ConfigInstanceDict
 
     def __init__(self, doc, typemap, default=None, optional=False, multi=False):
-        source = traceback.extract_stack(limit=2)[0]
+        source = getStackFrame()
         self._setup(doc=doc, dtype=self.instanceDictClass, default=default, check=None, optional=optional,
                     source=source)
         self.typemap = typemap
@@ -327,7 +328,7 @@ class ConfigChoiceField(Field):
     def _getOrMake(self, instance, label="default"):
         instanceDict = instance._storage.get(self.name)
         if instanceDict is None:
-            at = traceback.extract_stack()[:-2]
+            at = getCallStack(1)
             instanceDict = self.dtype(instance, self)
             instanceDict.__doc__ = self.doc
             instance._storage[self.name] = instanceDict
@@ -346,7 +347,7 @@ class ConfigChoiceField(Field):
         if instance._frozen:
             raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
         instanceDict = self._getOrMake(instance)
         if isinstance(value, self.instanceDictClass):
             for k, v in value.items():

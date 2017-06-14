@@ -21,11 +21,11 @@
 #
 from builtins import str
 
-import traceback
 import collections
 
 from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
 from .comparison import getComparisonName, compareScalars
+from .callStack import getCallStack, getStackFrame
 
 __all__ = ["DictField"]
 
@@ -102,7 +102,7 @@ class Dict(collections.MutableMapping):
             raise FieldValidationError(self._field, self._config, msg)
 
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
 
         self._dict[k] = x
         if setHistory:
@@ -116,7 +116,7 @@ class Dict(collections.MutableMapping):
         del self._dict[k]
         if setHistory:
             if at is None:
-                at = traceback.extract_stack()[:-1]
+                at = getCallStack()
             self._history.append((dict(self._dict), at, label))
 
     def __repr__(self):
@@ -160,7 +160,7 @@ class DictField(Field):
     DictClass = Dict
 
     def __init__(self, doc, keytype, itemtype, default=None, optional=False, dictCheck=None, itemCheck=None):
-        source = traceback.extract_stack(limit=2)[0]
+        source = getStackFrame()
         self._setup(doc=doc, dtype=Dict, default=default, check=None,
                     optional=optional, source=source)
         if keytype not in self.supportedTypes:
@@ -199,7 +199,7 @@ class DictField(Field):
             raise FieldValidationError(self, instance, msg)
 
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
         if value is not None:
             value = self.DictClass(instance, self, value, at=at, label=label)
         else:

@@ -132,19 +132,6 @@ def _colorize(text, category):
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-
-class StackFrame(object):
-    def __init__(self, stackTrace):
-        self.fileName = stackTrace[0]
-        self.lineNumber = stackTrace[1]
-        self.functionName = stackTrace[2]
-        self.text = stackTrace[3]
-
-        self.fileName = re.sub(r'.*/python/lsst/', "", self.fileName)
-
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-
 def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
     """Format the history record for config.name"""
 
@@ -155,21 +142,21 @@ def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
             print(format(config, name))
 
     outputs = []
-    for value, tb, label in config.history[name]:
+    for value, stack, label in config.history[name]:
         output = []
-        for frame in [StackFrame(t) for t in tb]:
-            if frame.functionName in ("__new__", "__set__", "__setattr__", "execfile", "wrapper") or \
-                    os.path.split(frame.fileName)[1] in ("argparse.py", "argumentParser.py"):
+        for frame in stack:
+            if frame.function in ("__new__", "__set__", "__setattr__", "execfile", "wrapper") or \
+                    os.path.split(frame.filename)[1] in ("argparse.py", "argumentParser.py"):
                 if not verbose:
                     continue
 
             line = []
             if writeSourceLine:
-                line.append(["%s" % ("%s:%d" % (frame.fileName, frame.lineNumber)), "FILE", ])
+                line.append(["%s" % ("%s:%d" % (frame.filename, frame.lineno)), "FILE", ])
 
-            line.append([frame.text, "TEXT", ])
+            line.append([frame.content, "TEXT", ])
             if False:
-                line.append([frame.functionName, "FUNCTION_NAME", ])
+                line.append([frame.function, "FUNCTION_NAME", ])
 
             output.append(line)
 

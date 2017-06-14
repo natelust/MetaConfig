@@ -24,11 +24,11 @@ from past.builtins import basestring
 import inspect
 import re
 import importlib
-import traceback
 
 from .config import Config, Field
 from .listField import ListField, List
 from .configField import ConfigField
+from .callStack import getCallerFrame, getCallStack
 
 __all__ = ("wrap", "makeConfigClass")
 
@@ -47,7 +47,7 @@ _dtypeMap = {
 _containerRegex = re.compile(r"(std::)?(vector|list)<\s*(?P<type>[a-z0-9_:]+)\s*>")
 
 
-def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
+def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=0, cls=None):
     """A function that creates a Python config class that matches a  C++ control object class.
 
     @param ctrl        C++ control class to wrap.
@@ -57,7 +57,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
     @param doc         Docstring for the config class.
     @param module      Either a module object, a string specifying the name of the module, or an
                        integer specifying how far back in the stack to look for the module to use:
-                       0 is pex.config.wrap, 1 is the immediate caller, etc.  This will be used to
+                       0 is the immediate caller of pex.config.wrap.  This will be used to
                        set __module__ for the new config class, and the class will also be added
                        to the module.  Ignored if None or if cls is not None, but note that the default
                        is to use the callers' module.
@@ -126,8 +126,8 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
             # Not only does setting __module__ make Python pretty-printers more useful,
             # it's also necessary if we want to pickle Config objects.
             if isinstance(module, int):
-                frame = inspect.stack()[module]
-                moduleObj = inspect.getmodule(frame[0])
+                frame = getCallerFrame(module)
+                moduleObj = inspect.getmodule(frame)
                 moduleName = moduleObj.__name__
             elif isinstance(module, basestring):
                 moduleName = module
@@ -203,7 +203,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=1, cls=None):
         remove internal calls from the history.
         """
         if __at is None:
-            __at = traceback.extract_stack()[:-1]
+            __at = getCallStack()
         values = {}
         for k, f in fields.items():
             if isinstance(f, ConfigField):

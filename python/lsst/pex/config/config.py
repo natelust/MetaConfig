@@ -28,7 +28,6 @@ from past.builtins import unicode
 
 import os
 import io
-import traceback
 import sys
 import math
 import copy
@@ -36,6 +35,7 @@ import tempfile
 import shutil
 
 from .comparison import getComparisonName, compareScalars, compareConfigs
+from .callStack import getStackFrame, getCallStack
 from future.utils import with_metaclass
 
 __all__ = ("Config", "Field", "FieldValidationError")
@@ -100,7 +100,7 @@ class ConfigMeta(type):
     def __init__(self, name, bases, dict_):
         type.__init__(self, name, bases, dict_)
         self._fields = {}
-        self._source = traceback.extract_stack(limit=2)[0]
+        self._source = getStackFrame()
 
         def getFields(classtype):
             fields = {}
@@ -146,8 +146,7 @@ class FieldValidationError(ValueError):
                 "For more information read the Field definition at:\n%s"\
                 "And the Config definition at:\n%s" % \
             (self.fieldType.__name__, self.fullname, msg,
-             traceback.format_list([self.fieldSource])[0],
-             traceback.format_list([self.configSource])[0])
+             self.fieldSource.format(), self.configSource.format())
         ValueError.__init__(self, error)
 
 
@@ -183,7 +182,7 @@ class Field(object):
         if dtype == str:
             dtype = oldStringType
 
-        source = traceback.extract_stack(limit=2)[0]
+        source = getStackFrame()
         self._setup(doc=doc, dtype=dtype, default=default, check=check, optional=optional, source=source)
 
     def _setup(self, doc, dtype, default, check, optional, source):
@@ -339,7 +338,7 @@ class Field(object):
 
         instance._storage[self.name] = value
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
         history.append((value, at, label))
 
     def __delete__(self, instance, at=None, label='deletion'):
@@ -349,7 +348,7 @@ class Field(object):
         directly
         """
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
         self.__set__(instance, None, at=at, label=label)
 
     def _compare(self, instance1, instance2, shortcut, rtol, atol, output):
@@ -483,7 +482,7 @@ class Config(with_metaclass(ConfigMeta, object)):
         should call the base Config.__init__
         """
         name = kw.pop("__name", None)
-        at = kw.pop("__at", traceback.extract_stack()[:-1])
+        at = kw.pop("__at", getCallStack())
         # remove __label and ignore it
         kw.pop("__label", "default")
 
@@ -496,7 +495,7 @@ class Config(with_metaclass(ConfigMeta, object)):
         # load up defaults
         for field in instance._fields.values():
             instance._history[field.name] = []
-            field.__set__(instance, field.default, at=at+[field.source], label="default")
+            field.__set__(instance, field.default, at=at + [field.source], label="default")
         # set custom default-overides
         instance.setDefaults()
         # set constructor overides
@@ -531,7 +530,7 @@ class Config(with_metaclass(ConfigMeta, object)):
         history tracebacks of the config. Modifying these keywords allows users
         to lie about a Config's history. Please do not do so!
         """
-        at = kw.pop("__at", traceback.extract_stack()[:-1])
+        at = kw.pop("__at", getCallStack())
         label = kw.pop("__label", "update")
 
         for name, value in kw.items():
@@ -718,7 +717,7 @@ class Config(with_metaclass(ConfigMeta, object)):
         """
         if attr in self._fields:
             if at is None:
-                at = traceback.extract_stack()[:-1]
+                at = getCallStack()
             # This allows Field descriptors to work.
             self._fields[attr].__set__(self, value, at=at, label=label)
         elif hasattr(getattr(self.__class__, attr, None), '__set__'):
@@ -734,7 +733,7 @@ class Config(with_metaclass(ConfigMeta, object)):
     def __delattr__(self, attr, at=None, label="deletion"):
         if attr in self._fields:
             if at is None:
-                at = traceback.extract_stack()[:-1]
+                at = getCallStack()
             self._fields[attr].__delete__(self, at=at, label=label)
         else:
             object.__delattr__(self, attr)

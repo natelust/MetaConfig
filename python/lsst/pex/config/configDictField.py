@@ -21,11 +21,10 @@
 #
 from __future__ import print_function
 
-import traceback
-
 from .config import Config, FieldValidationError, _autocast, _typeStr, _joinNamePath
 from .dictField import Dict, DictField
 from .comparison import compareConfigs, compareScalars, getComparisonName
+from .callStack import getCallStack, getStackFrame
 
 __all__ = ["ConfigDictField"]
 
@@ -62,7 +61,7 @@ class ConfigDict(Dict):
             raise FieldValidationError(self._field, self._config, msg)
 
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
         name = _joinNamePath(self._config._name, self._field.name, k)
         oldValue = self._dict.get(k, None)
         if oldValue is None:
@@ -81,7 +80,7 @@ class ConfigDict(Dict):
 
     def __delitem__(self, k, at=None, label="delitem"):
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
         Dict.__delitem__(self, k, at, label, False)
         self.history.append(("Removed item at key %s" % k, at, label))
 
@@ -102,7 +101,7 @@ class ConfigDictField(DictField):
     DictClass = ConfigDict
 
     def __init__(self, doc, keytype, itemtype, default=None, optional=False, dictCheck=None, itemCheck=None):
-        source = traceback.extract_stack(limit=2)[0]
+        source = getStackFrame()
         self._setup(doc=doc, dtype=ConfigDict, default=default, check=None,
                     optional=optional, source=source)
         if keytype not in self.supportedTypes:

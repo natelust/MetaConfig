@@ -21,9 +21,9 @@
 #
 oldStringType = str  # Need to keep hold of original str type
 from builtins import str
-import traceback
 
 from .config import Field, _typeStr
+from .callStack import getStackFrame
 
 __all__ = ["ChoiceField"]
 
@@ -56,7 +56,7 @@ class ChoiceField(Field):
 
         Field.__init__(self, doc=doc, dtype=dtype, default=default,
                        check=None, optional=optional)
-        self.source = traceback.extract_stack(limit=2)[0]
+        self.source = getStackFrame()
 
     def _validateValue(self, value):
         Field._validateValue(self, value)

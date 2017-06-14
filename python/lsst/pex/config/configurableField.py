@@ -23,11 +23,11 @@ from __future__ import print_function
 from builtins import str
 from builtins import object
 
-import traceback
 import copy
 
 from .config import Config, Field, _joinNamePath, _typeStr, FieldValidationError
 from .comparison import compareConfigs, getComparisonName
+from .callStack import getCallStack, getStackFrame
 
 
 class ConfigurableInstance(object):
@@ -54,7 +54,7 @@ class ConfigurableInstance(object):
         object.__setattr__(self, "_value", None)
 
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
         at += [self._field.source]
         self.__initValue(at, label)
 
@@ -95,7 +95,7 @@ class ConfigurableInstance(object):
             raise FieldValidationError(self._field, self._config, e.message)
 
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
         object.__setattr__(self, "_target", target)
         if ConfigClass != self.ConfigClass:
             object.__setattr__(self, "_ConfigClass", ConfigClass)
@@ -121,7 +121,7 @@ class ConfigurableInstance(object):
             object.__setattr__(self, name, value)
         else:
             if at is None:
-                at = traceback.extract_stack()[:-1]
+                at = getCallStack()
             self._value.__setattr__(name, value, at=at, label=label)
 
     def __delattr__(self, name, at=None, label="delete"):
@@ -137,7 +137,7 @@ class ConfigurableInstance(object):
             object.__delattr__(self, name)
         except AttributeError:
             if at is None:
-                at = traceback.extract_stack()[:-1]
+                at = getCallStack()
             self._value.__delattr__(name, at=at, label=label)
 
 
@@ -183,7 +183,7 @@ class ConfigurableField(Field):
             raise TypeError("'default' is of incorrect type %s. Expected %s" %
                             (_typeStr(default), _typeStr(ConfigClass)))
 
-        source = traceback.extract_stack(limit=2)[0]
+        source = getStackFrame()
         self._setup(doc=doc, dtype=ConfigurableInstance, default=default,
                     check=check, optional=False, source=source)
         self.target = target
@@ -193,7 +193,7 @@ class ConfigurableField(Field):
         value = instance._storage.get(self.name, None)
         if value is None:
             if at is None:
-                at = traceback.extract_stack()[:-2]
+                at = getCallStack(1)
             value = ConfigurableInstance(instance, self, at=at, label=label)
             instance._storage[self.name] = value
         return value
@@ -208,7 +208,7 @@ class ConfigurableField(Field):
         if instance._frozen:
             raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
         oldValue = self.__getOrMake(instance, at=at)
 
         if isinstance(value, ConfigurableInstance):

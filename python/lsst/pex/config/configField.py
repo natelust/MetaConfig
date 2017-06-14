@@ -21,10 +21,9 @@
 #
 from builtins import str
 
-import traceback
-
 from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr
 from .comparison import compareConfigs, getComparisonName
+from .callStack import getCallStack, getStackFrame
 
 __all__ = ["ConfigField"]
 
@@ -54,7 +53,7 @@ class ConfigField(Field):
                              _typeStr(dtype))
         if default is None:
             default = dtype
-        source = traceback.extract_stack(limit=2)[0]
+        source = getStackFrame()
         self._setup(doc=doc, dtype=dtype, default=default, check=check,
                     optional=False, source=source)
 
@@ -64,7 +63,8 @@ class ConfigField(Field):
         else:
             value = instance._storage.get(self.name, None)
             if value is None:
-                at = traceback.extract_stack()[:-1]+[self.source]
+                at = getCallStack()
+                at.insert(0, self.source)
                 self.__set__(instance, self.default, at=at, label="default")
             return value
 
@@ -80,7 +80,7 @@ class ConfigField(Field):
             raise FieldValidationError(self, instance, msg)
 
         if at is None:
-            at = traceback.extract_stack()[:-1]
+            at = getCallStack()
 
         oldValue = instance._storage.get(self.name, None)
         if oldValue is None:
