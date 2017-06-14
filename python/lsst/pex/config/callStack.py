@@ -91,8 +91,13 @@ class StackFrame(object):
         The actual content being executed. If not provided, it will be
         loaded from the file.
     """
+    _STRIP = "/python/lsst/"  # String to strip from the filename
+
     def __init__(self, filename, lineno, function, content=None):
-        self.filename = re.sub(r'.*/python/lsst/', "", filename)
+        loc = filename.rfind(self._STRIP)
+        if loc > 0:
+            filename = filename[loc + len(self._STRIP):]
+        self.filename = filename
         self.lineno = lineno
         self.function = function
         self._content = content
