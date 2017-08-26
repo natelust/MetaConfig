@@ -24,7 +24,7 @@ from builtins import str
 from builtins import object
 from past.builtins import long
 from past.builtins import basestring
-from past.builtins import unicode 
+from past.builtins import unicode
 
 import os
 import io
@@ -627,8 +627,8 @@ class Config(with_metaclass(ConfigMeta, object)):
             outfile.write(u"import {}\n".format(configType.__module__))
             outfile.write(u"assert type({})=={}, 'config is of type %s.%s ".format(root, typeString))
             outfile.write(u"instead of {}' % (type({}).__module__, type({}).__name__)\n".format(typeString,
-                                                                                               root,
-                                                                                               root))
+                                                                                                root,
+                                                                                                root))
             self._save(outfile)
         finally:
             self._rename(tmp)

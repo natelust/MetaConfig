@@ -50,11 +50,14 @@ class Simple(pexConfig.Config):
                             itemCheck=lambda x: x.startswith('v'))
     n = pexConfig.Field("nan test", float, default=float("NAN"))
 
+
 GLOBAL_REGISTRY["AAA"] = Simple
 
 
 class InnerConfig(pexConfig.Config):
     f = pexConfig.Field("Inner.f", float, default=0.0, check=lambda x: x >= 0, optional=False)
+
+
 GLOBAL_REGISTRY["BBB"] = InnerConfig
 
 
@@ -337,7 +340,8 @@ class ConfigTest(unittest.TestCase):
             self.assertFalse(re.search(searchString, streamStr))
 
     def testImports(self):
-        importing = "import lsst.pex.config._doNotImportMe\n" # A module not used by anything else, but which exists
+        # A module not used by anything else, but which exists
+        importing = "import lsst.pex.config._doNotImportMe\n"
         self.checkImportRoundTrip(importing, importing, True)
 
     def testBadImports(self):
@@ -421,6 +425,7 @@ class TestMemory(lsst.utils.tests.MemoryTestCase):
 
 def setup_module(module):
     lsst.utils.tests.init()
+
 
 if __name__ == "__main__":
     lsst.utils.tests.init()
