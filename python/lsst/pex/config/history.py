@@ -130,7 +130,6 @@ def _colorize(text, category):
     text = Color(text, category)
     return str(text)
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
     """Format the history record for config.name"""

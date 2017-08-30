@@ -26,8 +26,6 @@ __all__ = ['getCallerFrame', 'getStackFrame', 'StackFrame', 'getCallStack']
 
 from builtins import object
 
-import re
-import os
 import inspect
 import linecache
 
@@ -135,7 +133,7 @@ class StackFrame(object):
         return cls(filename, lineno, function)
 
     def __repr__(self):
-        return "%s(%s, %s, %s)" % (self.__class__.__name__ , self.filename, self.lineno, self.function)
+        return "%s(%s, %s, %s)" % (self.__class__.__name__, self.filename, self.lineno, self.function)
 
     def format(self, full=False):
         """Format for printing

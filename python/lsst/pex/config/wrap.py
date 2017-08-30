@@ -41,7 +41,7 @@ _dtypeMap = {
     "double": float,
     "float": float,
     "std::int64_t": int,
-    "std::string": basestring 
+    "std::string": basestring
 }
 
 _containerRegex = re.compile(r"(std::)?(vector|list)<\s*(?P<type>[a-z0-9_:]+)\s*>")

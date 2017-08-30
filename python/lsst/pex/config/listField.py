@@ -63,7 +63,6 @@ class List(collections.MutableSequence):
     def list(self):
         return self._list
 
-
     """
     Read-only history
     """
