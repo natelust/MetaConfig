@@ -60,7 +60,7 @@ class ListFieldTest(unittest.TestCase):
         try:
             class BadDtype(pexConfig.Config):
                 l = pexConfig.ListField("...", list)
-        except:
+        except Exception:
             pass
         else:
             raise SyntaxError("Unsupported dtype ListFields should not be allowed")
@@ -76,7 +76,7 @@ class ListFieldTest(unittest.TestCase):
         try:
             class BadLength(pexConfig.Config):
                 l = pexConfig.ListField("...", int, length=-1)
-        except:
+        except Exception:
             pass
         else:
             raise SyntaxError("negative length should not be allowed")
@@ -84,7 +84,7 @@ class ListFieldTest(unittest.TestCase):
         try:
             class BadLength2(pexConfig.Config):
                 l = pexConfig.ListField("...", int, maxLength=-1)
-        except:
+        except Exception:
             pass
         else:
             raise SyntaxError("negative max length should not be allowed")

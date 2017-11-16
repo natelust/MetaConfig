@@ -231,7 +231,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=0, cls=None):
             # Indicate in the history that these values came from C++, even if we can't say which line
             self.readControl(r, __at=[(ctrl.__name__ + " C++", 0, "setDefaults", "")], __label="defaults",
                              __reset=True)
-        except:
+        except Exception:
             pass  # if we can't instantiate the Control, don't set defaults
 
     ctrl.ConfigClass = cls

@@ -222,7 +222,7 @@ class ConfigInstanceDict(collections.Mapping):
         except KeyError:
             try:
                 dtype = self._field.typemap[k]
-            except:
+            except Exception:
                 raise FieldValidationError(self._field, self._config,
                                            "Unknown key %r in Registry/ConfigChoiceField" % k)
             name = _joinNamePath(self._config._name, self._field.name, k)
@@ -238,7 +238,7 @@ class ConfigInstanceDict(collections.Mapping):
 
         try:
             dtype = self._field.typemap[k]
-        except:
+        except Exception:
             raise FieldValidationError(self._field, self._config, "Unknown key %r" % k)
 
         if value != dtype and type(value) != dtype:

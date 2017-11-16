@@ -124,7 +124,7 @@ class ConfigTest(unittest.TestCase):
             self.simple.d["failKey"] = "failValue"
         except pexConfig.FieldValidationError:
             pass
-        except:
+        except Exception:
             raise "Validation error Expected"
         self.simple.validate()
 

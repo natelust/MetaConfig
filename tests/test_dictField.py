@@ -38,7 +38,7 @@ class DictFieldTest(unittest.TestCase):
         try:
             class BadKeytype(pexConfig.Config):
                 d = pexConfig.DictField("...", keytype=list, itemtype=int)
-        except:
+        except Exception:
             pass
         else:
             raise SyntaxError("Unsupported keyptype DictFields should not be allowed")
@@ -46,7 +46,7 @@ class DictFieldTest(unittest.TestCase):
         try:
             class BadItemtype(pexConfig.Config):
                 d = pexConfig.DictField("...", keytype=int, itemtype=dict)
-        except:
+        except Exception:
             pass
         else:
             raise SyntaxError("Unsupported itemtype DictFields should not be allowed")
@@ -54,7 +54,7 @@ class DictFieldTest(unittest.TestCase):
         try:
             class BadItemCheck(pexConfig.Config):
                 d = pexConfig.DictField("...", keytype=int, itemtype=int, itemCheck=4)
-        except:
+        except Exception:
             pass
         else:
             raise SyntaxError("Non-callable itemCheck DictFields should not be allowed")
@@ -62,7 +62,7 @@ class DictFieldTest(unittest.TestCase):
         try:
             class BadDictCheck(pexConfig.Config):
                 d = pexConfig.DictField("...", keytype=int, itemtype=int, dictCheck=4)
-        except:
+        except Exception:
             pass
         else:
             raise SyntaxError("Non-callable dictCheck DictFields should not be allowed")
