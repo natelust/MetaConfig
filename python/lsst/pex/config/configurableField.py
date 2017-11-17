@@ -156,7 +156,7 @@ class ConfigurableField(Field):
         if ConfigClass is None:
             try:
                 ConfigClass = target.ConfigClass
-            except:
+            except Exception:
                 raise AttributeError("'target' must define attribute 'ConfigClass'")
         if not issubclass(ConfigClass, Config):
             raise TypeError("'ConfigClass' is of incorrect type %s."

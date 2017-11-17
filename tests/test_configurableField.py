@@ -54,7 +54,7 @@ class ConfigurableFieldTest(unittest.TestCase):
         try:
             class BadTarget(pexConf.Config):
                 d = pexConf.ConfigurableField("...", target=None)
-        except:
+        except Exception:
             pass
         else:
             raise SyntaxError("Uncallable targets should not be allowed")
@@ -62,7 +62,7 @@ class ConfigurableFieldTest(unittest.TestCase):
         try:
             class NoConfigClass(pexConf.Config):
                 d = pexConf.ConfigurableField("...", target=Target2)
-        except:
+        except Exception:
             pass
         else:
             raise SyntaxError("Missing ConfigClass should not be allowed")
@@ -70,7 +70,7 @@ class ConfigurableFieldTest(unittest.TestCase):
         try:
             class BadConfigClass(pexConf.Config):
                 d = pexConf.DictField("...", target=Target2, ConfigClass=Target2)
-        except:
+        except Exception:
             pass
         else:
             raise SyntaxError("ConfigClass that are not subclasses of Config should not be allowed")

@@ -44,8 +44,8 @@ class Simple(pexConfig.Config):
                               allowed={"Hello": "First choice", "World": "second choice"})
     r = pexConfig.RangeField("Range test", float, default=3.0, optional=False,
                              min=3.0, inclusiveMin=True)
-    l = pexConfig.ListField("list test", int, default=[1, 2, 3], maxLength=5,
-                            itemCheck=lambda x: x is not None and x > 0)
+    ll = pexConfig.ListField("list test", int, default=[1, 2, 3], maxLength=5,
+                             itemCheck=lambda x: x is not None and x > 0)
     d = pexConfig.DictField("dict test", str, str, default={"key": "value"},
                             itemCheck=lambda x: x.startswith('v'))
     n = pexConfig.Field("nan test", float, default=float("NAN"))
@@ -100,7 +100,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.simple.f, 3.0)
         self.assertEqual(self.simple.b, False)
         self.assertEqual(self.simple.c, "Hello")
-        self.assertEqual(list(self.simple.l), [1, 2, 3])
+        self.assertEqual(list(self.simple.ll), [1, 2, 3])
         self.assertEqual(self.simple.d["key"], "value")
         self.assertEqual(self.inner.f, 0.0)
 
@@ -124,7 +124,7 @@ class ConfigTest(unittest.TestCase):
             self.simple.d["failKey"] = "failValue"
         except pexConfig.FieldValidationError:
             pass
-        except:
+        except Exception:
             raise "Validation error Expected"
         self.simple.validate()
 
@@ -295,14 +295,14 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(pol.get("f"), self.simple.f)
         self.assertEqual(pol.get("b"), self.simple.b)
         self.assertEqual(pol.get("c"), self.simple.c)
-        self.assertEqual(pol.getArray("l"), list(self.simple.l))
+        self.assertEqual(pol.getArray("ll"), list(self.simple.ll))
 
         ps = pexConfig.makePropertySet(self.simple)
         self.assertEqual(ps.exists("i"), False)
         self.assertEqual(ps.get("f"), self.simple.f)
         self.assertEqual(ps.get("b"), self.simple.b)
         self.assertEqual(ps.get("c"), self.simple.c)
-        self.assertEqual(list(ps.get("l")), list(self.simple.l))
+        self.assertEqual(list(ps.get("ll")), list(self.simple.ll))
 
         pol = pexConfig.makePolicy(self.comp)
         self.assertEqual(pol.get("c.f"), self.comp.c.f)
@@ -381,7 +381,7 @@ except ImportError:
         def outFunc(msg):
             outList.append(msg)
         simple2.b = True
-        simple2.l.append(4)
+        simple2.ll.append(4)
         simple2.d["foo"] = "var"
         self.assertFalse(self.simple.compare(simple2, shortcut=True, output=outFunc))
         self.assertEqual(len(outList), 1)
@@ -389,17 +389,17 @@ except ImportError:
         self.assertFalse(self.simple.compare(simple2, shortcut=False, output=outFunc))
         output = "\n".join(outList)
         self.assertIn("Inequality in b", output)
-        self.assertIn("Inequality in size for l", output)
+        self.assertIn("Inequality in size for ll", output)
         self.assertIn("Inequality in keys for d", output)
         del outList[:]
         self.simple.d["foo"] = "vast"
-        self.simple.l.append(5)
+        self.simple.ll.append(5)
         self.simple.b = True
         self.simple.f += 1E8
         self.assertFalse(self.simple.compare(simple2, shortcut=False, output=outFunc))
         output = "\n".join(outList)
         self.assertIn("Inequality in f", output)
-        self.assertIn("Inequality in l[3]", output)
+        self.assertIn("Inequality in ll[3]", output)
         self.assertIn("Inequality in d['foo']", output)
         del outList[:]
         comp2.r["BBB"].f = 1.0  # changing the non-selected item shouldn't break equality
