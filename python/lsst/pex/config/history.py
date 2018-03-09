@@ -26,13 +26,27 @@ import sys
 
 
 class Color:
-    """Control whether strings should be coloured
+    """A controller that determines whether strings should be colored.
 
-    The usual usage is `Color(string, category)` which returns a string that
-    may be printed; categories are given by the keys of Color.categories
+    Parameters
+    ----------
+    text : `str`
+        Text content to print to a terminal.
+    category : `str`
+        Semantic category of the ``text``. See `categories` for possible values.
 
-    Color.colorize() may be used to set or retrieve whether the user wants
-    colour; it always returns False when sys.stdout is not attached to a
+    Raises
+    ------
+    RuntimeError
+        Raised when the ``category`` is not a key of ``Color.categories``.
+
+    Notes
+    -----
+    The usual usage is ``Color(string, category)`` which returns a string that
+    may be printed; categories are given by the keys of `Color.categories`.
+
+    `Color.colorize` may be used to set or retrieve whether the user wants
+    color. It always returns `False` when `sys.stdout` is not attached to a
     terminal.
     """
 
@@ -43,6 +57,18 @@ class Color:
         TEXT="red",
         FUNCTION_NAME="blue",
     )
+    """Mapping of semantic labels to color names (`dict`).
+
+    Notes
+    -----
+    The default categories are:
+
+    - ``'NAME'``
+    - ``'VALUE'``
+    - ``'FILE'``
+    - ``'TEXT'``
+    - ``'FUNCTION_NAME'``
+    """
 
     colors = {
         "black": 0,
@@ -54,11 +80,12 @@ class Color:
         "cyan": 6,
         "white": 7,
     }
+    """Mapping of color names to terminal color codes (`dict`).
+    """
 
     _colorize = True
 
     def __init__(self, text, category):
-        """Return a string that should display as coloured on a conformant terminal"""
         try:
             color = Color.categories[category]
         except KeyError:
@@ -82,12 +109,22 @@ class Color:
 
     @staticmethod
     def colorize(val=None):
-        """Should I colour strings?  With an argument, set the value
+        """Get or set whether the string should be colorized.
 
-        The value is usually a bool, but it may be a dict which is used
-        to modify Color.categories
+        Parameters
+        ----------
+        val : `bool` or `dict`, optional
+            The value is usually a bool, but it may be a dict which is used
+            to modify Color.categories
 
-        N.b. only strings written to a terminal are colourized
+        Returns
+        -------
+        shouldColorize : `bool`
+            If `True`, the string should be colorized. A string **will not** be
+            colorized if standard output or standard error are not attached to
+            a terminal or if the ``val`` argument was `False`.
+
+            Only strings written to a terminal are colorized.
         """
 
         if val is not None:
@@ -127,7 +164,25 @@ def _colorize(text, category):
 
 
 def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
-    """Format the history record for config.name"""
+    """Format the history record for a configuration, or a specific
+    configuration field.
+
+    Parameters
+    ----------
+    config : `lsst.pex.config.Config`
+        A configuration instance.
+    name : `str`, optional
+        The name of a configuration field to specifically format the history
+        for. Otherwise the history of all configuration fields is printed.
+    writeSourceLine : `bool`, optional
+        If `True`, prefix each printout line with the code filename and line
+        number where the configuration event occurred. Default is `True`.
+    prefix : `str`, optional
+        A prefix for to add to each printout line. This prefix occurs first,
+        even before any source line. The default is an empty string.
+    verbose : `bool`, optional
+        Default is `False`.
+    """
 
     if name is None:
         for i, name in enumerate(config.history.keys()):
@@ -155,9 +210,8 @@ def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
             output.append(line)
 
         outputs.append([value, output])
-    #
-    # Find the maximum widths of the value and file:lineNo fields
-    #
+
+    # Find the maximum widths of the value and file:lineNo fields.
     if writeSourceLine:
         sourceLengths = []
         for value, output in outputs:
@@ -165,9 +219,8 @@ def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
         sourceLength = max(sourceLengths)
 
     valueLength = len(prefix) + max([len(str(value)) for value, output in outputs])
-    #
-    # actually generate the config history
-    #
+
+    # Generate the config history content.
     msg = []
     fullname = "%s.%s" % (config._name, name) if config._name is not None else name
     msg.append(_colorize(re.sub(r"^root\.", "", fullname), "NAME"))
