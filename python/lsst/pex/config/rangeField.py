@@ -54,12 +54,6 @@ class RangeField(Field):
         self.min = min
         self.max = max
 
-        self.rangeString = "%s%s,%s%s" % \
-            (("[" if inclusiveMin else "("),
-             ("-inf" if self.min is None else self.min),
-             ("inf" if self.max is None else self.max),
-             ("]" if inclusiveMax else ")"))
-        doc += "\n\tValid Range = " + self.rangeString
         if inclusiveMax:
             self.maxCheck = lambda x, y: True if y is None else x <= y
         else:
@@ -69,6 +63,12 @@ class RangeField(Field):
         else:
             self.minCheck = lambda x, y: True if y is None else x > y
         self._setup(doc, dtype=dtype, default=default, check=None, optional=optional, source=source)
+        self.rangeString = "%s%s,%s%s" % \
+            (("[" if inclusiveMin else "("),
+             ("-inf" if self.min is None else self.min),
+             ("inf" if self.max is None else self.max),
+             ("]" if inclusiveMax else ")"))
+        self.__doc__ += "\n\nValid Range = " + self.rangeString
 
     def _validateValue(self, value):
         Field._validateValue(self, value)
