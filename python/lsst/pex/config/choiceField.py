@@ -55,7 +55,7 @@ class ChoiceField(Field):
             if choice is not None and not isinstance(choice, dtype):
                 raise ValueError("ChoiceField's allowed choice %s is of incorrect type %s. Expected %s" %
                                  (choice, _typeStr(choice), _typeStr(dtype)))
-            self.__doc__ += "%s\n  %s\n" % (str(choice), choiceDoc)
+            self.__doc__ += "%s\n  %s\n" % ('``{0!r}``'.format(str(choice)), choiceDoc)
 
         self.source = getStackFrame()
 
