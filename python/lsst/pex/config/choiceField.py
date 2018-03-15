@@ -47,15 +47,16 @@ class ChoiceField(Field):
         if dtype == str:
             dtype = oldStringType
 
-        doc += "\nAllowed values:\n"
+        Field.__init__(self, doc=doc, dtype=dtype, default=default,
+                       check=None, optional=optional)
+
+        self.__doc__ += "\n\nAllowed values:\n\n"
         for choice, choiceDoc in self.allowed.items():
             if choice is not None and not isinstance(choice, dtype):
                 raise ValueError("ChoiceField's allowed choice %s is of incorrect type %s. Expected %s" %
                                  (choice, _typeStr(choice), _typeStr(dtype)))
-            doc += "\t%s\t%s\n" % (str(choice), choiceDoc)
+            self.__doc__ += "%s\n  %s\n" % ('``{0!r}``'.format(str(choice)), choiceDoc)
 
-        Field.__init__(self, doc=doc, dtype=dtype, default=default,
-                       check=None, optional=optional)
         self.source = getStackFrame()
 
     def _validateValue(self, value):
