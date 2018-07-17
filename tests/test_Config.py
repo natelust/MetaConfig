@@ -299,16 +299,16 @@ class ConfigTest(unittest.TestCase):
 
         ps = pexConfig.makePropertySet(self.simple)
         self.assertEqual(ps.exists("i"), False)
-        self.assertEqual(ps.get("f"), self.simple.f)
-        self.assertEqual(ps.get("b"), self.simple.b)
-        self.assertEqual(ps.get("c"), self.simple.c)
-        self.assertEqual(list(ps.get("ll")), list(self.simple.ll))
+        self.assertEqual(ps.getScalar("f"), self.simple.f)
+        self.assertEqual(ps.getScalar("b"), self.simple.b)
+        self.assertEqual(ps.getScalar("c"), self.simple.c)
+        self.assertEqual(list(ps.getArray("ll")), list(self.simple.ll))
 
         pol = pexConfig.makePolicy(self.comp)
         self.assertEqual(pol.get("c.f"), self.comp.c.f)
 
         ps = pexConfig.makePropertySet(self.comp)
-        self.assertEqual(ps.get("c.f"), self.comp.c.f)
+        self.assertEqual(ps.getScalar("c.f"), self.comp.c.f)
 
     def testFreeze(self):
         self.comp.freeze()
