@@ -45,9 +45,7 @@ struct ListView {
     std::vector<T> *v;
 };
 
-PYBIND11_PLUGIN(_testLib) {
-    pybind11::module mod("_testLib", "Tests for the pex_config library");
-
+PYBIND11_MODULE(_testLib, mod) {
     py::class_<ListView<std::string>>(mod, "ListView")
         .def("append", [](ListView<std::string> &view, std::string value) {
             view.v->push_back(value);
@@ -106,6 +104,4 @@ PYBIND11_PLUGIN(_testLib) {
 
     mod.def("checkControl", &checkControl);
     mod.def("checkNestedControl", &checkNestedControl);
-
-    return mod.ptr();
 }
