@@ -418,6 +418,18 @@ except ImportError:
         self.assertRaises(SyntaxError, self.simple.loadFromStream, "bork bork bork")
         self.assertRaises(NameError, self.simple.loadFromStream, "config.f = bork")
 
+    def testNames(self):
+        """Check that the names() method returns valid keys
+
+        Also check that we have the right number of keys, and as they are
+        all known to be valid we know that we got them all
+        """
+
+        names = self.simple.names()
+        self.assertEqual(len(names), 8)
+        for name in names:
+            self.assertTrue(hasattr(self.simple, name))
+
 
 class TestMemory(lsst.utils.tests.MemoryTestCase):
     pass

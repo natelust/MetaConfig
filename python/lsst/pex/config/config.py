@@ -26,8 +26,9 @@ from past.builtins import long
 from past.builtins import basestring
 from past.builtins import unicode
 
-import os
 import io
+import os
+import re
 import sys
 import math
 import copy
@@ -237,7 +238,7 @@ class Field(object):
 
         This is called from __set__
         This is not part of the Field API. However, simple derived field types
-            may benifit from implementing _validateValue
+            may benefit from implementing _validateValue
         """
         if value is None:
             return
@@ -659,6 +660,31 @@ class Config(with_metaclass(ConfigMeta, object)):
         for name, field in self._fields.items():
             dict_[name] = field.toDict(self)
         return dict_
+
+    def names(self):
+        """!Return all the keys in a config recursively
+        """
+        #
+        # Rather than sort out the recursion all over again use the
+        # pre-existing saveToStream()
+        #
+        with io.StringIO() as strFd:
+            self.saveToStream(strFd, "config")
+            contents = strFd.getvalue()
+            strFd.close()
+        #
+        # Pull the names out of the dumped config
+        #
+        keys = []
+        for line in contents.split("\n"):
+            if re.search(r"^((assert|import)\s+|\s*$|#)", line):
+                continue
+
+            mat = re.search(r"^(?:config\.)?([^=]+)\s*=\s*.*", line)
+            if mat:
+                keys.append(mat.group(1))
+
+        return keys
 
     def _rename(self, name):
         """!Rename this Config object in its parent config
