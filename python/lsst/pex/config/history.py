@@ -24,8 +24,6 @@ import os
 import re
 import sys
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
 
 class Color(object):
     """Control whether strings should be coloured
