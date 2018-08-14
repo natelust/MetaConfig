@@ -20,13 +20,13 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
+__all__ = ("Registry", "makeRegistry", "RegistryField", "registerConfig", "registerConfigurable")
+
 import collections
 import copy
 
 from .config import Config, FieldValidationError, _typeStr
 from .configChoiceField import ConfigInstanceDict, ConfigChoiceField
-
-__all__ = ("Registry", "makeRegistry", "RegistryField", "registerConfig", "registerConfigurable")
 
 
 class ConfigurableWrapper(object):

@@ -20,13 +20,13 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
+__all__ = ["DictField"]
+
 import collections
 
 from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
 from .comparison import getComparisonName, compareScalars
 from .callStack import getCallStack, getStackFrame
-
-__all__ = ["DictField"]
 
 
 class Dict(collections.MutableMapping):

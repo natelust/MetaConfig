@@ -19,6 +19,8 @@
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
+__all__ = ("Config", "Field", "FieldValidationError")
+
 import io
 import os
 import re
@@ -30,8 +32,6 @@ import shutil
 
 from .comparison import getComparisonName, compareScalars, compareConfigs
 from .callStack import getStackFrame, getCallStack
-
-__all__ = ("Config", "Field", "FieldValidationError")
 
 
 def _joinNamePath(prefix=None, name=None, index=None):

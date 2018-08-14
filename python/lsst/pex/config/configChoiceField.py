@@ -20,14 +20,14 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
+__all__ = ["ConfigChoiceField"]
+
 import copy
 import collections
 
 from .config import Config, Field, FieldValidationError, _typeStr, _joinNamePath
 from .comparison import getComparisonName, compareScalars, compareConfigs
 from .callStack import getCallStack, getStackFrame
-
-__all__ = ["ConfigChoiceField"]
 
 
 class SelectionSet(collections.MutableSet):

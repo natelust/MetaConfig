@@ -19,6 +19,8 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+__all__ = ("wrap", "makeConfigClass")
+
 import inspect
 import re
 import importlib
@@ -27,8 +29,6 @@ from .config import Config, Field
 from .listField import ListField, List
 from .configField import ConfigField
 from .callStack import getCallerFrame, getCallStack
-
-__all__ = ("wrap", "makeConfigClass")
 
 # Mapping from C++ types to Python type: assumes we can round-trip between these using
 # the usual pybind11 converters, but doesn't require they be binary equivalent under-the-hood
