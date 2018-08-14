@@ -25,7 +25,7 @@ import re
 import sys
 
 
-class Color(object):
+class Color:
     """Control whether strings should be coloured
 
     The usual usage is `Color(string, category)` which returns a string that

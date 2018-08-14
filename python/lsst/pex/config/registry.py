@@ -29,7 +29,7 @@ from .config import Config, FieldValidationError, _typeStr
 from .configChoiceField import ConfigInstanceDict, ConfigChoiceField
 
 
-class ConfigurableWrapper(object):
+class ConfigurableWrapper:
     """A wrapper for configurables
 
     Used for configurables that don't contain a ConfigClass attribute,
@@ -61,7 +61,7 @@ class Registry(collections.Mapping):
     registry = Registry()
     class FooConfig(Config):
         val = Field(dtype=int, default=3, doc="parameter for Foo")
-    class Foo(object):
+    class Foo:
         ConfigClass = FooConfig
         def __init__(self, config):
             self.config = config

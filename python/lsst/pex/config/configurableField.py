@@ -27,7 +27,7 @@ from .comparison import compareConfigs, getComparisonName
 from .callStack import getCallStack, getStackFrame
 
 
-class ConfigurableInstance(object):
+class ConfigurableInstance:
     def __initValue(self, at, label):
         """
         if field.default is an instance of ConfigClass, custom construct

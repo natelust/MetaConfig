@@ -29,7 +29,7 @@ import lsst.pex.config as pexConf
 class SubConfigDefaultsTest(unittest.TestCase):
 
     def setUp(self):
-        class Configurable(object):
+        class Configurable:
             class ConfigClass(pexConf.Config):
                 v = pexConf.Field(dtype=int, doc="dummy int field for registry configurable", default=0)
 

@@ -5,7 +5,7 @@ class TestConfig(Config):
     pass
 
 
-class TestConfigurable(object):
+class TestConfigurable:
     ConfigClass = TestConfig
 
     def __init__(self, config):

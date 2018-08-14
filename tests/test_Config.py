@@ -268,7 +268,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(f.a, 4)
 
         # test inheritance from non Config objects
-        class GGG(object):
+        class GGG:
             a = pexConfig.Field("AAA.a", float, default=10.)
 
         class HHH(GGG, AAA):

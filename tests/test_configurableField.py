@@ -32,7 +32,7 @@ class Config1(pexConf.Config):
     f = pexConf.Field("f", dtype=float, default=5, check=lambda x: x > 0)
 
 
-class Target1(object):
+class Target1:
     ConfigClass = Config1
 
     def __init__(self, config):

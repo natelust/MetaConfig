@@ -53,7 +53,7 @@ class ConfigTest(unittest.TestCase):
         self.config2Class = Config2
 
         @pexConfig.registerConfigurable("foo1", self.registry)
-        class FooAlg1(object):
+        class FooAlg1:
             ConfigClass = FooConfig1
 
             def __init__(self, config):
@@ -63,7 +63,7 @@ class ConfigTest(unittest.TestCase):
                 pass
         self.fooAlg1Class = FooAlg1
 
-        class FooAlg2(object):
+        class FooAlg2:
             ConfigClass = FooConfig2
 
             def __init__(self, config):

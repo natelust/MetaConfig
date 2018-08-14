@@ -139,7 +139,7 @@ class FieldValidationError(ValueError):
         ValueError.__init__(self, error)
 
 
-class Field(object):
+class Field:
     """A field in a a Config.
 
     Instances of Field should be class attributes of Config subclasses:
@@ -360,7 +360,7 @@ class Field(object):
         return compareScalars(name, v1, v2, dtype=self.dtype, rtol=rtol, atol=atol, output=output)
 
 
-class RecordingImporter(object):
+class RecordingImporter:
     """An Importer (for sys.meta_path) that records which modules are being imported.
 
     Objects also act as Context Managers, so you can:

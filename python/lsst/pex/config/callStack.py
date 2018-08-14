@@ -66,7 +66,7 @@ def getStackFrame(relative=0):
     return StackFrame.fromFrame(frame)
 
 
-class StackFrame(object):
+class StackFrame:
     """A single element of the stack trace
 
     This differs slightly from the standard system mechanisms for
