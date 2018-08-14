@@ -20,10 +20,7 @@
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
 
-
 __all__ = ['getCallerFrame', 'getStackFrame', 'StackFrame', 'getCallStack']
-
-from builtins import object
 
 import inspect
 import linecache

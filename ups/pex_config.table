@@ -2,7 +2,6 @@ setupRequired(daf_base)
 setupRequired(pex_policy)
 setupRequired(numpy)
 setupRequired(utils)
-setupRequired(python_future)
 setupRequired(pybind11)
 setupRequired(python)
 

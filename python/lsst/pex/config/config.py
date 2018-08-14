@@ -19,13 +19,6 @@
 # the GNU General Public License along with this program.  If not,
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
-oldStringType = str  # Need to keep hold of original str type
-from builtins import str
-from builtins import object
-from past.builtins import long
-from past.builtins import basestring
-from past.builtins import unicode
-
 import io
 import os
 import re
@@ -37,7 +30,6 @@ import shutil
 
 from .comparison import getComparisonName, compareScalars, compareConfigs
 from .callStack import getStackFrame, getCallStack
-from future.utils import with_metaclass
 
 __all__ = ("Config", "Field", "FieldValidationError")
 
@@ -66,10 +58,6 @@ def _autocast(x, dtype):
     """
     if dtype == float and isinstance(x, int):
         return float(x)
-    if dtype == int and isinstance(x, long):
-        return int(x)
-    if isinstance(x, str):
-        return oldStringType(x)
     return x
 
 
@@ -162,7 +150,7 @@ class Field(object):
     """
     # Must be able to support str and future str as we can not guarantee that
     # code will pass in a future str type on Python 2
-    supportedTypes = set((str, unicode, basestring, oldStringType, bool, float, int, complex))
+    supportedTypes = set((str, bool, float, int, complex))
 
     def __init__(self, doc, dtype, default=None, check=None, optional=False):
         """Initialize a Field.
@@ -178,10 +166,6 @@ class Field(object):
         """
         if dtype not in self.supportedTypes:
             raise ValueError("Unsupported Field dtype %s" % _typeStr(dtype))
-
-        # Use standard string type if we are given a future str
-        if dtype == str:
-            dtype = oldStringType
 
         source = getStackFrame()
         self._setup(doc=doc, dtype=dtype, default=default, check=check, optional=optional, source=source)
@@ -418,7 +402,7 @@ class RecordingImporter(object):
         return self._modules
 
 
-class Config(with_metaclass(ConfigMeta, object)):
+class Config(metaclass=ConfigMeta):
     """Base class for control objects.
 
     A Config object will usually have several Field instances as class

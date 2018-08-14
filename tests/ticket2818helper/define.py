@@ -1,4 +1,3 @@
-from builtins import object
 from lsst.pex.config import Config, ConfigurableField
 
 
