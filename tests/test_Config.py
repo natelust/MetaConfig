@@ -21,8 +21,6 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-from builtins import object
-from past.builtins import unicode
 
 import io
 import itertools
@@ -270,7 +268,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(f.a, 4)
 
         # test inheritance from non Config objects
-        class GGG(object):
+        class GGG:
             a = pexConfig.Field("AAA.a", float, default=10.)
 
         class HHH(GGG, AAA):
@@ -323,7 +321,7 @@ class ConfigTest(unittest.TestCase):
 
         # Generate a Config through loading
         stream = io.StringIO()
-        stream.write(unicode(importStatement))
+        stream.write(str(importStatement))
         self.comp.saveToStream(stream)
         roundtrip = Complex()
         roundtrip.loadFromStream(stream.getvalue())

@@ -19,13 +19,12 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-from builtins import str
+
+__all__ = ["ConfigField"]
 
 from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr
 from .comparison import compareConfigs, getComparisonName
 from .callStack import getCallStack, getStackFrame
-
-__all__ = ["ConfigField"]
 
 
 class ConfigField(Field):

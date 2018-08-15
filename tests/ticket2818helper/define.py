@@ -1,4 +1,3 @@
-from builtins import object
 from lsst.pex.config import Config, ConfigurableField
 
 
@@ -6,7 +5,7 @@ class TestConfig(Config):
     pass
 
 
-class TestConfigurable(object):
+class TestConfigurable:
     ConfigClass = TestConfig
 
     def __init__(self, config):

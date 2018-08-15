@@ -20,11 +20,7 @@
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
 
-from __future__ import print_function, division, absolute_import
-
 __all__ = ['getCallerFrame', 'getStackFrame', 'StackFrame', 'getCallStack']
-
-from builtins import object
 
 import inspect
 import linecache
@@ -70,7 +66,7 @@ def getStackFrame(relative=0):
     return StackFrame.fromFrame(frame)
 
 
-class StackFrame(object):
+class StackFrame:
     """A single element of the stack trace
 
     This differs slightly from the standard system mechanisms for

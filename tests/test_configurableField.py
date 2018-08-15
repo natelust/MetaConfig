@@ -21,7 +21,6 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-from builtins import object
 
 import os
 import unittest
@@ -33,7 +32,7 @@ class Config1(pexConf.Config):
     f = pexConf.Field("f", dtype=float, default=5, check=lambda x: x > 0)
 
 
-class Target1(object):
+class Target1:
     ConfigClass = Config1
 
     def __init__(self, config):

@@ -23,8 +23,6 @@ import unittest
 import lsst.utils.tests
 import lsst.pex.config
 
-from builtins import str
-
 
 class TicketDM7337Test(unittest.TestCase):
 

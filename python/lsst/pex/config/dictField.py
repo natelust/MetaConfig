@@ -19,15 +19,14 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-from builtins import str
+
+__all__ = ["DictField"]
 
 import collections
 
 from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
 from .comparison import getComparisonName, compareScalars
 from .callStack import getCallStack, getStackFrame
-
-__all__ = ["DictField"]
 
 
 class Dict(collections.MutableMapping):

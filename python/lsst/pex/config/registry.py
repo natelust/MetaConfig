@@ -19,7 +19,8 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-from builtins import object
+
+__all__ = ("Registry", "makeRegistry", "RegistryField", "registerConfig", "registerConfigurable")
 
 import collections
 import copy
@@ -27,10 +28,8 @@ import copy
 from .config import Config, FieldValidationError, _typeStr
 from .configChoiceField import ConfigInstanceDict, ConfigChoiceField
 
-__all__ = ("Registry", "makeRegistry", "RegistryField", "registerConfig", "registerConfigurable")
 
-
-class ConfigurableWrapper(object):
+class ConfigurableWrapper:
     """A wrapper for configurables
 
     Used for configurables that don't contain a ConfigClass attribute,
@@ -62,7 +61,7 @@ class Registry(collections.Mapping):
     registry = Registry()
     class FooConfig(Config):
         val = Field(dtype=int, default=3, doc="parameter for Foo")
-    class Foo(object):
+    class Foo:
         ConfigClass = FooConfig
         def __init__(self, config):
             self.config = config

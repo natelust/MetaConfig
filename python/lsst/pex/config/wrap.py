@@ -19,7 +19,7 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-from past.builtins import basestring
+__all__ = ("wrap", "makeConfigClass")
 
 import inspect
 import re
@@ -30,8 +30,6 @@ from .listField import ListField, List
 from .configField import ConfigField
 from .callStack import getCallerFrame, getCallStack
 
-__all__ = ("wrap", "makeConfigClass")
-
 # Mapping from C++ types to Python type: assumes we can round-trip between these using
 # the usual pybind11 converters, but doesn't require they be binary equivalent under-the-hood
 # or anything.
@@ -41,7 +39,7 @@ _dtypeMap = {
     "double": float,
     "float": float,
     "std::int64_t": int,
-    "std::string": basestring
+    "std::string": str
 }
 
 _containerRegex = re.compile(r"(std::)?(vector|list)<\s*(?P<type>[a-z0-9_:]+)\s*>")
@@ -129,7 +127,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=0, cls=None):
                 frame = getCallerFrame(module)
                 moduleObj = inspect.getmodule(frame)
                 moduleName = moduleObj.__name__
-            elif isinstance(module, basestring):
+            elif isinstance(module, str):
                 moduleName = module
                 moduleObj = __import__(moduleName)
             else:

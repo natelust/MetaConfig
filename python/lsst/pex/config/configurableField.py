@@ -19,9 +19,6 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-from __future__ import print_function
-from builtins import str
-from builtins import object
 
 import copy
 
@@ -30,7 +27,7 @@ from .comparison import compareConfigs, getComparisonName
 from .callStack import getCallStack, getStackFrame
 
 
-class ConfigurableInstance(object):
+class ConfigurableInstance:
     def __initValue(self, at, label):
         """
         if field.default is an instance of ConfigClass, custom construct

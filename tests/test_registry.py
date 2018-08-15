@@ -21,7 +21,6 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-from builtins import object
 
 import unittest
 import lsst.utils.tests
@@ -54,7 +53,7 @@ class ConfigTest(unittest.TestCase):
         self.config2Class = Config2
 
         @pexConfig.registerConfigurable("foo1", self.registry)
-        class FooAlg1(object):
+        class FooAlg1:
             ConfigClass = FooConfig1
 
             def __init__(self, config):
@@ -64,7 +63,7 @@ class ConfigTest(unittest.TestCase):
                 pass
         self.fooAlg1Class = FooAlg1
 
-        class FooAlg2(object):
+        class FooAlg2:
             ConfigClass = FooConfig2
 
             def __init__(self, config):

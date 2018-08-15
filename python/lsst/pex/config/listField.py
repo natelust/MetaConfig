@@ -19,17 +19,14 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-from builtins import zip
-from builtins import str
-from builtins import range
+
+__all__ = ["ListField"]
 
 import collections
 
 from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
 from .comparison import compareScalars, getComparisonName
 from .callStack import getCallStack, getStackFrame
-
-__all__ = ["ListField"]
 
 
 class List(collections.MutableSequence):

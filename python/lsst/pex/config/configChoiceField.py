@@ -19,8 +19,8 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-from __future__ import print_function
-from builtins import str
+
+__all__ = ["ConfigChoiceField"]
 
 import copy
 import collections
@@ -28,8 +28,6 @@ import collections
 from .config import Config, Field, FieldValidationError, _typeStr, _joinNamePath
 from .comparison import getComparisonName, compareScalars, compareConfigs
 from .callStack import getCallStack, getStackFrame
-
-__all__ = ["ConfigChoiceField"]
 
 
 class SelectionSet(collections.MutableSet):
