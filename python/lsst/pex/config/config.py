@@ -86,10 +86,10 @@ class ConfigMeta(type):
     an instance variable of the field itself (so you don't have to pass the
     name of the field to the field constructor).
     """
-    def __init__(self, name, bases, dict_):
-        type.__init__(self, name, bases, dict_)
-        self._fields = {}
-        self._source = getStackFrame()
+    def __init__(cls, name, bases, dict_):
+        type.__init__(cls, name, bases, dict_)
+        cls._fields = {}
+        cls._source = getStackFrame()
 
         def getFields(classtype):
             fields = {}
@@ -103,15 +103,15 @@ class ConfigMeta(type):
                     fields[k] = v
             return fields
 
-        fields = getFields(self)
+        fields = getFields(cls)
         for k, v in fields.items():
-            setattr(self, k, copy.deepcopy(v))
+            setattr(cls, k, copy.deepcopy(v))
 
-    def __setattr__(self, name, value):
+    def __setattr__(cls, name, value):
         if isinstance(value, Field):
             value.name = name
-            self._fields[name] = value
-        type.__setattr__(self, name, value)
+            cls._fields[name] = value
+        type.__setattr__(cls, name, value)
 
 
 class FieldValidationError(ValueError):
