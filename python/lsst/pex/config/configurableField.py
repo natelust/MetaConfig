@@ -28,6 +28,14 @@ from .callStack import getCallStack, getStackFrame
 
 
 class ConfigurableInstance:
+    """A retargetable configuration for a configurable object.
+
+    The actual `~lsst.pex.config.Config` instance is accessed using the
+    ``value`` property (e.g. to get its documentation).  The associated
+    configurable object (usually a `~lsst.pipe.base.Task`) is accessed
+    using the ``target`` property.
+    """
+
     def __initValue(self, at, label):
         """
         if field.default is an instance of ConfigClass, custom construct
@@ -74,15 +82,14 @@ class ConfigurableInstance:
 
     def apply(self, *args, **kw):
         """
-        Call the confirurable.
+        Call the configurable.
         With argument config=self.value along with any positional and kw args
         """
         return self.target(*args, config=self.value, **kw)
 
-    """
-    Target a new configurable and ConfigClass
-    """
     def retarget(self, target, ConfigClass=None, at=None, label="retarget"):
+        """Target a new configurable and ConfigClass
+        """
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
 
