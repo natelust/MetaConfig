@@ -30,6 +30,32 @@ from .callStack import getCallStack, getStackFrame
 
 
 class List(collections.abc.MutableSequence):
+    """List collection used internally by `ListField`.
+
+    Parameters
+    ----------
+    config : `lsst.pex.config.Config`
+        Config instance that contains the ``field``.
+    field : `ListField`
+        Instance of the `ListField` using this ``List``.
+    value : sequence
+        Sequence of values that are inserted into this ``List``.
+    at : `list` of `lsst.pex.config.callStack.StackFrame`
+        The call stack (created by `lsst.pex.config.callStack.getCallStack`).
+    label : `str`
+        Event label for the history.
+    setHistory : `bool`, optional
+        Enable setting the field's history, using the value of the ``at``
+        parameter. Default is `True`.
+
+    Raises
+    ------
+    FieldValidationError
+        Raised if an item in the ``value`` parameter does not have the
+        appropriate type for this field or does not pass the
+        `ListField.itemCheck` method of the ``field`` parameter.
+    """
+
     def __init__(self, config, field, value, at, label, setHistory=True):
         self._field = field
         self._config = config
@@ -47,6 +73,22 @@ class List(collections.abc.MutableSequence):
             self.history.append((list(self._list), at, label))
 
     def validateItem(self, i, x):
+        """Validate an item to determine if it can be included in the list.
+
+        Parameters
+        ----------
+        i : `int`
+            Index of the item in the `list`.
+        x : object
+            Item in the `list`.
+
+        Raises
+        ------
+        FieldValidationError
+            Raised if an item in the ``value`` parameter does not have the
+            appropriate type for this field or does not pass the field's
+            `ListField.itemCheck` method.
+        """
 
         if not isinstance(x, self._field.itemtype) and x is not None:
             msg = "Item at position %d with value %s is of incorrect type %s. Expected %s" % \
@@ -58,12 +100,13 @@ class List(collections.abc.MutableSequence):
             raise FieldValidationError(self._field, self._config, msg)
 
     def list(self):
+        """Sequence of items contained by the `List` (`list`).
+        """
         return self._list
 
-    """
-    Read-only history
-    """
     history = property(lambda x: x._history)
+    """Read-only history.
+    """
 
     def __contains__(self, x):
         return x in self._list
@@ -109,6 +152,23 @@ class List(collections.abc.MutableSequence):
         return iter(self._list)
 
     def insert(self, i, x, at=None, label="insert", setHistory=True):
+        """Insert an item into the list at the given index.
+
+        Parameters
+        ----------
+        i : `int`
+            Index where the item is inserted.
+        x : object
+            Item that is inserted.
+        at : `list` of `lsst.pex.config.callStack.StackFrame`, optional
+            The call stack (created by
+            `lsst.pex.config.callStack.getCallStack`).
+        label : `str`, optional
+            Event label for the history.
+        setHistory : `bool`, optional
+            Enable setting the field's history, using the value of the ``at``
+            parameter. Default is `True`.
+        """
         if at is None:
             at = getCallStack()
         self.__setitem__(slice(i, i), [x], at=at, label=label, setHistory=setHistory)
@@ -149,19 +209,45 @@ class List(collections.abc.MutableSequence):
 
 
 class ListField(Field):
-    """
-    Defines a field which is a container of values of type dtype
+    """A configuration field (`~lsst.pex.config.Field` subclass) that contains
+    a list of values of a specific type.
 
-    If length is not None, then instances of this field must match this length
-    exactly.
-    If minLength is not None, then instances of the field must be no shorter
-    then minLength
-    If maxLength is not None, then instances of the field must be no longer
-    than maxLength
+    Parameters
+    ----------
+    doc : `str`
+        A description of the field.
+    dtype : class
+        The data type of items in the list.
+    default : sequence, optional
+        The default items for the field.
+    optional : `bool`, optional
+        Set whether the field is *optional*. When `False`,
+        `lsst.pex.config.Config.validate` will fail if the field's value is
+        `None`.
+    listCheck : callable, optional
+        A callable that validates the list as a whole.
+    itemCheck : callable, optional
+        A callable that validates individual items in the list.
+    length : `int`, optional
+        If set, this field must contain exactly ``length`` number of items.
+    minLength : `int`, optional
+        If set, this field must contain *at least* ``minLength`` number of
+        items.
+    maxLength : `int`, optional
+        If set, this field must contain *no more than* ``maxLength`` number of
+        items.
 
-    Additionally users can provide two check functions:
-    listCheck - used to validate the list as a whole, and
-    itemCheck - used to validate each item individually
+    See also
+    --------
+    ChoiceField
+    ConfigChoiceField
+    ConfigDictField
+    ConfigField
+    ConfigurableField
+    DictField
+    Field
+    RangeField
+    RegistryField
     """
     def __init__(self, doc, dtype, default=None, optional=False,
                  listCheck=None, itemCheck=None,
@@ -188,19 +274,57 @@ class ListField(Field):
 
         source = getStackFrame()
         self._setup(doc=doc, dtype=List, default=default, check=None, optional=optional, source=source)
+
         self.listCheck = listCheck
+        """Callable used to check the list as a whole.
+        """
+
         self.itemCheck = itemCheck
+        """Callable used to validate individual items as they are inserted
+        into the list.
+        """
+
         self.itemtype = dtype
+        """Data type of list items.
+        """
+
         self.length = length
+        """Number of items that must be present in the list (or `None` to
+        disable checking the list's length).
+        """
+
         self.minLength = minLength
+        """Minimum number of items that must be present in the list (or `None`
+        to disable checking the list's minimum length).
+        """
+
         self.maxLength = maxLength
+        """Maximum number of items that must be present in the list (or `None`
+        to disable checking the list's maximum length).
+        """
 
     def validate(self, instance):
-        """
-        ListField validation ensures that non-optional fields are not None,
-            and that non-None values comply with length requirements and
-            that the list passes listCheck if supplied by the user.
-        Individual Item checks are applied at set time and are not re-checked.
+        """Validate the field.
+
+        Parameters
+        ----------
+        instance : `lsst.pex.config.Config`
+            The config instance that contains this field.
+
+        Raises
+        ------
+        lsst.pex.config.FieldValidationError
+            Raised if:
+
+            - The field is not optional, but the value is `None`.
+            - The list itself does not meet the requirements of the `length`,
+              `minLength`, or `maxLength` attributes.
+            - The `listCheck` callable returns `False`.
+
+        Notes
+        -----
+        Individual item checks (`itemCheck`) are applied when each item is
+        set and are not re-checked by this method.
         """
         Field.validate(self, instance)
         value = self.__get__(instance)
@@ -235,21 +359,55 @@ class ListField(Field):
         instance._storage[self.name] = value
 
     def toDict(self, instance):
+        """Convert the value of this field to a plain `list`.
+
+        `lsst.pex.config.Config.toDict` is the primary user of this method.
+
+        Parameters
+        ----------
+        instance : `lsst.pex.config.Config`
+            The config instance that contains this field.
+
+        Returns
+        -------
+        `list`
+            Plain `list` of items, or `None` if the field is not set.
+        """
         value = self.__get__(instance)
         return list(value) if value is not None else None
 
     def _compare(self, instance1, instance2, shortcut, rtol, atol, output):
-        """Helper function for Config.compare; used to compare two fields for equality.
+        """Compare two config instances for equality with respect to this
+        field.
 
-        @param[in] instance1  LHS Config instance to compare.
-        @param[in] instance2  RHS Config instance to compare.
-        @param[in] shortcut   If True, return as soon as an inequality is found.
-        @param[in] rtol       Relative tolerance for floating point comparisons.
-        @param[in] atol       Absolute tolerance for floating point comparisons.
-        @param[in] output     If not None, a callable that takes a string, used (possibly repeatedly)
-                              to report inequalities.
+        `lsst.pex.config.config.compare` is the primary user of this method.
 
-        Floating point comparisons are performed by numpy.allclose; refer to that for details.
+        Parameters
+        ----------
+        instance1 : `lsst.pex.config.Config`
+            Left-hand-side `~lsst.pex.config.Config` instance in the
+            comparison.
+        instance2 : `lsst.pex.config.Config`
+            Right-hand-side `~lsst.pex.config.Config` instance in the
+            comparison.
+        shortcut : `bool`
+            If `True`, return as soon as an **inequality** is found.
+        rtol : `float`
+            Relative tolerance for floating point comparisons.
+        atol : `float`
+            Absolute tolerance for floating point comparisons.
+        output : callable
+            If not None, a callable that takes a `str`, used (possibly
+            repeatedly) to report inequalities.
+
+        Returns
+        -------
+        equal : `bool`
+            `True` if the fields are equal; `False` otherwise.
+
+        Notes
+        -----
+        Floating point comparisons are performed by `numpy.allclose`.
         """
         l1 = getattr(instance1, self.name)
         l2 = getattr(instance2, self.name)
