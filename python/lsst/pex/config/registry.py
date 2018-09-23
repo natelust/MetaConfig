@@ -30,11 +30,12 @@ from .configChoiceField import ConfigInstanceDict, ConfigChoiceField
 
 
 class ConfigurableWrapper:
-    """A wrapper for configurables
+    """A wrapper for configurables.
 
-    Used for configurables that don't contain a ConfigClass attribute,
+    Used for configurables that don't contain a ``ConfigClass`` attribute,
     or contain one that is being overridden.
     """
+
     def __init__(self, target, ConfigClass):
         self.ConfigClass = ConfigClass
         self._target = target
@@ -44,59 +45,104 @@ class ConfigurableWrapper:
 
 
 class Registry(collections.abc.Mapping):
-    """A base class for global registries, mapping names to configurables.
+    """A base class for global registries, which map names to configurables.
 
-    There are no hard requirements on configurable, but they typically create an algorithm
-    or are themselves the algorithm, and typical usage is as follows:
-    - configurable is a callable whose call signature is (config, ...extra arguments...)
-    - All configurables added to a particular registry will have the same call signature
-    - All configurables in a registry will typically share something important in common.
-      For example all configurables in psfMatchingRegistry return a psf matching
-      class that has a psfMatch method with a particular call signature.
+    A registry acts like a read-only dictionary with an additional `register`
+    method to add targets. Targets in the registry are configurables (see
+    *Notes*).
 
-    A registry acts like a read-only dictionary with an additional register method to add items.
-    The dict contains configurables and each configurable has an instance ConfigClass.
+    Parameters
+    ----------
+    configBaseType : `lsst.pex.config.Config`-type
+        The base class for config classes in the registry.
 
-    Example:
-    registry = Registry()
-    class FooConfig(Config):
-        val = Field(dtype=int, default=3, doc="parameter for Foo")
-    class Foo:
-        ConfigClass = FooConfig
-        def __init__(self, config):
-            self.config = config
-        def addVal(self, num):
-            return self.config.val + num
-    registry.register("foo", Foo)
-    names = registry.keys() # returns ("foo",)
-    fooConfigurable = registry["foo"]
-    fooConfig = fooItem.ConfigClass()
-    foo = fooConfigurable(fooConfig)
-    foo.addVal(5) # returns config.val + 5
+    Notes
+    -----
+    A configurable is a callable with call signature ``(config, *args)``
+    Configurables typically create an algorithm or are themselves the
+    algorithm. Often configurables are `lsst.pipe.base.Task` subclasses, but
+    this is not required.
+
+    A ``Registry`` has these requirements:
+
+    - All configurables added to a particular registry have the same call
+      signature.
+    - All configurables in a registry typically share something important
+      in common. For example, all configurables in ``psfMatchingRegistry``
+      return a PSF matching class that has a ``psfMatch`` method with a
+      particular call signature.
+
+    Examples
+    --------
+    This examples creates a configurable class ``Foo`` and adds it to a
+    registry. First, creating the configurable:
+
+    >>> from lsst.pex.config import Registry, Config
+    >>> class FooConfig(Config):
+    ...     val = Field(dtype=int, default=3, doc="parameter for Foo")
+    ...
+    >>> class Foo:
+    ...     ConfigClass = FooConfig
+    ...     def __init__(self, config):
+    ...         self.config = config
+    ...     def addVal(self, num):
+    ...         return self.config.val + num
+    ...
+
+    Next, create a ``Registry`` instance called ``registry`` and register the
+    ``Foo`` configurable under the ``"foo"`` key:
+
+    >>> registry = Registry()
+    >>> registry.register("foo", Foo)
+    >>> print(list(registry.keys()))
+    ["foo"]
+
+    Now ``Foo`` is conveniently accessible from the registry itself.
+
+    Finally, use the registry to get the configurable class and create an
+    instance of it:
+
+    >>> FooConfigurable = registry["foo"]
+    >>> foo = FooConfigurable(FooConfigurable.ConfigClass())
+    >>> foo.addVal(5)
+    8
     """
 
     def __init__(self, configBaseType=Config):
-        """Construct a registry of name: configurables
-
-        @param configBaseType: base class for config classes in registry
-        """
         if not issubclass(configBaseType, Config):
             raise TypeError("configBaseType=%s must be a subclass of Config" % _typeStr(configBaseType,))
         self._configBaseType = configBaseType
         self._dict = {}
 
     def register(self, name, target, ConfigClass=None):
-        """Add a new item to the registry.
+        """Add a new configurable target to the registry.
 
-        @param target       A callable 'object that takes a Config instance as its first argument.
-                            This may be a Python type, but is not required to be.
-        @param ConfigClass  A subclass of pex_config Config used to configure the configurable;
-                            if None then configurable.ConfigClass is used.
+        Parameters
+        ----------
+        name : `str`
+            Name that the ``target`` is registered under. The target can
+            be accessed later with `dict`-like patterns using ``name`` as
+            the key.
+        target : obj
+            A configurable type, usually a subclass of `lsst.pipe.base.Task`.
+        ConfigClass : `lsst.pex.config.Config`-type, optional
+            A subclass of `lsst.pex.config.Config` used to configure the
+            configurable. If `None` then the configurable's ``ConfigClass``
+            attribute is used.
 
-        @note: If ConfigClass is provided then then 'target' is wrapped in a new object that forwards
-               function calls to it.  Otherwise the original 'target' is stored.
+        Raises
+        ------
+        RuntimeError
+            Raised if an item with ``name`` is already in the registry.
+        AttributeError
+            Raised if ``ConfigClass`` is `None` and ``target`` does not have
+            a ``ConfigClass`` attribute.
 
-        @raise AttributeError if ConfigClass is None and target does not have attribute ConfigClass
+        Notes
+        -----
+        If ``ConfigClass`` is provided then the ``target`` configurable is
+        wrapped in a new object that forwards function calls to it. Otherwise
+        the original ``target`` is stored.
         """
         if name in self._dict:
             raise RuntimeError("An item with name %r already exists" % name)
@@ -122,11 +168,38 @@ class Registry(collections.abc.Mapping):
         return key in self._dict
 
     def makeField(self, doc, default=None, optional=False, multi=False):
+        """Create a `RegistryField` configuration field from this registry.
+
+        Parameters
+        ----------
+        doc : `str`
+            A description of the field.
+        default : object, optional
+            The default target for the field.
+        optional : `bool`, optional
+            When `False`, `lsst.pex.config.Config.validate` fails if the
+            field's value is `None`.
+        multi : `bool`, optional
+            A flag to allow multiple selections in the `RegistryField` if
+            `True`.
+
+        Returns
+        -------
+        field : `lsst.pex.config.RegistryField`
+            `~lsst.pex.config.RegistryField` Configuration field.
+        """
         return RegistryField(doc, self, default, optional, multi)
 
 
 class RegistryAdaptor(collections.abc.Mapping):
-    """Private class that makes a Registry behave like the thing a ConfigChoiceField expects."""
+    """Private class that makes a `Registry` behave like the thing a
+    `~lsst.pex.config.ConfigChoiceField` expects.
+
+    Parameters
+    ----------
+    registry : `Registry`
+        `Registry` instance.
+    """
 
     def __init__(self, registry):
         self.registry = registry
@@ -145,6 +218,16 @@ class RegistryAdaptor(collections.abc.Mapping):
 
 
 class RegistryInstanceDict(ConfigInstanceDict):
+    """Dictionary of instantiated configs, used to populate a `RegistryField`.
+
+    Parameters
+    ----------
+    config : `lsst.pex.config.Config`
+        Configuration instance.
+    field : `RegistryField`
+        Configuration field.
+    """
+
     def __init__(self, config, field):
         ConfigInstanceDict.__init__(self, config, field)
         self.registry = field.registry
@@ -154,6 +237,7 @@ class RegistryInstanceDict(ConfigInstanceDict):
             raise FieldValidationError(self._field, self._config,
                                        "Multi-selection field has no attribute 'target'")
         return self._field.typemap.registry[self._selection]
+
     target = property(_getTarget)
 
     def _getTargets(self):
@@ -161,6 +245,7 @@ class RegistryInstanceDict(ConfigInstanceDict):
             raise FieldValidationError(self._field, self._config,
                                        "Single-selection field has no attribute 'targets'")
         return [self._field.typemap.registry[c] for c in self._selection]
+
     targets = property(_getTargets)
 
     def apply(self, *args, **kw):
@@ -191,7 +276,39 @@ class RegistryInstanceDict(ConfigInstanceDict):
 
 
 class RegistryField(ConfigChoiceField):
+    """A configuration field whose options are defined in a `Registry`.
+
+    Parameters
+    ----------
+    doc : `str`
+        A description of the field.
+    registry : `Registry`
+        The registry that contains this field.
+    default : `str`, optional
+        The default target key.
+    optional : `bool`, optional
+        When `False`, `lsst.pex.config.Config.validate` fails if the field's
+        value is `None`.
+    multi : `bool`, optional
+        If `True`, the field allows multiple selections. The default is
+        `False`.
+
+    See also
+    --------
+    ChoiceField
+    ConfigChoiceField
+    ConfigDictField
+    ConfigField
+    ConfigurableField
+    DictField
+    Field
+    ListField
+    RangeField
+    """
+
     instanceDictClass = RegistryInstanceDict
+    """Class used to hold configurable instances in the field.
+    """
 
     def __init__(self, doc, registry, default=None, optional=False, multi=False):
         types = RegistryAdaptor(registry)
@@ -200,8 +317,9 @@ class RegistryField(ConfigChoiceField):
 
     def __deepcopy__(self, memo):
         """Customize deep-copying, want a reference to the original registry.
+
         WARNING: this must be overridden by subclasses if they change the
-            constructor signature!
+        constructor signature!
         """
         other = type(self)(doc=self.doc, registry=self.registry,
                            default=copy.deepcopy(self.default),
@@ -211,19 +329,48 @@ class RegistryField(ConfigChoiceField):
 
 
 def makeRegistry(doc, configBaseType=Config):
-    """A convenience function to create a new registry.
+    """Create a `Registry`.
 
-    The returned value is an instance of a trivial subclass of Registry whose only purpose is to
-    customize its doc string and set attrList.
+    Parameters
+    ----------
+    doc : `str`
+        Docstring for the created `Registry` (this is set as the ``__doc__``
+        attribute of the `Registry` instance.
+    configBaseType : `lsst.pex.config.Config`-type
+        Base type of config classes in the `Registry`
+        (`lsst.pex.config.Registry.configBaseType`).
+
+    Returns
+    -------
+    registry : `Registry`
+        Registry with ``__doc__`` and `~Registry.configBaseType` attributes
+        set.
     """
     cls = type("Registry", (Registry,), {"__doc__": doc})
     return cls(configBaseType=configBaseType)
 
 
 def registerConfigurable(name, registry, ConfigClass=None):
-    """A decorator that adds a class as a configurable in a Registry.
+    """A decorator that adds a class as a configurable in a `Registry`
+    instance.
 
-    If the 'ConfigClass' argument is None, the class's ConfigClass attribute will be used.
+    Parameters
+    ----------
+    name : `str`
+        Name of the target (the decorated class) in the ``registry``.
+    registry : `Registry`
+        The `Registry` instance that the decorated class is added to.
+    ConfigClass : `lsst.pex.config.Config`-type, optional
+        Config class associated with the configurable. If `None`, the class's
+        ``ConfigClass`` attribute is used instead.
+
+    See also
+    --------
+    registerConfig
+
+    Notes
+    -----
+    Internally, this decorator runs `Registry.register`.
     """
     def decorate(cls):
         registry.register(name, target=cls, ConfigClass=ConfigClass)
@@ -232,8 +379,25 @@ def registerConfigurable(name, registry, ConfigClass=None):
 
 
 def registerConfig(name, registry, target):
-    """A decorator that adds a class as a ConfigClass in a Registry, and associates it with the given
-    configurable.
+    """Decorator that adds a class as a ``ConfigClass`` in a `Registry` and
+    associates it with the given configurable.
+
+    Parameters
+    ----------
+    name : `str`
+        Name of the ``target`` in the ``registry``.
+    registry : `Registry`
+        The registry containing the ``target``.
+    target : obj
+        A configurable type, such as a subclass of `lsst.pipe.base.Task`.
+
+    See also
+    --------
+    registerConfigurable
+
+    Notes
+    -----
+    Internally, this decorator runs `Registry.register`.
     """
     def decorate(cls):
         registry.register(name, target=target, ConfigClass=cls)
