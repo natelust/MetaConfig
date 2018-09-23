@@ -30,9 +30,6 @@ from .listField import ListField, List
 from .configField import ConfigField
 from .callStack import getCallerFrame, getCallStack
 
-# Mapping from C++ types to Python type: assumes we can round-trip between these using
-# the usual pybind11 converters, but doesn't require they be binary equivalent under-the-hood
-# or anything.
 _dtypeMap = {
     "bool": bool,
     "int": int,
@@ -41,78 +38,108 @@ _dtypeMap = {
     "std::int64_t": int,
     "std::string": str
 }
+"""Mapping from C++ types to Python type (`dict`)
+
+Tassumes we can round-trip between these using the usual pybind11 converters,
+but doesn't require they be binary equivalent under-the-hood or anything.
+"""
 
 _containerRegex = re.compile(r"(std::)?(vector|list)<\s*(?P<type>[a-z0-9_:]+)\s*>")
 
 
 def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=0, cls=None):
-    """A function that creates a Python config class that matches a  C++ control object class.
+    """Create a `~lsst.pex.config.Config` class that matches a  C++ control
+    object class.
 
-    @param ctrl        C++ control class to wrap.
-    @param name        Name of the new config class; defaults to the __name__ of the control
-                       class with 'Control' replaced with 'Config'.
-    @param base        Base class for the config class.
-    @param doc         Docstring for the config class.
-    @param module      Either a module object, a string specifying the name of the module, or an
-                       integer specifying how far back in the stack to look for the module to use:
-                       0 is the immediate caller of pex.config.wrap.  This will be used to
-                       set __module__ for the new config class, and the class will also be added
-                       to the module.  Ignored if None or if cls is not None, but note that the default
-                       is to use the callers' module.
-    @param cls         An existing config class to use instead of creating a new one; name, base
-                       doc, and module will be ignored if this is not None.
+    See the `wrap` decorator as a convenient interface to ``makeConfigClass``.
 
-    See the 'wrap' decorator as a way to use makeConfigClass that may be more convenient.
+    Parameters
+    ----------
+    ctrl : class
+        C++ control class to wrap.
+    name : `str`, optional
+        Name of the new config class; defaults to the ``__name__`` of the
+        control class with ``'Control'`` replaced with ``'Config'``.
+    base : `lsst.pex.config.Config`-type, optional
+        Base class for the config class.
+    doc : `str`, optional
+        Docstring for the config class.
+    module : object, `str`, or `int`, optional
+        Either a module object, a string specifying the name of the module, or
+        an integer specifying how far back in the stack to look for the module
+        to use: 0 is the immediate caller of `~lsst.pex.config.wrap`. This will
+        be used to set ``__module__`` for the new config class, and the class
+        will also be added to the module. Ignored if `None` or if ``cls`` is
+        not `None`, but note that the default is to use the callers' module.
+    cls : class
+        An existing config class to use instead of creating a new one; name,
+        base doc, and module will be ignored if this is not `None`.
 
-    To use makeConfigClass, in C++, write a control object, using the LSST_CONTROL_FIELD macro in
-    lsst/pex/config.h (note that it must have sensible default constructor):
+    Notes
+    -----
+    To use ``makeConfigClass``, write a control object in C++ using the
+    ``LSST_CONTROL_FIELD`` macro in ``lsst/pex/config.h`` (note that it must
+    have sensible default constructor):
 
-    @code
-    // myHeader.h
+    .. code-block:: cpp
 
-    struct InnerControl {
-        LSST_CONTROL_FIELD(wim, std::string, "documentation for field 'wim'");
-    };
+       // myHeader.h
 
-    struct FooControl {
-        LSST_CONTROL_FIELD(bar, int, "documentation for field 'bar'");
-        LSST_CONTROL_FIELD(baz, double, "documentation for field 'baz'");
-        LSST_NESTED_CONTROL_FIELD(zot, myWrappedLib, InnerControl, "documentation for field 'zot'");
+       struct InnerControl {
+           LSST_CONTROL_FIELD(wim, std::string, "documentation for field 'wim'");
+       };
 
-        FooControl() : bar(0), baz(0.0) {}
-    };
-    @endcode
+       struct FooControl {
+           LSST_CONTROL_FIELD(bar, int, "documentation for field 'bar'");
+           LSST_CONTROL_FIELD(baz, double, "documentation for field 'baz'");
+           LSST_NESTED_CONTROL_FIELD(zot, myWrappedLib, InnerControl, "documentation for field 'zot'");
 
+           FooControl() : bar(0), baz(0.0) {}
+       };
 
-    You can use LSST_NESTED_CONTROL_FIELD to nest control objects.  Now, wrap those control objects as
-    you would any other C++ class, but make sure you include lsst/pex/config.h before including the header
-    file where the control object class is defined:
+    You can use ``LSST_NESTED_CONTROL_FIELD`` to nest control objects. Wrap
+    those control objects as you would any other C++ class, but make sure you
+    include ``lsst/pex/config.h`` before including the header file where
+    the control object class is defined.
 
-    Now, in Python, do this:
+    Next, in Python:
 
-    @code
-    import myWrappedLib
-    import lsst.pex.config
-    InnerConfig = lsst.pex.config.makeConfigClass(myWrappedLib.InnerControl)
-    FooConfig = lsst.pex.config.makeConfigClass(myWrappedLib.FooControl)
-    @endcode
+    .. code-block:: py
 
-    This will add fully-fledged "bar", "baz", and "zot" fields to FooConfig, set
-    FooConfig.Control = FooControl, and inject makeControl and readControl
-    methods to create a FooControl and set the FooConfig from the FooControl,
-    respectively.  In addition, if FooControl has a validate() member function,
-    a custom validate() method will be added to FooConfig that uses it.   And,
-    of course, all of the above will be done for InnerControl/InnerConfig too.
+       import lsst.pex.config
+       import myWrappedLib
 
-    Any field that would be injected that would clash with an existing attribute of the
-    class will be silently ignored; this allows the user to customize fields and
-    inherit them from wrapped control classes.  However, these names will still be
-    processed when converting between config and control classes, so they should generally
-    be present as base class fields or other instance attributes or descriptors.
+       InnerConfig = lsst.pex.config.makeConfigClass(myWrappedLib.InnerControl)
+       FooConfig = lsst.pex.config.makeConfigClass(myWrappedLib.FooControl)
 
-    While LSST_CONTROL_FIELD will work for any C++ type, automatic Config generation
-    only supports bool, int, std::int64_t, double, and std::string  fields, along
-    with std::list and std::vectors of those types.
+    This does the following things:
+
+    - Adds ``bar``, ``baz``, and ``zot`` fields to ``FooConfig``.
+    - Set ``FooConfig.Control`` to ``FooControl``.
+    - Adds ``makeControl`` and ``readControl`` methods to create a
+      ``FooControl`` and set the ``FooConfig`` from the ``FooControl``,
+      respectively.
+    - If ``FooControl`` has a ``validate()`` member function,
+      a custom ``validate()`` method will be added to ``FooConfig`` that uses
+      it.
+
+    All of the above are done for ``InnerConfig`` as well.
+
+    Any field that would be injected that would clash with an existing
+    attribute of the class is be silently ignored. This allows you to
+    customize fields and inherit them from wrapped control classes. However,
+    these names are still be processed when converting between config and
+    control classes, so they should generally be present as base class fields
+    or other instance attributes or descriptors.
+
+    While ``LSST_CONTROL_FIELD`` will work for any C++ type, automatic
+    `~lsst.pex.config.Config` generation only supports ``bool``, ``int``,
+    ``std::int64_t``, ``double``, and ``std::string`` fields, along with
+    ``std::list`` and ``std::vectors`` of those types.
+
+    See also
+    --------
+    wrap
     """
     if name is None:
         if "Control" not in ctrl.__name__:
@@ -179,8 +206,8 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=0, cls=None):
     def makeControl(self):
         """Construct a C++ Control object from this Config object.
 
-        Fields set to None will be ignored, and left at the values defined by the
-        Control object's default constructor.
+        Fields set to `None` will be ignored, and left at the values defined
+        by the Control object's default constructor.
         """
         r = self.Control()
         for k, f in fields.items():
@@ -195,10 +222,18 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=0, cls=None):
         return r
 
     def readControl(self, control, __at=None, __label="readControl", __reset=False):
-        """Read values from a C++ Control object and assign them to self's fields.
+        """Read values from a C++ Control object and assign them to self's
+        fields.
 
-        The __at, __label, and __reset arguments are for internal use only; they are used to
-        remove internal calls from the history.
+        Parameters
+        ----------
+        control
+            C++ Control object.
+
+        Notes
+        -----
+        The ``__at``, ``__label``, and ``__reset`` arguments are for internal
+        use only; they are used to remove internal calls from the history.
         """
         if __at is None:
             __at = getCallStack()
@@ -214,15 +249,17 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=0, cls=None):
         self.update(__at=__at, __label=__label, **values)
 
     def validate(self):
-        """Validate the config object by constructing a control object and using
-        a C++ validate() implementation."""
+        """Validate the config object by constructing a control object and
+        using a C++ ``validate()`` implementation.
+        """
         super(cls, self).validate()
         r = self.makeControl()
         r.validate()
 
     def setDefaults(self):
         """Initialize the config object, using the Control objects default ctor
-        to provide defaults."""
+        to provide defaults.
+        """
         super(cls, self).setDefaults()
         try:
             r = self.Control()
@@ -246,16 +283,31 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=0, cls=None):
 
 
 def wrap(ctrl):
-    """A decorator that adds fields from a C++ control class to a Python config class.
+    """Decorator that adds fields from a C++ control class to a
+    `lsst.pex.config.Config` class.
 
-    Used like this:
+    Parameters
+    ----------
+    ctrl : object
+        The C++ control class.
 
-    @wrap(MyControlClass)
-    class MyConfigClass(Config):
-        pass
+    Notes
+    -----
+    See `makeConfigClass` for more information. This `wrap` decorator is
+    equivalent to calling `makeConfigClass` with the decorated class as the
+    ``cls`` argument.
 
-    See makeConfigClass for more information; this is equivalent to calling makeConfigClass
-    with the decorated class as the 'cls' argument.
+    Examples
+    --------
+    Use `wrap` like this::
+
+        @wrap(MyControlClass)
+        class MyConfigClass(Config):
+            pass
+
+    See also
+    --------
+    makeConfigClass
     """
     def decorate(cls):
         return makeConfigClass(ctrl, cls=cls)
