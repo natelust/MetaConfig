@@ -569,8 +569,8 @@ class Config(metaclass=ConfigMeta):
                         filename = getattr(stream, "co_filename", None)
                         if filename is None:
                             filename = getattr(stream, "name", "?")
-                    sys.stderr.write(u"Config override file %r" % (filename,) +
-                                     u" appears to use 'root' instead of 'config'; trying with 'root'")
+                    print(f"Config override file {filename!r}"
+                          " appears to use 'root' instead of 'config'; trying with 'root'", file=sys.stderr)
                     local = {"root": self}
                     exec(stream, {}, local)
                 else:
