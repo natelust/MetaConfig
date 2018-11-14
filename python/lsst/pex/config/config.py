@@ -177,7 +177,10 @@ class Field:
         """
         self.dtype = dtype
         self.doc = doc
-        self.__doc__ = doc+" (`"+dtype.__name__+"`, default "+'``{0!r}``'.format(default)+")"
+        self.__doc__ = f"{doc} (`{dtype.__name__}`"
+        if optional or default is not None:
+            self.__doc__ += f", default ``{default!r}``"
+        self.__doc__ += ")"
         self.default = default
         self.check = check
         self.optional = optional
