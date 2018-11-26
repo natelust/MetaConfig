@@ -94,7 +94,7 @@ def compareConfigs(name, c1, c2, shortcut=True, rtol=1E-8, atol=1E-8, output=Non
             if output is not None:
                 output("RHS is None for %s" % name)
             return False
-    if type(c1) != type(c1):
+    if type(c1) != type(c2):
         if output is not None:
             output("Config types do not match for %s: %s != %s" % (name, type(c1), type(c2)))
         return False
