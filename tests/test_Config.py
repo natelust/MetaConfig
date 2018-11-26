@@ -410,6 +410,11 @@ except ImportError:
         self.assertIn("Inequality in r['AAA']", output)
         self.assertNotIn("Inequality in r['BBB']", output)
 
+        # Before DM-16561, this incorrectly returned `True`.
+        self.assertFalse(self.inner.compare(self.outer))
+        # Before DM-16561, this raised.
+        self.assertFalse(self.outer.compare(self.inner))
+
     def testLoadError(self):
         """Check that loading allows errors in the file being loaded to propagate
         """
