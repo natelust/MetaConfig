@@ -34,3 +34,7 @@ Python API reference
 .. automodapi:: lsst.pex.config.callStack
    :no-main-docstr:
    :no-inheritance-diagram:
+
+.. automodapi:: lsst.pex.config.history
+   :no-main-docstr:
+   :no-inheritance-diagram:

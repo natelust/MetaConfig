@@ -20,6 +20,8 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
+__all__ = ('Color', 'format')
+
 import os
 import re
 import sys
