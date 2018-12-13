@@ -218,6 +218,22 @@ class Field:
     RangeField
     RegistryField
 
+    Notes
+    -----
+    ``Field`` instances (including those of any subclass of ``Field``) are used
+    as class attributes of `~lsst.pex.config.Config` subclasses (see the
+    example, below). ``Field`` attributes work like the `property` attributes
+    of classes that implement custom setters and getters. `Field` attributes
+    belong to the class, but operate on the instance. Formally speaking,
+    `Field` attributes are `descriptors
+    <https://docs.python.org/3/howto/descriptor.html>`_.
+
+    When you access a `Field` attribute on a `Config` instance, you don't
+    get the `Field` instance itself. Instead, you get the value of that field,
+    which might be a simple type (`int`, `float`, `str`, `bool`) or a custom
+    container type (like a `lsst.pex.config.List`) depending on the field's
+    type. See the example, below.
+
     Examples
     --------
     Instances of ``Field`` should be used as class attributes of
