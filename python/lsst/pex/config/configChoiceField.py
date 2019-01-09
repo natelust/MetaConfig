@@ -23,14 +23,14 @@
 __all__ = ["ConfigChoiceField"]
 
 import copy
-import collections
+import collections.abc
 
 from .config import Config, Field, FieldValidationError, _typeStr, _joinNamePath
 from .comparison import getComparisonName, compareScalars, compareConfigs
 from .callStack import getCallStack, getStackFrame
 
 
-class SelectionSet(collections.MutableSet):
+class SelectionSet(collections.abc.MutableSet):
     """
     Custom set class used to track the selection of multi-select
     ConfigChoiceField.
@@ -107,14 +107,14 @@ class SelectionSet(collections.MutableSet):
         return str(list(self._set))
 
 
-class ConfigInstanceDict(collections.Mapping):
+class ConfigInstanceDict(collections.abc.Mapping):
     """A dict of instantiated configs, used to populate a ConfigChoiceField.
 
     typemap must support the following:
     - typemap[name]: return the config class associated with the given name
     """
     def __init__(self, config, field):
-        collections.Mapping.__init__(self)
+        collections.abc.Mapping.__init__(self)
         self._dict = dict()
         self._selection = None
         self._config = config

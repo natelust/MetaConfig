@@ -22,14 +22,14 @@
 
 __all__ = ["DictField"]
 
-import collections
+import collections.abc
 
 from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
 from .comparison import getComparisonName, compareScalars
 from .callStack import getCallStack, getStackFrame
 
 
-class Dict(collections.MutableMapping):
+class Dict(collections.abc.MutableMapping):
     """
     Config-Internal mapping container
     Emulates a dict, but adds validation and provenance.

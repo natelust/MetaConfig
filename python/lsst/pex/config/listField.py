@@ -22,14 +22,14 @@
 
 __all__ = ["ListField"]
 
-import collections
+import collections.abc
 
 from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
 from .comparison import compareScalars, getComparisonName
 from .callStack import getCallStack, getStackFrame
 
 
-class List(collections.MutableSequence):
+class List(collections.abc.MutableSequence):
     def __init__(self, config, field, value, at, label, setHistory=True):
         self._field = field
         self._config = config
