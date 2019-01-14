@@ -26,11 +26,38 @@ from .callStack import getStackFrame
 
 
 class ChoiceField(Field):
-    """
-    Defines a Config Field which allows only a set of values
-    All allowed must be of the same type.
-    Allowed values should be provided as a dict of value, doc string pairs
+    """A configuration field (`~lsst.pex.config.Field` subclass) that allows a
+    user to select from a predefined set of values.
 
+    Use ``ChoiceField`` when a configuration can only take one of a predefined
+    set of values. Each choice must be of the same type.
+
+    Parameters
+    ----------
+    doc : `str`
+        Documentation string that describes the configuration field.
+    dtype : class
+        The type of the field's choices. For example, `str` or `int`.
+    allowed : `dict`
+        The allowed values. Keys are the allowed choices (of ``dtype``-type).
+        Values are descriptions (`str`-type) of each choice.
+    default : ``dtype``-type, optional
+        The default value, which is of type ``dtype`` and one of the allowed
+        choices.
+    optional : `bool`, optional
+        If `True`, this configuration field is *optional*. Default is `True`.
+
+    See also
+    --------
+    ConfigChoiceField
+    ConfigDictField
+    ConfigField
+    ConfigurableField
+    DictField
+    Field
+    ListField
+    RangeField
+    RegistryField
     """
     def __init__(self, doc, dtype, allowed, default=None, optional=True):
         self.allowed = dict(allowed)

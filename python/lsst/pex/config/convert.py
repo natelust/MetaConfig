@@ -19,11 +19,33 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+
+__all__ = ('makePropertySet', 'makePolicy')
+
 import lsst.pex.policy
 import lsst.daf.base
 
 
 def makePropertySet(config):
+    """Convert a configuration into a `lsst.daf.base.PropertySet`.
+
+    Parameters
+    ----------
+    config : `lsst.pex.config.Config`
+        Configuration instance.
+
+    Returns
+    -------
+    propertySet : `lsst.daf.base.PropertySet`
+        A `~lsst.daf.base.PropertySet` that is equivalent to the ``config``
+        instance. If ``config`` is `None` then this return value is also
+        `None`.
+
+    See also
+    --------
+    makePolicy
+    lsst.daf.base.PropertySet
+    """
     def _helper(ps, prefix, dict_):
         for k, v in dict_.items():
             name = prefix + "." + k if prefix is not None else k
@@ -41,6 +63,24 @@ def makePropertySet(config):
 
 
 def makePolicy(config):
+    """Convert a configuration into a `lsst.pex.policy.Policy`.
+
+    Parameters
+    ----------
+    config : `lsst.pex.config.Config`
+        Configuration instance.
+
+    Returns
+    -------
+    policy : `lsst.pex.policy.Policy`
+        A `~lsst.pex.policy.Policy` that is equivalent to the ``config``
+        instance. If ``config`` is `None` then return value is also `None`.
+
+    See also
+    --------
+    makePropertySet
+    lsst.pex.policy.Policy
+    """
     def _helper(dict_):
         p = lsst.pex.policy.Policy()
         for k, v in dict_.items():

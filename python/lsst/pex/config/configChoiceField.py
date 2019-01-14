@@ -31,14 +31,30 @@ from .callStack import getCallStack, getStackFrame
 
 
 class SelectionSet(collections.abc.MutableSet):
-    """
-    Custom set class used to track the selection of multi-select
-    ConfigChoiceField.
+    """A mutable set class that tracks the selection of multi-select
+    `~lsst.pex.config.ConfigChoiceField` objects.
 
-    This class allows user a multi-select ConfigChoiceField to add/discard
-    items from the set of active configs. Each change to the selection is
-    tracked in the field's history.
+    Parameters
+    ----------
+    dict_ : `ConfigInstanceDict`
+        The dictionary of instantiated configs.
+    value
+        The selected key.
+    at : `lsst.pex.config.callStack.StackFrame`, optional
+        The call stack when the selection was made.
+    label : `str`, optional
+        Label for history tracking.
+    setHistory : `bool`, optional
+        Add this even to the history, if `True`.
+
+    Notes
+    -----
+    This class allows a user of a multi-select
+    `~lsst.pex.config.ConfigChoiceField` to add or discard items from the set
+    of active configs. Each change to the selection is tracked in the field's
+    history.
     """
+
     def __init__(self, dict_, value, at=None, label="assignment", setHistory=True):
         if at is None:
             at = getCallStack()
@@ -63,6 +79,8 @@ class SelectionSet(collections.abc.MutableSet):
             self.__history.append(("Set selection to %s" % self, at, label))
 
     def add(self, value, at=None):
+        """Add a value to the selected set.
+        """
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config,
                                        "Cannot modify a frozen Config")
@@ -78,6 +96,8 @@ class SelectionSet(collections.abc.MutableSet):
         self._set.add(value)
 
     def discard(self, value, at=None):
+        """Discard a value from the selected set.
+        """
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config,
                                        "Cannot modify a frozen Config")
@@ -108,10 +128,17 @@ class SelectionSet(collections.abc.MutableSet):
 
 
 class ConfigInstanceDict(collections.abc.Mapping):
-    """A dict of instantiated configs, used to populate a ConfigChoiceField.
+    """Dictionary of instantiated configs, used to populate a
+    `~lsst.pex.config.ConfigChoiceField`.
 
-    typemap must support the following:
-    - typemap[name]: return the config class associated with the given name
+    Parameters
+    ----------
+    config : `lsst.pex.config.Config`
+        A configuration instance.
+    field : `lsst.pex.config.Field`-type
+        A configuration field. Note that the `lsst.pex.config.Field.fieldmap`
+        attribute must provide key-based access to configuration classes,
+        (that is, ``typemap[name]``).
     """
     def __init__(self, config, field):
         collections.abc.Mapping.__init__(self)
@@ -186,17 +213,17 @@ class ConfigInstanceDict(collections.abc.Mapping):
                                        "Multi-selection field has no attribute 'name'")
         self._selection = None
 
-    """
-    In a multi-selection ConfigInstanceDict, list of names of active items
-    Disabled In a single-selection _Regsitry)
-    """
     names = property(_getNames, _setNames, _delNames)
+    """List of names of active items in a multi-selection
+    ``ConfigInstanceDict``. Disabled in a single-selection ``_Registry``; use
+    the `name` attribute instead.
+    """
 
-    """
-    In a single-selection ConfigInstanceDict, name of the active item
-    Disabled In a multi-selection _Regsitry)
-    """
     name = property(_getName, _setName, _delName)
+    """Name of the active item in a single-selection ``ConfigInstanceDict``.
+    Disabled in a multi-selection ``_Registry``; use the ``names`` attribute
+    instead.
+    """
 
     def _getActive(self):
         if self._selection is None:
@@ -207,12 +234,12 @@ class ConfigInstanceDict(collections.abc.Mapping):
         else:
             return self[self._selection]
 
-    """
-    Readonly shortcut to access the selected item(s)
-    for multi-selection, this is equivalent to: [self[name] for name in self.names]
-    for single-selection, this is equivalent to: self[name]
-    """
     active = property(_getActive)
+    """The selected items.
+
+    For multi-selection, this is equivalent to: ``[self[name] for name in
+    self.names]``. For single-selection, this is equivalent to: ``self[name]``.
+    """
 
     def __getitem__(self, k, at=None, label="default"):
         try:
@@ -277,43 +304,106 @@ class ConfigInstanceDict(collections.abc.Mapping):
 
 
 class ConfigChoiceField(Field):
-    """
-    ConfigChoiceFields allow the config to choose from a set of possible Config types.
-    The set of allowable types is given by the typemap argument to the constructor
+    """A configuration field (`~lsst.pex.config.Field` subclass) that allows a
+    user to choose from a set of `~lsst.pex.config.Config` types.
 
-    The typemap object must implement typemap[name], which must return a Config subclass.
+    Parameters
+    ----------
+    doc : `str`
+        Documentation string for the field.
+    typemap : `dict`-like
+        A mapping between keys and `~lsst.pex.config.Config`-types as values.
+        See *Examples* for details.
+    default : `str`, optional
+        The default configuration name.
+    optional : `bool`, optional
+        When `False`, `lsst.pex.config.Config.validate` will fail if the
+        field's value is `None`.
+    multi : `bool`, optional
+        If `True`, the field allows multiple selections. In this case, set the
+        selections by assigning a sequence to the ``names`` attribute of the
+        field.
 
-    While the typemap is shared by all instances of the field, each instance of
-    the field has its own instance of a particular sub-config type
+        If `False`, the field allows only a single selection. In this case,
+        set the active config by assigning the config's key from the
+        ``typemap`` to the field's ``name`` attribute (see *Examples*).
 
-    For example:
+    See also
+    --------
+    ChoiceField
+    ConfigDictField
+    ConfigField
+    ConfigurableField
+    DictField
+    Field
+    ListField
+    RangeField
+    RegistryField
 
-      class AaaConfig(Config):
-        somefield = Field(int, "...")
-      TYPEMAP = {"A", AaaConfig}
-      class MyConfig(Config):
-          choice = ConfigChoiceField("doc for choice", TYPEMAP)
+    Notes
+    -----
+    ``ConfigChoiceField`` instances can allow either single selections or
+    multiple selections, depending on the ``multi`` parameter. For
+    single-selection fields, set the selection with the ``name`` attribute.
+    For multi-selection fields, set the selection though the ``names``
+    attribute.
 
-      instance = MyConfig()
-      instance.choice['AAA'].somefield = 5
-      instance.choice = "AAA"
+    This field is validated only against the active selection. If the
+    ``active`` attribute is `None` and the field is not optional, validation
+    will fail.
+
+    When saving a configuration with a ``ConfigChoiceField``, the entire set is
+    saved, as well as the active selection.
+
+    Examples
+    --------
+    While the ``typemap`` is shared by all instances of the field, each
+    instance of the field has its own instance of a particular sub-config type.
+
+    For example, ``AaaConfig`` is a config object
+
+    >>> from lsst.pex.config import Config, ConfigChoiceField, Field
+    >>> class AaaConfig(Config):
+    ...     somefield = Field("doc", int)
+    ...
+
+    The ``MyConfig`` config has a ``ConfigChoiceField`` field called ``choice``
+    that maps the ``AaaConfig`` type to the ``"AAA"`` key:
+
+    >>> TYPEMAP = {"AAA", AaaConfig}
+    >>> class MyConfig(Config):
+    ...     choice = ConfigChoiceField("doc for choice", TYPEMAP)
+    ...
+
+    Creating an instance of ``MyConfig``:
+
+    >>> instance = MyConfig()
+
+    Setting value of the field ``somefield`` on the "AAA" key of the ``choice``
+    field:
+
+    >>> instance.choice['AAA'].somefield = 5
+
+    **Selecting the active configuration**
+
+    Make the ``"AAA"`` key the active configuration value for the ``choice``
+    field:
+
+    >>> instance.choice = "AAA"
 
     Alternatively, the last line can be written:
-      instance.choice.name = "AAA"
 
-    Validation of this field is performed only the "active" selection.
-    If active is None and the field is not optional, validation will fail.
+    >>> instance.choice.name = "AAA"
 
-    ConfigChoiceFields can allow single selections or multiple selections.
-    Single selection fields set selection through property name, and
-    multi-selection fields use the property names.
+    (If the config instance allows multiple selections, you'd assign a sequence
+    to the ``names`` attribute instead.)
 
-    ConfigChoiceFields also allow multiple values of the same type:
-      TYPEMAP["CCC"] = AaaConfig
-      TYPEMAP["BBB"] = AaaConfig
+    ``ConfigChoiceField`` instances also allow multiple values of the same type:
 
-    When saving a config with a ConfigChoiceField, the entire set is saved, as well as the active selection
+    >>> TYPEMAP["CCC"] = AaaConfig
+    >>> TYPEMAP["BBB"] = AaaConfig
     """
+
     instanceDictClass = ConfigInstanceDict
 
     def __init__(self, doc, typemap, default=None, optional=False, multi=False):
@@ -404,9 +494,11 @@ class ConfigChoiceField(Field):
             outfile.write(u"{}.name={!r}\n".format(fullname, instanceDict.name))
 
     def __deepcopy__(self, memo):
-        """Customize deep-copying, because we always want a reference to the original typemap.
+        """Customize deep-copying, because we always want a reference to the
+        original typemap.
 
-        WARNING: this must be overridden by subclasses if they change the constructor signature!
+        WARNING: this must be overridden by subclasses if they change the
+        constructor signature!
         """
         other = type(self)(doc=self.doc, typemap=self.typemap, default=copy.deepcopy(self.default),
                            optional=self.optional, multi=self.multi)
@@ -414,19 +506,37 @@ class ConfigChoiceField(Field):
         return other
 
     def _compare(self, instance1, instance2, shortcut, rtol, atol, output):
-        """Helper function for Config.compare; used to compare two fields for equality.
+        """Compare two fields for equality.
 
-        Only the selected config(s) are compared, as the parameters of any others do not matter.
+        Used by `lsst.pex.ConfigChoiceField.compare`.
 
-        @param[in] instance1  LHS Config instance to compare.
-        @param[in] instance2  RHS Config instance to compare.
-        @param[in] shortcut   If True, return as soon as an inequality is found.
-        @param[in] rtol       Relative tolerance for floating point comparisons.
-        @param[in] atol       Absolute tolerance for floating point comparisons.
-        @param[in] output     If not None, a callable that takes a string, used (possibly repeatedly)
-                              to report inequalities.
+        Parameters
+        ----------
+        instance1 : `lsst.pex.config.Config`
+            Left-hand side config instance to compare.
+        instance2 : `lsst.pex.config.Config`
+            Right-hand side config instance to compare.
+        shortcut : `bool`
+            If `True`, this function returns as soon as an inequality if found.
+        rtol : `float`
+            Relative tolerance for floating point comparisons.
+        atol : `float`
+            Absolute tolerance for floating point comparisons.
+        output : callable
+            A callable that takes a string, used (possibly repeatedly) to
+            report inequalities.
 
-        Floating point comparisons are performed by numpy.allclose; refer to that for details.
+        Returns
+        -------
+        isEqual : bool
+            `True` if the fields are equal, `False` otherwise.
+
+        Notes
+        -----
+        Only the selected configurations are compared, as the parameters of any
+        others do not matter.
+
+        Floating point comparisons are performed by `numpy.allclose`.
         """
         d1 = getattr(instance1, self.name)
         d2 = getattr(instance2, self.name)

@@ -29,12 +29,12 @@ __all__ = ["ConfigDictField"]
 
 
 class ConfigDict(Dict):
-    """
-    Config-Insternal representation of a dict of config classes
+    """Internal representation of a dictionary of configuration classes.
 
-    Much like Dict, ConfigDict is a custom MutableMapper which tracks the
-    history of changes to any of its items.
+    Much like `Dict`, `ConfigDict` is a custom `MutableMapper` which tracks
+    the history of changes to any of its items.
     """
+
     def __init__(self, config, field, value, at, label):
         Dict.__init__(self, config, field, value, at, label, setHistory=False)
         self.history.append(("Dict initialized", at, label))
@@ -85,16 +85,56 @@ class ConfigDict(Dict):
 
 
 class ConfigDictField(DictField):
-    """
-    Defines a field which is a mapping between a POD and a config class.
+    """A configuration field (`~lsst.pex.config.Field` subclass) that is a
+    mapping of keys to `~lsst.pex.config.Config` instances.
 
-    This behaves exactly like a DictField with the slight difference that
-        itemtype must be an subclass of Config.
+    ``ConfigDictField`` behaves like `DictField` except that the
+    ``itemtype`` must be a `~lsst.pex.config.Config` subclass.
 
-    This allows config writters to create name-to-config mappings. One use case
-    is for configuring mappings for dataset types in a butler. In this case,
-    the dataset type names are arbitrary and user-selected; the mapping
-    configurations are known and fixed.
+    Parameters
+    ----------
+    doc : `str`
+        A description of the configuration field.
+    keytype : {`int`, `float`, `complex`, `bool`, `str`}
+        The type of the mapping keys. All keys must have this type.
+    itemtype : `lsst.pex.config.Config`-type
+        The type of the values in the mapping. This must be
+        `~lsst.pex.config.Config` or a subclass.
+    default : optional
+        Unknown.
+    default : ``itemtype``-dtype, optional
+        Default value of this field.
+    optional : `bool`, optional
+        If `True`, this configuration `~lsst.pex.config.Field` is *optional*.
+        Default is `True`.
+
+    Raises
+    ------
+    ValueError
+        Raised if the inputs are invalid:
+
+        - ``keytype`` or ``itemtype`` arguments are not supported types
+          (members of `ConfigDictField.supportedTypes`.
+        - ``dictCheck`` or ``itemCheck`` is not a callable function.
+
+    See also
+    --------
+    ChoiceField
+    ConfigChoiceField
+    ConfigField
+    ConfigurableField
+    DictField
+    Field
+    ListField
+    RangeField
+    RegistryField
+
+    Notes
+    -----
+    You can use ``ConfigDictField`` to create name-to-config mappings. One use
+    case is for configuring mappings for dataset types in a Butler. In this
+    case, the dataset type names are arbitrary and user-selected while the
+    mapping configurations are known and fixed.
     """
 
     DictClass = ConfigDict
@@ -167,17 +207,33 @@ class ConfigDictField(DictField):
                 configDict[k].freeze()
 
     def _compare(self, instance1, instance2, shortcut, rtol, atol, output):
-        """Helper function for Config.compare; used to compare two fields for equality.
+        """Compare two fields for equality.
 
-        @param[in] instance1  LHS Config instance to compare.
-        @param[in] instance2  RHS Config instance to compare.
-        @param[in] shortcut   If True, return as soon as an inequality is found.
-        @param[in] rtol       Relative tolerance for floating point comparisons.
-        @param[in] atol       Absolute tolerance for floating point comparisons.
-        @param[in] output     If not None, a callable that takes a string, used (possibly repeatedly)
-                              to report inequalities.
+        Used by `lsst.pex.ConfigDictField.compare`.
 
-        Floating point comparisons are performed by numpy.allclose; refer to that for details.
+        Parameters
+        ----------
+        instance1 : `lsst.pex.config.Config`
+            Left-hand side config instance to compare.
+        instance2 : `lsst.pex.config.Config`
+            Right-hand side config instance to compare.
+        shortcut : `bool`
+            If `True`, this function returns as soon as an inequality if found.
+        rtol : `float`
+            Relative tolerance for floating point comparisons.
+        atol : `float`
+            Absolute tolerance for floating point comparisons.
+        output : callable
+            A callable that takes a string, used (possibly repeatedly) to report inequalities.
+
+        Returns
+        -------
+        isEqual : bool
+            `True` if the fields are equal, `False` otherwise.
+
+        Notes
+        -----
+        Floating point comparisons are performed by `numpy.allclose`.
         """
         d1 = getattr(instance1, self.name)
         d2 = getattr(instance2, self.name)

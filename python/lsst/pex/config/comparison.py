@@ -19,12 +19,11 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
-"""
-Helper functions for comparing Configs.
+"""Helper functions for comparing `lsst.pex.config.Config` instancess.
 
-The function here should be use for any comparison in a Config.compare
-or Field._compare implementation, as they take care of writing messages
-as well as floating-point comparisons and shortcuts.
+Theses function should be use for any comparison in a `lsst.pex.Config.compare`
+or `lsst.pex.config.Field._compare` implementation, as they take care of
+writing messages as well as floating-point comparisons and shortcuts.
 """
 
 import numpy
@@ -33,25 +32,64 @@ __all__ = ("getComparisonName", "compareScalars", "compareConfigs")
 
 
 def getComparisonName(name1, name2):
+    """Create a comparison name that is used for printed output of comparisons.
+
+    Parameters
+    ----------
+    name1 : `str`
+        Name of the first configuration.
+    name2 : `str`
+        Name of the second configuration.
+
+    Returns
+    -------
+    name : `str`
+        When ``name1`` and ``name2`` are equal, the returned name is
+        simply one of the names. When they are different the returned name is
+        formatted as ``"{name1} / {name2}"``.
+    """
     if name1 != name2:
         return "%s / %s" % (name1, name2)
     return name1
 
 
 def compareScalars(name, v1, v2, output, rtol=1E-8, atol=1E-8, dtype=None):
-    """Helper function for Config.compare; used to compare two scalar values for equality.
+    """Compare two scalar values for equality.
 
-    @param[in] name       Name to use when reporting differences
-    @param[in] dtype      Data type for comparison; may be None if it's definitely not floating-point.
-    @param[in] v1         LHS value to compare
-    @param[in] v2         RHS value to compare
-    @param[in] output     If not None, a callable that takes a string, used (possibly repeatedly)
-                          to report inequalities.
-    @param[in] rtol       Relative tolerance for floating point comparisons.
-    @param[in] atol       Absolute tolerance for floating point comparisons.
-    @param[in] dtype      Data type for comparison; may be None if it's definitely not floating-point.
+    This function is a helper for `lsst.pex.config.Config.compare`.
 
-    Floating point comparisons are performed by numpy.allclose; refer to that for details.
+    Parameters
+    ----------
+    name : `str`
+        Name to use when reporting differences, typically created by
+        `getComparisonName`.
+    v1 : object
+        Left-hand side value to compare.
+    v2 : object
+        Right-hand side value to compare.
+    output : callable or `None`
+        A callable that takes a string, used (possibly repeatedly) to report
+        inequalities (for example, `print`). Set to `None` to disable output.
+    rtol : `float`, optional
+        Relative tolerance for floating point comparisons.
+    atol : `float`, optional
+        Absolute tolerance for floating point comparisons.
+    dtype : class, optional
+        Data type of values for comparison. May be `None` if values are not
+        floating-point.
+
+    Returns
+    -------
+    areEqual : `bool`
+        `True` if the values are equal, `False` if they are not.
+
+    See also
+    --------
+    lsst.pex.config.compareConfigs
+
+    Notes
+    -----
+    Floating point comparisons are performed by `numpy.allclose`.
     """
     if v1 is None or v2 is None:
         result = (v1 == v2)
@@ -65,21 +103,46 @@ def compareScalars(name, v1, v2, output, rtol=1E-8, atol=1E-8, dtype=None):
 
 
 def compareConfigs(name, c1, c2, shortcut=True, rtol=1E-8, atol=1E-8, output=None):
-    """Helper function for Config.compare; used to compare two Configs for equality.
+    """Compare two `lsst.pex.config.Config` instances for equality.
 
-    If the Configs contain RegistryFields or ConfigChoiceFields, unselected Configs
-    will not be compared.
+    This function is a helper for `lsst.pex.config.Config.compare`.
 
-    @param[in] name       Name to use when reporting differences
-    @param[in] c1         LHS config to compare
-    @param[in] c2         RHS config to compare
-    @param[in] shortcut   If True, return as soon as an inequality is found.
-    @param[in] rtol       Relative tolerance for floating point comparisons.
-    @param[in] atol       Absolute tolerance for floating point comparisons.
-    @param[in] output     If not None, a callable that takes a string, used (possibly repeatedly)
-                          to report inequalities.
+    Parameters
+    ----------
+    name : `str`
+        Name to use when reporting differences, typically created by
+        `getComparisonName`.
+    v1 : `lsst.pex.config.Config`
+        Left-hand side config to compare.
+    v2 : `lsst.pex.config.Config`
+        Right-hand side config to compare.
+    shortcut : `bool`, optional
+        If `True`, return as soon as an inequality is found. Default is `True`.
+    rtol : `float`, optional
+        Relative tolerance for floating point comparisons.
+    atol : `float`, optional
+        Absolute tolerance for floating point comparisons.
+    output : callable, optional
+        A callable that takes a string, used (possibly repeatedly) to report
+        inequalities. For example: `print`.
 
-    Floating point comparisons are performed by numpy.allclose; refer to that for details.
+    Returns
+    -------
+    areEqual : `bool`
+        `True` when the two `lsst.pex.config.Config` instances are equal.
+        `False` if there is an inequality.
+
+    See also
+    --------
+    lsst.pex.config.compareScalars
+
+    Notes
+    -----
+    Floating point comparisons are performed by `numpy.allclose`.
+
+    If ``c1`` or ``c2`` contain `~lsst.pex.config.RegistryField` or
+    `~lsst.pex.config.ConfigChoiceField` instances, *unselected*
+    `~lsst.pex.config.Config` instances will not be compared.
     """
     assert name is not None
     if c1 is None:

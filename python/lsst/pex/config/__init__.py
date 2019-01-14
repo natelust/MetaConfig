@@ -19,6 +19,7 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+from .comparison import *
 from .config import *
 from .rangeField import *
 from .choiceField import *

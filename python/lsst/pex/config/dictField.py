@@ -30,9 +30,9 @@ from .callStack import getCallStack, getStackFrame
 
 
 class Dict(collections.abc.MutableMapping):
-    """
-    Config-Internal mapping container
-    Emulates a dict, but adds validation and provenance.
+    """An internal mapping container.
+
+    This class emulates a `dict`, but adds validation and provenance.
     """
 
     def __init__(self, config, field, value, at, label, setHistory=True):
@@ -53,10 +53,9 @@ class Dict(collections.abc.MutableMapping):
         if setHistory:
             self._history.append((dict(self._dict), at, label))
 
-    """
-    Read-only history
-    """
     history = property(lambda x: x._history)
+    """History (read-only).
+    """
 
     def __getitem__(self, k):
         return self._dict[k]
@@ -138,24 +137,60 @@ class Dict(collections.abc.MutableMapping):
 
 
 class DictField(Field):
+    """A configuration field (`~lsst.pex.config.Field` subclass) that maps keys
+    and values.
+
+    The types of both items and keys are restricted to these builtin types:
+    `int`, `float`, `complex`, `bool`, and `str`). All keys share the same type
+    and all values share the same type. Keys can have a different type from
+    values.
+
+    Parameters
+    ----------
+    doc : `str`
+        A documentation string that describes the configuration field.
+    keytype : {`int`, `float`, `complex`, `bool`, `str`}
+        The type of the mapping keys. All keys must have this type.
+    itemtype : {`int`, `float`, `complex`, `bool`, `str`}
+        Type of the mapping values.
+    default : `dict`, optional
+        The default mapping.
+    optional : `bool`, optional
+        If `True`, the field doesn't need to have a set value.
+    dictCheck : callable
+        A function that validates the dictionary as a whole.
+    itemCheck : callable
+        A function that validates individual mapping values.
+
+    See also
+    --------
+    ChoiceField
+    ConfigChoiceField
+    ConfigDictField
+    ConfigField
+    ConfigurableField
+    Field
+    ListField
+    RangeField
+    RegistryField
+
+    Examples
+    --------
+    This field maps has `str` keys and `int` values:
+
+    >>> from lsst.pex.config import Config, DictField
+    >>> class MyConfig(Config):
+    ...     field = DictField(
+    ...         doc="Example string-to-int mapping field.",
+    ...         keytype=str, itemtype=int,
+    ...         default={})
+    ...
+    >>> config = MyConfig()
+    >>> config.field['myKey'] = 42
+    >>> print(config.field)
+    {'myKey': 42}
     """
-    Defines a field which is a mapping of values
 
-    Both key and item types are restricted to builtin POD types:
-        (int, float, complex, bool, str)
-
-    Users can provide two check functions:
-        dictCheck: used to validate the dict as a whole, and
-        itemCheck: used to validate each item individually
-
-    For example to define a field which is a mapping from names to int values:
-
-    class MyConfig(Config):
-        field = DictField(
-                doc="example string-to-int mapping field",
-                keytype=str, itemtype=int,
-                default= {})
-    """
     DictClass = Dict
 
     def __init__(self, doc, keytype, itemtype, default=None, optional=False, dictCheck=None, itemCheck=None):
@@ -179,10 +214,30 @@ class DictField(Field):
         self.itemCheck = itemCheck
 
     def validate(self, instance):
-        """
-        DictField validation ensures that non-optional fields are not None,
-            and that non-None values comply with dictCheck.
-        Individual Item checks are applied at set time and are not re-checked.
+        """Validate the field's value (for internal use only).
+
+        Parameters
+        ----------
+        instance : `lsst.pex.config.Config`
+            The configuration that contains this field.
+
+        Returns
+        -------
+        isValid : `bool`
+            `True` is returned if the field passes validation criteria (see
+            *Notes*). Otherwise `False`.
+
+        Notes
+        -----
+        This method validates values according to the following criteria:
+
+        - A non-optional field is not `None`.
+        - If a value is not `None`, is must pass the `ConfigField.dictCheck`
+          user callback functon.
+
+        Individual item checks by the `ConfigField.itemCheck` user callback
+        function are done immediately when the value is set on a key. Those
+        checks are not repeated by this method.
         """
         Field.validate(self, instance)
         value = self.__get__(instance)
@@ -208,21 +263,52 @@ class DictField(Field):
         instance._storage[self.name] = value
 
     def toDict(self, instance):
+        """Convert this field's key-value pairs into a regular `dict`.
+
+        Parameters
+        ----------
+        instance : `lsst.pex.config.Config`
+            The configuration that contains this field.
+
+        Returns
+        -------
+        result : `dict` or `None`
+            If this field has a value of `None`, then this method returns
+            `None`. Otherwise, this method returns the field's value as a
+            regular Python `dict`.
+        """
         value = self.__get__(instance)
         return dict(value) if value is not None else None
 
     def _compare(self, instance1, instance2, shortcut, rtol, atol, output):
-        """Helper function for Config.compare; used to compare two fields for equality.
+        """Compare two fields for equality.
 
-        @param[in] instance1  LHS Config instance to compare.
-        @param[in] instance2  RHS Config instance to compare.
-        @param[in] shortcut   If True, return as soon as an inequality is found.
-        @param[in] rtol       Relative tolerance for floating point comparisons.
-        @param[in] atol       Absolute tolerance for floating point comparisons.
-        @param[in] output     If not None, a callable that takes a string, used (possibly repeatedly)
-                              to report inequalities.
+        Used by `lsst.pex.ConfigDictField.compare`.
 
-        Floating point comparisons are performed by numpy.allclose; refer to that for details.
+        Parameters
+        ----------
+        instance1 : `lsst.pex.config.Config`
+            Left-hand side config instance to compare.
+        instance2 : `lsst.pex.config.Config`
+            Right-hand side config instance to compare.
+        shortcut : `bool`
+            If `True`, this function returns as soon as an inequality if found.
+        rtol : `float`
+            Relative tolerance for floating point comparisons.
+        atol : `float`
+            Absolute tolerance for floating point comparisons.
+        output : callable
+            A callable that takes a string, used (possibly repeatedly) to
+            report inequalities.
+
+        Returns
+        -------
+        isEqual : bool
+            `True` if the fields are equal, `False` otherwise.
+
+        Notes
+        -----
+        Floating point comparisons are performed by `numpy.allclose`.
         """
         d1 = getattr(instance1, self.name)
         d2 = getattr(instance2, self.name)

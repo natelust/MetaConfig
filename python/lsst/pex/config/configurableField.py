@@ -19,6 +19,7 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+__all__ = ('ConfigurableInstance', 'ConfigurableField')
 
 import copy
 
@@ -28,7 +29,14 @@ from .callStack import getCallStack, getStackFrame
 
 
 class ConfigurableInstance:
-    """A retargetable configuration for a configurable object.
+    """A retargetable configuration in a `ConfigurableField` that proxies
+    a `~lsst.pex.config.Config`.
+
+    Notes
+    -----
+    ``ConfigurableInstance`` implements ``__getattr__`` and ``__setattr__``
+    methods that forward to the `~lsst.pex.config.Config` it holds.
+    ``ConfigurableInstance`` adds a `retarget` method.
 
     The actual `~lsst.pex.config.Config` instance is accessed using the
     ``value`` property (e.g. to get its documentation).  The associated
@@ -37,10 +45,13 @@ class ConfigurableInstance:
     """
 
     def __initValue(self, at, label):
-        """
-        if field.default is an instance of ConfigClass, custom construct
-        _value with the correct values from default.
-        otherwise call ConfigClass constructor
+        """Construct value of field.
+
+        Notes
+        -----
+        If field.default is an instance of `lsst.pex.config.ConfigClass`,
+        custom construct ``_value`` with the correct values from default.
+        Otherwise, call ``ConfigClass`` constructor
         """
         name = _joinNamePath(self._config._name, self._field.name)
         if type(self._field.default) == self.ConfigClass:
@@ -66,24 +77,27 @@ class ConfigurableInstance:
         history = config._history.setdefault(field.name, [])
         history.append(("Targeted and initialized from defaults", at, label))
 
-    """
-    Read-only access to the targeted configurable
-    """
     target = property(lambda x: x._target)
+    """The targeted configurable (read-only).
     """
-    Read-only access to the ConfigClass
-    """
-    ConfigClass = property(lambda x: x._ConfigClass)
 
+    ConfigClass = property(lambda x: x._ConfigClass)
+    """The configuration class (read-only)
     """
-    Read-only access to the ConfigClass instance
-    """
+
     value = property(lambda x: x._value)
+    """The `ConfigClass` instance (`lsst.pex.config.ConfigClass`-type,
+    read-only).
+    """
 
     def apply(self, *args, **kw):
-        """
-        Call the configurable.
-        With argument config=self.value along with any positional and kw args
+        """Call the configurable.
+
+        Notes
+        -----
+        In addition to the user-provided positional and keyword arguments,
+        the configurable is also provided a keyword argument ``config`` with
+        the value of `ConfigurableInstance.value`.
         """
         return self.target(*args, config=self.value, **kw)
 
@@ -113,8 +127,8 @@ class ConfigurableInstance:
         return getattr(self._value, name)
 
     def __setattr__(self, name, value, at=None, label="assignment"):
-        """
-        Pretend to be an isntance of  ConfigClass.
+        """Pretend to be an instance of ConfigClass.
+
         Attributes defined by ConfigurableInstance will shadow those defined in ConfigClass
         """
         if self._config._frozen:
@@ -146,17 +160,78 @@ class ConfigurableInstance:
 
 
 class ConfigurableField(Field):
-    """
-    A variant of a ConfigField which has a known configurable target
+    """A configuration field (`~lsst.pex.config.Field` subclass) that can be
+    can be retargeted towards a different configurable (often a
+    `lsst.pipe.base.Task` subclass).
 
-    Behaves just like a ConfigField except that it can be 'retargeted' to point
-    at a different configurable. Further you can 'apply' to construct a fully
-    configured configurable.
+    The ``ConfigurableField`` is often used to configure subtasks, which are
+    tasks (`~lsst.pipe.base.Task`) called by a parent task.
 
+    Parameters
+    ----------
+    doc : `str`
+        A description of the configuration field.
+    target : configurable class
+        The configurable target. Configurables have a ``ConfigClass``
+        attribute. Within the task framework, configurables are
+        `lsst.pipe.base.Task` subclasses)
+    ConfigClass : `lsst.pex.config.Config`-type, optional
+        The subclass of `lsst.pex.config.Config` expected as the configuration
+        class of the ``target``. If ``ConfigClass`` is unset then
+        ``target.ConfigClass`` is used.
+    default : ``ConfigClass``-type, optional
+        The default configuration class. Normally this parameter is not set,
+        and defaults to ``ConfigClass`` (or ``target.ConfigClass``).
+    check : callable, optional
+        Callable that takes the field's value (the ``target``) as its only
+        positional argument, and returns `True` if the ``target`` is valid (and
+        `False` otherwise).
 
+    See also
+    --------
+    ChoiceField
+    ConfigChoiceField
+    ConfigDictField
+    ConfigField
+    DictField
+    Field
+    ListField
+    RangeField
+    RegistryField
+
+    Notes
+    -----
+    You can use the `ConfigurableInstance.apply` method to construct a
+    fully-configured configurable.
     """
 
     def validateTarget(self, target, ConfigClass):
+        """Validate the target and configuration class.
+
+        Parameters
+        ----------
+        target
+            The configurable being verified.
+        ConfigClass : `lsst.pex.config.Config`-type or `None`
+            The configuration class associated with the ``target``. This can
+            be `None` if ``target`` has a ``ConfigClass`` attribute.
+
+        Raises
+        ------
+        AttributeError
+            Raised if ``ConfigClass`` is `None` and ``target`` does not have a
+            ``ConfigClass`` attribute.
+        TypeError
+            Raised if ``ConfigClass`` is not a `~lsst.pex.config.Config`
+            subclass.
+        ValueError
+            Raised if:
+
+            - ``target`` is not callable (callables have a ``__call__``
+              method).
+            - ``target`` is not startically defined (does not have
+              ``__module__`` or ``__name__`` attributes).
+        """
         if ConfigClass is None:
             try:
                 ConfigClass = target.ConfigClass
@@ -173,12 +248,6 @@ class ConfigurableField(Field):
         return ConfigClass
 
     def __init__(self, doc, target, ConfigClass=None, default=None, check=None):
-        """
-        @param target is the configurable target. Must be callable, and the first
-                parameter will be the value of this field
-        @param ConfigClass is the class of Config object expected by the target.
-                If not provided by target.ConfigClass it must be provided explicitly in this argument
-        """
         ConfigClass = self.validateTarget(target, ConfigClass)
 
         if default is None:
@@ -267,25 +336,44 @@ class ConfigurableField(Field):
             raise FieldValidationError(self, instance, msg)
 
     def __deepcopy__(self, memo):
-        """Customize deep-copying, because we always want a reference to the original typemap.
+        """Customize deep-copying, because we always want a reference to the
+        original typemap.
 
-        WARNING: this must be overridden by subclasses if they change the constructor signature!
+        WARNING: this must be overridden by subclasses if they change the
+        constructor signature!
         """
         return type(self)(doc=self.doc, target=self.target, ConfigClass=self.ConfigClass,
                           default=copy.deepcopy(self.default))
 
     def _compare(self, instance1, instance2, shortcut, rtol, atol, output):
-        """Helper function for Config.compare; used to compare two fields for equality.
+        """Compare two fields for equality.
 
-        @param[in] instance1  LHS Config instance to compare.
-        @param[in] instance2  RHS Config instance to compare.
-        @param[in] shortcut   If True, return as soon as an inequality is found.
-        @param[in] rtol       Relative tolerance for floating point comparisons.
-        @param[in] atol       Absolute tolerance for floating point comparisons.
-        @param[in] output     If not None, a callable that takes a string, used (possibly repeatedly)
-                              to report inequalities.
+        Used by `lsst.pex.ConfigDictField.compare`.
 
-        Floating point comparisons are performed by numpy.allclose; refer to that for details.
+        Parameters
+        ----------
+        instance1 : `lsst.pex.config.Config`
+            Left-hand side config instance to compare.
+        instance2 : `lsst.pex.config.Config`
+            Right-hand side config instance to compare.
+        shortcut : `bool`
+            If `True`, this function returns as soon as an inequality if found.
+        rtol : `float`
+            Relative tolerance for floating point comparisons.
+        atol : `float`
+            Absolute tolerance for floating point comparisons.
+        output : callable
+            A callable that takes a string, used (possibly repeatedly) to
+            report inequalities. For example: `print`.
+
+        Returns
+        -------
+        isEqual : bool
+            `True` if the fields are equal, `False` otherwise.
+
+        Notes
+        -----
+        Floating point comparisons are performed by `numpy.allclose`.
         """
         c1 = getattr(instance1, self.name)._value
         c2 = getattr(instance2, self.name)._value

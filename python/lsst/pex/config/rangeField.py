@@ -27,15 +27,50 @@ __all__ = ["RangeField"]
 
 
 class RangeField(Field):
-    """
-    Defines a Config Field which allows only a range of values.
-    The range is defined by providing min and/or max values.
-    If min or max is None, the range will be open in that direction
-    If inclusive[Min|Max] is True the range will include the [min|max] value
+    """A configuration field (`lsst.pex.config.Field` subclass) that requires
+    the value to be in a specific numeric range.
 
+    Parameters
+    ----------
+    doc : `str`
+        A description of the field.
+    dtype : {`int`-type, `float`-type}
+        The field's data type: either the `int` or `float` type.
+    default : `int` or `float`, optional
+        Default value for the field.
+    optional : `bool`, optional
+        When `False`, `lsst.pex.config.Config.validate` will fail if the
+        field's value is `None`.
+    min : int, float, or `None`, optional
+        Minimum value accepted in the range. If `None`, the range has no
+        lower bound (equivalent to negative infinity).
+    max : `int`, `float`, or None, optional
+        Maximum value accepted in the range. If `None`, the range has no
+        upper bound (equivalent to positive infinity).
+    inclusiveMin : `bool`, optional
+        If `True` (default), the ``min`` value is included in the allowed
+        range.
+    inclusiveMax : `bool`, optional
+        If `True` (default), the ``max`` value is included in the allowed
+        range.
+
+    See also
+    --------
+    ChoiceField
+    ConfigChoiceField
+    ConfigDictField
+    ConfigField
+    ConfigurableField
+    DictField
+    Field
+    ListField
+    RegistryField
     """
 
     supportedTypes = set((int, float))
+    """The set of data types allowed by `RangeField` instances (`set`
+    containing `int` and `float` types).
+    """
 
     def __init__(self, doc, dtype, default=None, optional=False,
                  min=None, max=None, inclusiveMin=True, inclusiveMax=False):
@@ -52,7 +87,14 @@ class RangeField(Field):
                 raise ValueError("min = max = %s and min and max not both inclusive" % (min,))
 
         self.min = min
+        """Minimum value accepted in the range. If `None`, the range has no
+        lower bound (equivalent to negative infinity).
+        """
+
         self.max = max
+        """Maximum value accepted in the range. If `None`, the range has no
+        upper bound (equivalent to positive infinity).
+        """
 
         if inclusiveMax:
             self.maxCheck = lambda x, y: True if y is None else x <= y
@@ -68,6 +110,9 @@ class RangeField(Field):
              ("-inf" if self.min is None else self.min),
              ("inf" if self.max is None else self.max),
              ("]" if inclusiveMax else ")"))
+        """String representation of the field's allowed range (`str`).
+        """
+
         self.__doc__ += "\n\nValid Range = " + self.rangeString
 
     def _validateValue(self, value):
