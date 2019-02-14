@@ -483,6 +483,12 @@ class ConfigChoiceField(Field):
         for v in instanceDict.values():
             v.freeze()
 
+    def _collectImports(self, instance, imports):
+        instanceDict = self.__get__(instance)
+        for config in instanceDict.values():
+            config._collectImports()
+            imports |= config._imports
+
     def save(self, outfile, instance):
         instanceDict = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)

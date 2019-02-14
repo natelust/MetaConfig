@@ -391,6 +391,20 @@ class Field:
             msg = "Value %s is not a valid value" % str(value)
             raise ValueError(msg)
 
+    def _collectImports(self, instance, imports):
+        """This function should call the _collectImports method on all config
+        objects the field may own, and union them with the supplied imports
+        set.
+
+        Parameters
+        ----------
+        instance : instance or subclass of `lsst.pex.config.Config`
+            A config object that has this field defined on it
+        imports : `set`
+            Set of python modules that need imported after persistence
+        """
+        pass
+
     def save(self, outfile, instance):
         """Save this field to a file (for internal use only).
 
@@ -1045,6 +1059,9 @@ class Config(metaclass=ConfigMeta):
         tmp = self._name
         self._rename(root)
         try:
+            self._collectImports()
+            # Remove self from the set, as it is handled explicitly below
+            self._imports.remove(self.__module__)
             configType = type(self)
             typeString = _typeStr(configType)
             outfile.write(u"import {}\n".format(configType.__module__))
@@ -1052,6 +1069,9 @@ class Config(metaclass=ConfigMeta):
             outfile.write(u"instead of {}' % (type({}).__module__, type({}).__name__)\n".format(typeString,
                                                                                                 root,
                                                                                                 root))
+            for imp in self._imports:
+                if imp in sys.modules and sys.modules[imp] is not None:
+                    outfile.write(u"import {}\n".format(imp))
             self._save(outfile)
         finally:
             self._rename(tmp)
@@ -1072,11 +1092,19 @@ class Config(metaclass=ConfigMeta):
             Destination file object write the config into. Accepts strings not
             bytes.
         """
-        for imp in self._imports:
-            if imp in sys.modules and sys.modules[imp] is not None:
-                outfile.write(u"import {}\n".format(imp))
         for field in self._fields.values():
             field.save(outfile, self)
+
+    def _collectImports(self):
+        """Adds module containing self to the list of things to import and
+        then loops over all the fields in the config calling a corresponding
+        collect method. The field method will call _collectImports on any configs
+        it may own and return the set of things to import. This returned set
+        will be merged with the set of imports for this config class.
+        """
+        self._imports.add(self.__module__)
+        for name, field in self._fields.items():
+            field._collectImports(self, self._imports)
 
     def toDict(self):
         """Make a dictionary of field names and their values.
