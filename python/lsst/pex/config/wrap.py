@@ -47,7 +47,7 @@ but doesn't require they be binary equivalent under-the-hood or anything.
 _containerRegex = re.compile(r"(std::)?(vector|list)<\s*(?P<type>[a-z0-9_:]+)\s*>")
 
 
-def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=0, cls=None):
+def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=None, cls=None):
     """Create a `~lsst.pex.config.Config` class that matches a  C++ control
     object class.
 
@@ -64,13 +64,14 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=0, cls=None):
         Base class for the config class.
     doc : `str`, optional
         Docstring for the config class.
-    module : object, `str`, or `int`, optional
+    module : object, `str`, `int`, or `None` optional
         Either a module object, a string specifying the name of the module, or
         an integer specifying how far back in the stack to look for the module
         to use: 0 is the immediate caller of `~lsst.pex.config.wrap`. This will
         be used to set ``__module__`` for the new config class, and the class
         will also be added to the module. Ignored if `None` or if ``cls`` is
-        not `None`, but note that the default is to use the callers' module.
+        not `None`. Defaults to None in which case module is looked up from the
+        module of ctrl.
     cls : class
         An existing config class to use instead of creating a new one; name,
         base doc, and module will be ignored if this is not `None`.
@@ -162,6 +163,11 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=0, cls=None):
                 moduleName = moduleObj.__name__
             cls.__module__ = moduleName
             setattr(moduleObj, name, cls)
+        else:
+            cls.__module__ = ctrl.__module__
+            moduleName = ctrl.__module__
+    else:
+        moduleName = cls.__module__
     if doc is None:
         doc = ctrl.__doc__
     fields = {}
