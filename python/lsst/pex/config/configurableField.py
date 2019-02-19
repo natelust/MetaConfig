@@ -302,6 +302,13 @@ class ConfigurableField(Field):
         value = self.__getOrMake(instance)
         value._rename(fullname)
 
+    def _collectImports(self, instance, imports):
+        value = self.__get__(instance)
+        target = value.target
+        imports.add(target.__module__)
+        value.value._collectImports()
+        imports |= value.value._imports
+
     def save(self, outfile, instance):
         fullname = _joinNamePath(instance._name, self.name)
         value = self.__getOrMake(instance)
@@ -311,8 +318,6 @@ class ConfigurableField(Field):
             # not targeting the field-default target.
             # save target information
             ConfigClass = value.ConfigClass
-            for module in set([target.__module__, ConfigClass.__module__]):
-                outfile.write(u"import {}\n".format(module))
             outfile.write(u"{}.retarget(target={}, ConfigClass={})\n\n".format(fullname,
                                                                                _typeStr(target),
                                                                                _typeStr(ConfigClass)))

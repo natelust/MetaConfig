@@ -141,6 +141,11 @@ class ConfigField(Field):
         value = self.__get__(instance)
         value._rename(_joinNamePath(instance._name, self.name))
 
+    def _collectImports(self, instance, imports):
+        value = self.__get__(instance)
+        value._collectImports()
+        imports |= value._imports
+
     def save(self, outfile, instance):
         """Save this field to a file (for internal use only).
 

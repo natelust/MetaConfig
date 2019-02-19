@@ -479,9 +479,19 @@ class ConfigChoiceField(Field):
         return dict_
 
     def freeze(self, instance):
+        # When a config is frozen it should not be affected by anything further
+        # being added to a registry, so create a deep copy of the registry
+        # typemap
+        self.typemap = copy.deepcopy(self.typemap)
         instanceDict = self.__get__(instance)
         for v in instanceDict.values():
             v.freeze()
+
+    def _collectImports(self, instance, imports):
+        instanceDict = self.__get__(instance)
+        for config in instanceDict.values():
+            config._collectImports()
+            imports |= config._imports
 
     def save(self, outfile, instance):
         instanceDict = self.__get__(instance)
