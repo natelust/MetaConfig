@@ -135,8 +135,17 @@ class ConfigMeta(type):
 
 
 class FieldValidationError(ValueError):
-    """An exception that holds additional information, as attributes,
-    for debugging `lsst.pex.config.Config` errors.
+    """Raised when a ``~lsst.pex.config.Field`` is not valid in a
+    particular ``~lsst.pex.config.Config``.
+
+    Parameters
+    ----------
+    field : `lsst.pex.config.Field`
+        The field that was not valid.
+    config : `lsst.pex.config.Config`
+        The config containing the invalid field.
+    msg : `str`
+        Text describing why the field was not valid.
     """
 
     def __init__(self, field, config, msg):
@@ -169,11 +178,11 @@ class FieldValidationError(ValueError):
 
         self.configSource = config._source
         error = "%s '%s' failed validation: %s\n"\
-                "For more information read the Field definition at:\n%s"\
-                "And the Config definition at:\n%s" % \
+                "For more information see the Field definition at:\n%s"\
+                " and the Config definition at:\n%s" % \
             (self.fieldType.__name__, self.fullname, msg,
              self.fieldSource.format(), self.configSource.format())
-        ValueError.__init__(self, error)
+        super().__init__(error)
 
 
 class Field:
