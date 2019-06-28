@@ -48,6 +48,9 @@ class ConfigField(Field):
     check : callable, optional
         A callback function that validates the field's value, returning `True`
         if the value is valid, and `False` otherwise.
+    deprecated : None or `str`, optional
+        A description of why this Field is deprecated, including removal date.
+        If not None, the string is appended to the docstring for this Field.
 
     See also
     --------
@@ -70,7 +73,7 @@ class ConfigField(Field):
     configuration.
     """
 
-    def __init__(self, doc, dtype, default=None, check=None):
+    def __init__(self, doc, dtype, default=None, check=None, deprecated=None):
         if not issubclass(dtype, Config):
             raise ValueError("dtype=%s is not a subclass of Config" %
                              _typeStr(dtype))
@@ -78,7 +81,7 @@ class ConfigField(Field):
             default = dtype
         source = getStackFrame()
         self._setup(doc=doc, dtype=dtype, default=default, check=check,
-                    optional=False, source=source)
+                    optional=False, source=source, deprecated=deprecated)
 
     def __get__(self, instance, owner=None):
         if instance is None or not isinstance(instance, Config):

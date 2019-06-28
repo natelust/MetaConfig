@@ -327,6 +327,9 @@ class ConfigChoiceField(Field):
         If `False`, the field allows only a single selection. In this case,
         set the active config by assigning the config's key from the
         ``typemap`` to the field's ``name`` attribute (see *Examples*).
+    deprecated : None or `str`, optional
+        A description of why this Field is deprecated, including removal date.
+        If not None, the string is appended to the docstring for this Field.
 
     See also
     --------
@@ -406,10 +409,10 @@ class ConfigChoiceField(Field):
 
     instanceDictClass = ConfigInstanceDict
 
-    def __init__(self, doc, typemap, default=None, optional=False, multi=False):
+    def __init__(self, doc, typemap, default=None, optional=False, multi=False, deprecated=None):
         source = getStackFrame()
         self._setup(doc=doc, dtype=self.instanceDictClass, default=default, check=None, optional=optional,
-                    source=source)
+                    source=source, deprecated=deprecated)
         self.typemap = typemap
         self.multi = multi
 

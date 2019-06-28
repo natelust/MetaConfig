@@ -161,6 +161,9 @@ class DictField(Field):
         A function that validates the dictionary as a whole.
     itemCheck : callable
         A function that validates individual mapping values.
+    deprecated : None or `str`, optional
+        A description of why this Field is deprecated, including removal date.
+        If not None, the string is appended to the docstring for this Field.
 
     See also
     --------
@@ -193,10 +196,11 @@ class DictField(Field):
 
     DictClass = Dict
 
-    def __init__(self, doc, keytype, itemtype, default=None, optional=False, dictCheck=None, itemCheck=None):
+    def __init__(self, doc, keytype, itemtype, default=None, optional=False, dictCheck=None, itemCheck=None,
+                 deprecated=None):
         source = getStackFrame()
         self._setup(doc=doc, dtype=Dict, default=default, check=None,
-                    optional=optional, source=source)
+                    optional=optional, source=source, deprecated=deprecated)
         if keytype not in self.supportedTypes:
             raise ValueError("'keytype' %s is not a supported type" %
                              _typeStr(keytype))

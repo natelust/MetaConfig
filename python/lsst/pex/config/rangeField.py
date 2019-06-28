@@ -53,6 +53,9 @@ class RangeField(Field):
     inclusiveMax : `bool`, optional
         If `True` (default), the ``max`` value is included in the allowed
         range.
+    deprecated : None or `str`, optional
+        A description of why this Field is deprecated, including removal date.
+        If not None, the string is appended to the docstring for this Field.
 
     See also
     --------
@@ -73,7 +76,8 @@ class RangeField(Field):
     """
 
     def __init__(self, doc, dtype, default=None, optional=False,
-                 min=None, max=None, inclusiveMin=True, inclusiveMax=False):
+                 min=None, max=None, inclusiveMin=True, inclusiveMax=False,
+                 deprecated=None):
         if dtype not in self.supportedTypes:
             raise ValueError("Unsupported RangeField dtype %s" % (_typeStr(dtype)))
         source = getStackFrame()
@@ -104,7 +108,8 @@ class RangeField(Field):
             self.minCheck = lambda x, y: True if y is None else x >= y
         else:
             self.minCheck = lambda x, y: True if y is None else x > y
-        self._setup(doc, dtype=dtype, default=default, check=None, optional=optional, source=source)
+        self._setup(doc, dtype=dtype, default=default, check=None, optional=optional, source=source,
+                    deprecated=deprecated)
         self.rangeString = "%s%s,%s%s" % \
             (("[" if inclusiveMin else "("),
              ("-inf" if self.min is None else self.min),

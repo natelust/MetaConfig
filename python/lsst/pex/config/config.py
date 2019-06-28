@@ -29,6 +29,7 @@ import math
 import copy
 import tempfile
 import shutil
+import warnings
 
 from .comparison import getComparisonName, compareScalars, compareConfigs
 from .callStack import getStackFrame, getCallStack
@@ -208,6 +209,9 @@ class Field:
         This sets whether the field is considered optional, and therefore
         doesn't need to be set by the user. When `False`,
         `lsst.pex.config.Config.validate` fails if the field's value is `None`.
+    deprecated : None or `str`, optional
+        A description of why this Field is deprecated, including removal date.
+        If not None, the string is appended to the docstring for this Field.
 
     Raises
     ------
@@ -263,22 +267,30 @@ class Field:
     """Supported data types for field values (`set` of types).
     """
 
-    def __init__(self, doc, dtype, default=None, check=None, optional=False):
+    def __init__(self, doc, dtype, default=None, check=None, optional=False, deprecated=None):
         if dtype not in self.supportedTypes:
             raise ValueError("Unsupported Field dtype %s" % _typeStr(dtype))
 
         source = getStackFrame()
-        self._setup(doc=doc, dtype=dtype, default=default, check=check, optional=optional, source=source)
+        self._setup(doc=doc, dtype=dtype, default=default, check=check, optional=optional, source=source,
+                    deprecated=deprecated)
 
-    def _setup(self, doc, dtype, default, check, optional, source):
+    def _setup(self, doc, dtype, default, check, optional, source, deprecated):
         """Set attributes, usually during initialization.
         """
         self.dtype = dtype
         """Data type for the field.
         """
 
+        # append the deprecation message to the docstring.
+        if deprecated is not None:
+            doc = f"{doc} Deprecated: {deprecated}"
         self.doc = doc
         """A description of the field (`str`).
+        """
+
+        self.deprecated = deprecated
+        """If not None, a description of why this field is deprecated (`str`).
         """
 
         self.__doc__ = f"{doc} (`{dtype.__name__}`"
@@ -1258,6 +1270,10 @@ class Config(metaclass=ConfigMeta):
         non-existent field.
         """
         if attr in self._fields:
+            if self._fields[attr].deprecated is not None:
+                fullname = _joinNamePath(self._name, self._fields[attr].name)
+                warnings.warn(f"Config field {fullname} is deprecated: {self._fields[attr].deprecated}",
+                              FutureWarning)
             if at is None:
                 at = getCallStack()
             # This allows Field descriptors to work.
