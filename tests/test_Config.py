@@ -26,10 +26,11 @@ import io
 import itertools
 import re
 import os
+import pickle
 import unittest
+
 import lsst.utils.tests
 import lsst.pex.config as pexConfig
-import pickle
 
 GLOBAL_REGISTRY = {}
 
@@ -80,12 +81,17 @@ class Complex(pexConfig.Config):
                                     default="BBB", optional=True)
 
 
+class Deprecation(pexConfig.Config):
+    old = pexConfig.Field("Something.", int, default=10, deprecated="not used!")
+
+
 class ConfigTest(unittest.TestCase):
     def setUp(self):
         self.simple = Simple()
         self.inner = InnerConfig()
         self.outer = OuterConfig()
         self.comp = Complex()
+        self.deprecation = Deprecation()
 
     def tearDown(self):
         del self.simple
@@ -101,6 +107,9 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(list(self.simple.ll), [1, 2, 3])
         self.assertEqual(self.simple.d["key"], "value")
         self.assertEqual(self.inner.f, 0.0)
+        self.assertEqual(self.deprecation.old, 10)
+
+        self.assertEqual(self.deprecation._fields['old'].doc, "Something. Deprecated: not used!")
 
         self.assertEqual(self.outer.i.f, 5.0)
         self.assertEqual(self.outer.f, 0.0)
@@ -109,6 +118,15 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.comp.r.name, "AAA")
         self.assertEqual(self.comp.r.active.f, 3.0)
         self.assertEqual(self.comp.r["BBB"].f, 0.0)
+
+    def testDeprecationWarning(self):
+        """Test that a deprecated field emits a warning when it is set.
+        """
+        with self.assertWarns(FutureWarning) as w:
+            self.deprecation.old = 5
+            self.assertEqual(self.deprecation.old, 5)
+
+            self.assertIn(self.deprecation._fields['old'].deprecated, str(w.warnings[-1].message))
 
     def testValidate(self):
         self.simple.validate()

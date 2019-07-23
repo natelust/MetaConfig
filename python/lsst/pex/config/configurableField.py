@@ -186,6 +186,9 @@ class ConfigurableField(Field):
         Callable that takes the field's value (the ``target``) as its only
         positional argument, and returns `True` if the ``target`` is valid (and
         `False` otherwise).
+    deprecated : None or `str`, optional
+        A description of why this Field is deprecated, including removal date.
+        If not None, the string is appended to the docstring for this Field.
 
     See also
     --------
@@ -247,7 +250,7 @@ class ConfigurableField(Field):
                              "(must have '__module__' and '__name__' attributes)")
         return ConfigClass
 
-    def __init__(self, doc, target, ConfigClass=None, default=None, check=None):
+    def __init__(self, doc, target, ConfigClass=None, default=None, check=None, deprecated=None):
         ConfigClass = self.validateTarget(target, ConfigClass)
 
         if default is None:
@@ -258,7 +261,7 @@ class ConfigurableField(Field):
 
         source = getStackFrame()
         self._setup(doc=doc, dtype=ConfigurableInstance, default=default,
-                    check=check, optional=False, source=source)
+                    check=check, optional=False, source=source, deprecated=deprecated)
         self.target = target
         self.ConfigClass = ConfigClass
 

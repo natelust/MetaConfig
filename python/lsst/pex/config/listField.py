@@ -236,6 +236,9 @@ class ListField(Field):
     maxLength : `int`, optional
         If set, this field must contain *no more than* ``maxLength`` number of
         items.
+    deprecated : None or `str`, optional
+        A description of why this Field is deprecated, including removal date.
+        If not None, the string is appended to the docstring for this Field.
 
     See also
     --------
@@ -251,7 +254,8 @@ class ListField(Field):
     """
     def __init__(self, doc, dtype, default=None, optional=False,
                  listCheck=None, itemCheck=None,
-                 length=None, minLength=None, maxLength=None):
+                 length=None, minLength=None, maxLength=None,
+                 deprecated=None):
         if dtype not in Field.supportedTypes:
             raise ValueError("Unsupported dtype %s" % _typeStr(dtype))
         if length is not None:
@@ -273,7 +277,8 @@ class ListField(Field):
             raise ValueError("'itemCheck' must be callable")
 
         source = getStackFrame()
-        self._setup(doc=doc, dtype=List, default=default, check=None, optional=optional, source=source)
+        self._setup(doc=doc, dtype=List, default=default, check=None, optional=optional, source=source,
+                    deprecated=deprecated)
 
         self.listCheck = listCheck
         """Callable used to check the list as a whole.
