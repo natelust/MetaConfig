@@ -1249,7 +1249,7 @@ class Config(metaclass=ConfigMeta):
         --------
         lsst.pex.config.history.format
         """
-        import lsst.pex.config.history as pexHist
+        import meta_config as pexHist
         return pexHist.format(self, name, **kwargs)
 
     history = property(lambda x: x._history)
